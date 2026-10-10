@@ -209,5 +209,5 @@ try {
   assert.equal(requests, before);
   assert.deepEqual(unexpected, []);
   assert.deepEqual(errors, []);
-  console.log('PASS: 端末直接取得・検索・日付絞り込み/解除/検索併用/掲載終了・詳細・会場の地図リンク・重複統合・新着/既読保存・お気に入り登録/解除/保存・掲載終了・403/オフライン・自動巡回なし');
+  console.log('PASS: 端末直接取得・検索・カレンダー月移動/日付選択/解除/検索併用/掲載終了・詳細・会場の地図リンク・重複統合・新着/既読保存・お気に入り登録/解除/保存・掲載終了・403/オフライン・自動巡回なし');
 } finally { await browser.close(); }

@@ -95,6 +95,7 @@ GitHub に置く場合でも iPhone の署名・プロビジョニング制約�
 ## コードの構成
 
 - `App.tsx`：一覧・新着・お気に入り・取得状況・詳細。起動／復帰／手動更新以外の巡回なし。
+- `src/DateFilter.tsx` / `calendar.mjs`：日付選択カレンダー、公演日の印、月の移動。
 - `src/tickets/sources.json`：検索ページ、アーティスト一覧、許可ホストと抽出設定。
 - `src/tickets/collector.mjs`：端末互換の `fetch`、15 秒の通信制限、掲載一覧とページ送りの取得。
 - `src/tickets/adapters.mjs` / `extract.mjs`：サイト別 HTML・JSON-LD の抽出、安定した公演 ID の生成。
