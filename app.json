@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "ゆるチケ",
+    "name": "ゆるチケ（非公式）",
     "slug": "ylmlm-ticket",
     "version": "0.2.0",
     "orientation": "portrait",
@@ -24,7 +24,7 @@
       ]
     },
     "web": {
-      "name": "ゆるチケ",
+      "name": "ゆるチケ（非公式）",
       "bundler": "metro"
     }
   }
