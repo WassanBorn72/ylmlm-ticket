@@ -70,7 +70,18 @@ try {
   assert.equal(await page.getByText('公演・チケット詳細', { exact: true }).count(), 0);
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
   assert.equal(await page.getByText('推しに会える日を、見つけよう。').count(), 0);
-  assert.equal(await page.getByRole('button', { name: 'ローチケ', exact: true }).count(), 0);
+  assert.equal(await page.getByText('ライブ情報', { exact: true }).count(), 0);
+  for (const source of config.sources) assert.equal(await page.getByRole('button', { name: source.name, exact: true }).count(), 0);
+  await page.getByRole('button', { name: '2035-10-20の公演で絞り込む', exact: true }).click();
+  await expectCards(1);
+  assert.match(await cards().first().getAttribute('aria-label'), /絶対少女物語/);
+  await page.getByLabel('公演名・会場で検索').fill('ハロウィンパーティー');
+  await expectCards(0);
+  await page.getByText('条件に合う公演がありません', { exact: true }).waitFor();
+  await page.getByRole('button', { name: '検索をクリア' }).click();
+  await expectCards(1);
+  await page.getByRole('button', { name: 'すべての日付', exact: true }).click();
+  await expectCards(3);
   const favorite = page.getByRole('button', { name: /ハロウィンパーティー.*をお気に入りに登録$/ });
   await favorite.click();
   await page.getByRole('button', { name: /ハロウィンパーティー.*をお気に入りから解除$/ }).waitFor();
@@ -115,9 +126,9 @@ try {
   assert.equal(await page.getByRole('link', { name: /イープラス.*購入先で確認/ }).count(), 1);
   await page.getByRole('button', { name: '閉じる', exact: true }).click();
   await page.getByRole('button', { name: '検索をクリア' }).click();
-  await page.getByRole('button', { name: 'TIGET', exact: true }).click();
+  await page.getByRole('button', { name: '2035-10-20の公演で絞り込む', exact: true }).click();
   await expectCards(1);
-  await page.getByRole('button', { name: 'すべて', exact: true }).click();
+  await page.getByRole('button', { name: 'すべての日付', exact: true }).click();
   phase = 'addition';
   await refresh();
   await expectCards(4);
@@ -126,6 +137,8 @@ try {
   assert.match(new URL(mapUrls.at(-1)).searchParams.get('query'), /西永福JAM.*東京都杉並区/);
   await page.getByRole('tab', { name: /^新着/ }).click();
   await expectCards(1);
+  await page.getByRole('button', { name: '2035-10-12の公演で絞り込む', exact: true }).click();
+  await expectCards(1);
   await page.getByRole('button', { name: 'すべて既読にする', exact: true }).click();
   await expectCards(0);
   await page.reload();
@@ -133,8 +146,13 @@ try {
   await page.getByRole('tab', { name: /^新着/ }).click();
   await expectCards(0);
   await page.getByRole('tab', { name: 'チケット', exact: true }).click();
+  await page.getByRole('button', { name: '2035-10-27の公演で絞り込む', exact: true }).click();
+  await expectCards(1);
   phase = 'removed';
   await refresh();
+  await expectCards(0);
+  await page.getByText('条件に合う公演がありません', { exact: true }).waitFor();
+  await page.getByRole('button', { name: 'すべての日付', exact: true }).click();
   await expectCards(3);
   assert.equal(await page.getByText(/時間の記載に差があります/).count(), 0);
   await page.getByRole('tab', { name: 'お気に入り', exact: true }).click();
@@ -162,5 +180,5 @@ try {
   assert.equal(requests, before);
   assert.deepEqual(unexpected, []);
   assert.deepEqual(errors, []);
-  console.log('PASS: 端末直接取得・検索・詳細・会場の地図リンク・重複統合・新着/既読保存・お気に入り登録/解除/保存・掲載終了・403/オフライン・自動巡回なし');
+  console.log('PASS: 端末直接取得・検索・日付絞り込み/解除/検索併用/掲載終了・詳細・会場の地図リンク・重複統合・新着/既読保存・お気に入り登録/解除/保存・掲載終了・403/オフライン・自動巡回なし');
 } finally { await browser.close(); }
