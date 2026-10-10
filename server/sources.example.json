@@ -1,0 +1,53 @@
+{
+  "artist": "ゆるめるモ！",
+  "aliases": ["ゆるめるモ!", "You'll Melt More!"],
+  "sources": [
+    {
+      "id": "tiget",
+      "name": "TIGET",
+      "allowedHosts": ["tiget.net"],
+      "listingUrls": [],
+      "eventUrls": [],
+      "eventPathPattern": "^/events/[0-9]+$"
+    },
+    {
+      "id": "livepocket",
+      "name": "LivePocket",
+      "allowedHosts": ["t.livepocket.jp"],
+      "listingUrls": [],
+      "eventUrls": [],
+      "eventPathPattern": "^/e/[A-Za-z0-9_-]+$"
+    },
+    {
+      "id": "ticketdive",
+      "name": "TicketDive",
+      "allowedHosts": ["ticketdive.com"],
+      "listingUrls": [],
+      "eventUrls": [],
+      "eventPathPattern": "^/event/[A-Za-z0-9_-]+$"
+    },
+    {
+      "id": "eplus",
+      "name": "イープラス",
+      "allowedHosts": ["eplus.jp"],
+      "listingUrls": [],
+      "eventUrls": [],
+      "eventPathPattern": "^/sf/detail/"
+    },
+    {
+      "id": "l-tike",
+      "name": "ローチケ",
+      "allowedHosts": ["l-tike.com"],
+      "listingUrls": [],
+      "eventUrls": [],
+      "eventPathPattern": "^/concert/"
+    },
+    {
+      "id": "buzz-ticket",
+      "name": "Buzzチケ",
+      "allowedHosts": ["buzz-ticket.com"],
+      "listingUrls": [],
+      "eventUrls": []
+    }
+  ]
+}

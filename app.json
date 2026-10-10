@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "name": "ゆるチケ",
+    "slug": "ylmlm-ticket",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "scheme": "yuruticket",
+    "ios": { "supportsTablet": true, "bundleIdentifier": "jp.ylmlm.ticket" },
+    "android": { "package": "jp.ylmlm.ticket" },
+    "web": { "name": "ゆるチケ", "bundler": "metro" },
+    "plugins": ["expo-notifications"]
+  }
+}
