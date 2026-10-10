@@ -1,0 +1,17 @@
+# Androidスマホだけで試す
+
+GitHub Actionsで作成したAndroid試用版APKを利用できます。パソコン、Expoアカウント、正式配布用の署名鍵は不要です。ダウンロードにはGitHubへのログインが必要です。これは正式リリースとは別の試用版で、iPhoneでは利用できません。
+
+1. [Android Preview](https://github.com/WassanBorn72/ylmlm-ticket/actions/workflows/android-preview.yml) をスマホのブラウザーで開き、GitHubへログインします。
+2. 成功した実行を開き、下部の **Artifacts → yuru-ticket-android-preview** をダウンロードします。表示されない場合はブラウザーの「PC版サイト」を試してください。保存期限は7日です。
+3. Androidの「Files」などでZIPを展開し、`yuru-ticket-android-preview.apk` を開きます。
+4. ブラウザー／Filesからのインストール許可を求められたら、今回使う提供元を許可してインストールします。
+5. **ゆるチケ（非公式・試用版）** を開くと、端末から掲載情報を取得します。APIサーバーや開発用パソコンへの接続は不要です。
+
+最初は掲載済みの公演を基準として保存するため、新着は0件です。公演カードから詳細を開き、会場・料金・開場／開演を購入先のページと照合してください。設定タブで各サイトの取得状況を確認できます。新しい掲載は、次に開いたとき／手動更新時に新着として表示します。アプリを閉じている間は取得・通知しません。
+
+サイト側から端末の接続を拒否される場合は、取得エラーと前回情報を表示します。現在のクラウドでの取得成功はスマホ回線での成功を保証しません。
+
+試用APKはExpoが生成するdebug鍵で署名したreleaseビルドです。MetroやExpo Goは必要ありませんが、正式な署名鍵で作る配布版とは異なります。Androidのパッケージ名も `jp.ylmlm.ticket.preview` と分けているため、将来の正式版へ保存データは自動移行しません。一般公開用の署名付きAPKは [RELEASING.md](RELEASING.md) の手順で作成します。
+
+新しい試用版が必要なときは、リポジトリのActionsで **Android Preview → Run workflow** を実行します。GitHub Actionsの実行権限が必要です。

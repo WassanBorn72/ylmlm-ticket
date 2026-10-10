@@ -1,0 +1,68 @@
+name: Android Preview
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/android-preview.yml']
+permissions:
+  contents: read
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: android-actions/setup-android@v3
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - name: Give the trial app a separate Android identity
+        run: |
+          node --input-type=module - <<'JS'
+          import fs from 'node:fs';
+          const file = 'app.json';
+          const config = JSON.parse(fs.readFileSync(file, 'utf8'));
+          config.expo.name = 'ゆるチケ（非公式・試用版）';
+          config.expo.android.package = 'jp.ylmlm.ticket.preview';
+          fs.writeFileSync(file, JSON.stringify(config, null, 2) + '\n');
+          JS
+      - name: Build an installable trial APK with the Expo debug key
+        env:
+          EXPO_NO_TELEMETRY: '1'
+        run: |
+          set -euo pipefail
+          npx expo prebuild --platform android --no-install
+          cd android
+          ./gradlew assembleRelease --no-daemon --max-workers 2 -PreactNativeArchitectures=arm64-v8a,armeabi-v7a '-Dorg.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=1g'
+      - name: Verify and package the trial APK
+        run: |
+          set -euo pipefail
+          apk=android/app/build/outputs/apk/release/app-release.apk
+          verifier=$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n 1)
+          test -n "$verifier"
+          "$verifier" verify "$apk"
+          mkdir -p preview-artifacts
+          cp "$apk" preview-artifacts/yuru-ticket-android-preview.apk
+          cat > preview-artifacts/README.txt <<'EOF'
+          ゆるチケ（非公式）のAndroid試用版です。正式リリースではありません。
+          ZIPを展開し、yuru-ticket-android-preview.apkをAndroidで開いてインストールしてください。
+          起動すると端末からチケットサイトに接続します。初回の取得は新着ゼロです。
+          Expoのdebug鍵で署名しています。正式版にはこの鍵を使用しません。
+          試用版と正式版は別アプリとしてインストールされ、保存データは共有しません。
+          EOF
+          cd preview-artifacts
+          sha256sum *.apk > SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: yuru-ticket-android-preview
+          path: preview-artifacts/
+          if-no-files-found: error
+          retention-days: 7

@@ -8,5 +8,6 @@ dist/
 android/
 ios/
 release-artifacts/
+preview-artifacts/
 *.jks
 *.keystore

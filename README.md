@@ -32,6 +32,8 @@ LivePocket／イープラスの同じ YOIMACHI 公演は購入先をまとめて
 
 ## 開発を始める
 
+Androidスマホだけで試す場合は、[試用版APKのインストール手順](docs/TRYING.md) を参照してください。正式リリースとは別の試用版です。
+
 Node.js 24 以降を使用します。クラウドの作業ディレクトリは `/workspace/ylmlm-ticket` です。
 
 ```sh
