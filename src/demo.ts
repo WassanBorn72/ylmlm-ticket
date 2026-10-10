@@ -22,6 +22,6 @@ export const demoFeed: Feed = {
     sample('sample-1', 7, 'ゆるめるモ！ 秋のワンマンライブ', '東京・サンプルホール', 4500, ['TicketDive', 'LivePocket'], true),
     sample('sample-2', 15, 'ゆるめるモ！ × FRIENDS', '大阪・サンプルステージ', 3500, ['TIGET'], true),
     sample('sample-3', 23, 'ゆるめるモ！ 週末フェス', '名古屋・サンプル会場', 6000, ['イープラス', 'ローチケ']),
-    sample('sample-4', 31, 'ゆるめるモ！ スペシャルライブ', '東京・サンプルスタジオ', 4000, ['Buzzチケ']),
+    sample('sample-4', 31, 'ゆるめるモ！ スペシャルライブ', '東京・サンプルスタジオ', 4000, ['TicketDive']),
   ],
 };

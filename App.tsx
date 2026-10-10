@@ -11,8 +11,8 @@ import { disableNotifications, enableNotifications, loadRegistration, Registrati
 
 const apiUrl = (process.env.EXPO_PUBLIC_API_URL || '').replace(/\/$/, '');
 const isDemo = !apiUrl;
-const sites = ['TicketDive', 'LivePocket', 'TIGET', 'イープラス', 'ローチケ', 'Buzzチケ'];
-const siteColors: Record<string, string> = { TicketDive: '#eaf8f1', LivePocket: '#fff3da', TIGET: '#eeeafd', 'イープラス': '#ffecec', 'ローチケ': '#e7f0ff', 'Buzzチケ': '#ffe9f5' };
+const sites = ['TicketDive', 'LivePocket', 'TIGET', 'イープラス', 'ローチケ'];
+const siteColors: Record<string, string> = { TicketDive: '#eaf8f1', LivePocket: '#fff3da', TIGET: '#eeeafd', 'イープラス': '#ffecec', 'ローチケ': '#e7f0ff' };
 type Tab = 'tickets' | 'new' | 'favorites' | 'settings';
 const storage = { favorites: 'yuruticket-favorites', lastRead: 'yuruticket-last-read' };
 const time = (value: string | null) => value ? new Intl.DateTimeFormat('ja-JP', { timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(value)) : '未掲載';

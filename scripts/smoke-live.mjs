@@ -42,8 +42,7 @@ try {
     await page.getByRole('button', { name: '閉じる', exact: true }).click();
   }
   await page.getByRole('tab', { name: '設定', exact: true }).click();
-  for (const name of ['TicketDive', 'LivePocket', 'TIGET', 'イープラス', 'ローチケ', 'Buzzチケ']) await page.getByText(name, { exact: true }).waitFor();
-  if (feed.sources.find(source => source.name === 'Buzzチケ')?.status === 'error') await page.getByText('取得先の応答: HTTP 403', { exact: true }).waitFor();
+  for (const name of ['TicketDive', 'LivePocket', 'TIGET', 'イープラス', 'ローチケ']) await page.getByText(name, { exact: true }).waitFor();
   // 障害時も架空公演に切り替わらないことを確認。
   await page.route('**/api/events', route => route.fulfill({ status: 503, contentType: 'application/json', body: '{"error":"smoke-test failure"}' }));
   await page.reload();

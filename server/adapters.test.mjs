@@ -97,12 +97,8 @@ test('HTML の形式変更や HTTP 200 のアクセス確認画面を掲載ゼ�
   }
 });
 
-test('Buzzチケの接続拒否をエラーとして残し、初回取得を確定しない', async t => {
-  const store = storeFor(t);
-  await collect(store, { ...config, sources: [source('buzz-ticket')] }, async () => { throw new Error('取得先の応答: HTTP 403'); });
-  assert.equal(store.state.sourceStatus['buzz-ticket'].status, 'error');
-  assert.match(store.state.sourceStatus['buzz-ticket'].errors[0], /403/);
-  assert.equal(store.state.initializedSources.length, 0);
+test('Buzzチケは取得対象から除外する', () => {
+  assert.ok(!config.sources.some(item => item.id === 'buzz-ticket'));
 });
 
 test('同じ検索条件のページ送りを辿り、別検索には広げない', async t => {
