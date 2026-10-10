@@ -2,7 +2,7 @@
 
 GitHub Actionsで作成したAndroid試用版APKを利用できます。パソコン、Expoアカウント、正式配布用の署名鍵は不要です。ダウンロードにはGitHubへのログインが必要です。これは正式リリースとは別の試用版で、iPhoneでは利用できません。
 
-2026年10月11日（日本時間）に [Android試用版のビルド](https://github.com/WassanBorn72/ylmlm-ticket/actions/runs/38083342188) が成功しました。APKの署名検証と、ダウンロード後のSHA-256照合を確認済みです。実機での起動・各サイトへの接続は、下記の手順で確認してください。
+2026年10月11日（日本時間）に [お気に入り対応版（0.2.1）のAndroidビルド](https://github.com/WassanBorn72/ylmlm-ticket/actions/runs/38085500790) が成功しました。APKの署名検証と、ダウンロード後のSHA-256照合を確認済みです。前の試用版と同じ署名証明書で、更新用のバージョンコードも増やしています。実機での起動・各サイトへの接続は、下記の手順で確認してください。
 
 1. [Android Preview](https://github.com/WassanBorn72/ylmlm-ticket/actions/workflows/android-preview.yml) をスマホのブラウザーで開き、GitHubへログインします。
 2. 成功した実行を開き、下部の **Artifacts → yuru-ticket-android-preview** をダウンロードします。表示されない場合はブラウザーの「PC版サイト」を試してください。保存期限は7日です。

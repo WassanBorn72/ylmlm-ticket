@@ -79,6 +79,7 @@ try {
   await page.getByRole('tab', { name: 'チケット', exact: true }).click();
   await favorite.click();
   await page.getByRole('button', { name: /ハロウィンパーティー.*をお気に入りから解除$/ }).waitFor();
+  await page.getByRole('button', { name: '詳細を閉じる', exact: true }).waitFor({ state: 'hidden' });
   if (process.env.SCREENSHOT_PATH) await page.screenshot({ path: process.env.SCREENSHOT_PATH, fullPage: true });
   await page.setViewportSize({ width: 320, height: 844 });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
