@@ -7,9 +7,10 @@ export type TicketEvent = {
   id: string; title: string; date: string; startAt: string | null; doorsAt: string | null;
   venue: string; address: string; offers: Offer[]; sourceUrls: string[];
   firstSeenAt: string; updatedAt: string; isBaseline: boolean;
+  staleSourceIds?: string[];
   notes?: { sourceId: string; text: string }[];
 };
 export type Feed = {
   events: TicketEvent[]; lastSyncAt: string | null;
-  sources: { id: string; name: string; status: string; errors: string[]; checkedAt?: string; found?: number }[];
+  sources: { id: string; name: string; status: string; errors: string[]; checkedAt?: string; found?: number; lastSuccessAt?: string | null }[];
 };

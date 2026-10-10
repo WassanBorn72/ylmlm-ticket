@@ -1,0 +1,97 @@
+name: Android GitHub Release
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing version tag to build (for example v0.2.0)
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: android-actions/setup-android@v3
+      - name: Validate version tag
+        run: |
+          node --input-type=module -e 'import fs from "node:fs"; const version = JSON.parse(fs.readFileSync("package.json")).version; if (process.env.RELEASE_TAG !== `v${version}` || JSON.parse(fs.readFileSync("app.json")).expo.version !== version) throw new Error("Tag, package.json and app.json versions must match");'
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - name: Build with private release key
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          YURU_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          YURU_ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          YURU_ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          EXPO_NO_TELEMETRY: '1'
+        run: |
+          set -euo pipefail
+          export YURU_ANDROID_KEYSTORE_PATH="$RUNNER_TEMP/yuru-release.jks"
+          python3 - <<'PY'
+          import base64, os
+          from pathlib import Path
+          for name in ['ANDROID_KEYSTORE_BASE64', 'YURU_ANDROID_KEYSTORE_PASSWORD', 'YURU_ANDROID_KEY_ALIAS', 'YURU_ANDROID_KEY_PASSWORD']:
+              if not os.environ.get(name):
+                  raise SystemExit(f'Missing GitHub Actions secret: {name}')
+          key = Path(os.environ['YURU_ANDROID_KEYSTORE_PATH'])
+          key.write_bytes(base64.b64decode(''.join(os.environ['ANDROID_KEYSTORE_BASE64'].split()), validate=True))
+          key.chmod(0o600)
+          PY
+          trap 'rm -f "$YURU_ANDROID_KEYSTORE_PATH"' EXIT
+          npm run build:android
+          apk="android/app/build/outputs/apk/release/app-release.apk"
+          verifier=$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n 1)
+          test -n "$verifier"
+          "$verifier" verify "$apk"
+          mkdir -p release-artifacts
+          cp "$apk" "release-artifacts/yuru-ticket-${RELEASE_TAG}-android.apk"
+          cd release-artifacts
+          sha256sum *.apk > SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-release
+          path: release-artifacts/
+          if-no-files-found: error
+  draft-release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: android-release
+          path: release-artifacts
+      - name: Create a reviewable GitHub release draft
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/release-notes.md" <<'EOF'
+          ゆるチケ：開いたときにチケットサイトから掲載情報を直接取得する非公式アプリです。
+
+          Android: APK と SHA256SUMS.txt を添付しています。更新時は同じ署名鍵を使用します。
+          iPhone: APK は利用できません。README の iOS ビルド・署名手順を参照してください。
+
+          公開前に Android / iPhone の実機でサイトへの直接接続、掲載情報、新着・既読の動作を確認してください。
+          EOF
+          gh release create "$RELEASE_TAG" release-artifacts/* --verify-tag --draft --title "ゆるチケ ${RELEASE_TAG}" --notes-file "$RUNNER_TEMP/release-notes.md"

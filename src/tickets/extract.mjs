@@ -1,8 +1,21 @@
-import { load } from 'cheerio';
-import { createHash } from 'node:crypto';
+import { load } from 'cheerio/slim';
+import { sha256 } from '@noble/hashes/sha2.js';
+import { bytesToHex } from '@noble/hashes/utils.js';
 
 export const normalize = value => String(value ?? '').normalize('NFKC').toLowerCase().replace(/\s+/g, '');
-export const hash = value => createHash('sha256').update(value).digest('hex').slice(0, 24);
+// Hermes でも TextEncoder や Node.js の crypto に依存しない UTF-8 変換。
+export const hash = value => {
+  const bytes = [];
+  for (const char of String(value)) {
+    const point = char.codePointAt(0);
+    const code = point >= 0xd800 && point <= 0xdfff ? 0xfffd : point;
+    if (code < 0x80) bytes.push(code);
+    else if (code < 0x800) bytes.push(0xc0 | (code >> 6), 0x80 | (code & 63));
+    else if (code < 0x10000) bytes.push(0xe0 | (code >> 12), 0x80 | ((code >> 6) & 63), 0x80 | (code & 63));
+    else bytes.push(0xf0 | (code >> 18), 0x80 | ((code >> 12) & 63), 0x80 | ((code >> 6) & 63), 0x80 | (code & 63));
+  }
+  return bytesToHex(sha256(Uint8Array.from(bytes))).slice(0, 24);
+};
 
 export function checkedUrl(value, hosts) {
   const url = new URL(value);

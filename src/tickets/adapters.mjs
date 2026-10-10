@@ -1,4 +1,4 @@
-import { load } from 'cheerio';
+import { load } from 'cheerio/slim';
 import { extractEvents, normalizeEvents, normalize } from './extract.mjs';
 
 const text = value => String(value ?? '').normalize('NFKC').replace(/\s+/g, ' ').trim();

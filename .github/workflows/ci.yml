@@ -1,0 +1,31 @@
+name: Checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - name: Export iOS, Android and Web bundles
+        run: npx expo export --platform all --max-workers 2
+        env:
+          EXPO_OFFLINE: '1'
+          EXPO_NO_TELEMETRY: '1'
+      - run: npx playwright install --with-deps chromium
+      - name: Verify direct collection UI with offline page fixtures
+        run: |
+          python3 -m http.server 4173 --directory dist > /tmp/yuru-web.log 2>&1 &
+          npm run test:web
+        env:
+          WEB_TEST_URL: http://127.0.0.1:4173

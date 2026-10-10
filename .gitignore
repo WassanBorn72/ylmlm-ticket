@@ -3,6 +3,10 @@ node_modules/
 dist/
 .env
 .env.local
-server/data/
 *.log
 *.tsbuildinfo
+android/
+ios/
+release-artifacts/
+*.jks
+*.keystore
