@@ -2,19 +2,19 @@
   "expo": {
     "name": "ゆるチケ（非公式）",
     "slug": "ylmlm-ticket",
-    "version": "0.2.3",
+    "version": "0.2.4",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "scheme": "yuruticket",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "jp.ylmlm.ticket",
-      "buildNumber": "5"
+      "buildNumber": "6"
     },
     "android": {
       "package": "jp.ylmlm.ticket",
       "permissions": [],
-      "versionCode": 5,
+      "versionCode": 6,
       "blockedPermissions": [
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
