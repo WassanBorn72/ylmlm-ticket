@@ -45,6 +45,10 @@ export function extractEvents(html, pageUrl, source, config) {
   });
   const structuredEvents = data.filter(item => [].concat(item['@type'] ?? []).some(type => /^(?:https?:\/\/schema.org\/)?(?:MusicEvent|Event|Festival)$/.test(type)));
   if (!structuredEvents.length) throw new Error('Event JSON-LD がありません。サイト専用アダプターの検証が必要です');
+  return normalizeEvents(structuredEvents, pageUrl, source, config);
+}
+
+export function normalizeEvents(structuredEvents, pageUrl, source, config) {
   const aliases = [config.artist, ...(config.aliases ?? [])].map(normalize);
   return structuredEvents.flatMap(item => {
     const searchable = normalize([item.name, item.description, ...[].concat(item.performer ?? []).map(p => typeof p === 'string' ? p : p.name)].join(' '));
@@ -52,7 +56,8 @@ export function extractEvents(html, pageUrl, source, config) {
     const time = dateInfo(item.startDate);
     if (!time || !item.name) throw new Error('対象公演のタイトルまたは開催日を読み取れません');
     const location = Array.isArray(item.location) ? item.location[0] : item.location;
-    const venue = typeof location === 'string' ? location : location?.name || '会場未発表';
+    const venue = typeof location === 'string' ? location : location?.name || '会場は購入先で確認';
+    const venueAlias = Object.entries(config.venueAliases ?? {}).find(([key]) => normalize(key) === normalize(venue))?.[1] ?? venue;
     const address = typeof location?.address === 'string' ? location.address : [location?.address?.addressRegion, location?.address?.addressLocality, location?.address?.streetAddress].filter(Boolean).join(' ');
     const offers = [].concat(item.offers ?? []).flatMap(offer => offer.offers ? [].concat(offer.offers) : [offer]);
     const normalizedOffers = (offers.length ? offers : [{}]).map(offer => {
@@ -64,14 +69,16 @@ export function extractEvents(html, pageUrl, source, config) {
         price: amount, currency: offer.priceCurrency || (amount === null ? null : 'JPY'),
         url: ticketUrl(offer.url, pageUrl),
         availability: offer.availability ? String(offer.availability).split('/').pop() : null,
+        ...(offer.note ? { note: String(offer.note) } : {}),
       };
     });
     const doorValue = typeof item.doorTime === 'string' && /^\d{2}:\d{2}(?::\d{2})?$/.test(item.doorTime) ? `${time.date}T${item.doorTime}+09:00` : item.doorTime;
     const doors = doorValue ? dateInfo(doorValue)?.startAt ?? null : null;
     return [{
-      id: hash(`${time.date}|${time.startAt ?? 'unknown'}|${normalize(item.name)}|${normalize(venue)}`),
+      id: hash(`${time.date}|${time.startAt ?? 'unknown'}|${normalize(item.name)}|${normalize(venueAlias)}`),
       title: String(item.name), ...time, doorsAt: doors, venue, address,
       offers: normalizedOffers, sourceUrls: [pageUrl],
+      notes: (item.notes ?? []).map(text => ({ sourceId: source.id, text: `${source.name}: ${text}` })),
     }];
   });
 }
@@ -80,10 +87,15 @@ export function discoverEventUrls(html, listingUrl, source) {
   const $ = load(html);
   const pattern = new RegExp(source.eventPathPattern);
   const urls = new Set();
-  $('a[href]').each((_, el) => {
+  const anchors = source.listingSelector ? $(source.listingSelector).find('a[href]').addBack('a[href]') : $('a[href]');
+  anchors.each((_, el) => {
     try {
       const candidate = checkedUrl(new URL($(el).attr('href'), listingUrl).href, source.allowedHosts);
-      if (pattern.test(new URL(candidate).pathname)) urls.add(candidate);
+      if (pattern.test(new URL(candidate).pathname)) {
+        const canonical = new URL(candidate);
+        if (source.stripQuery) canonical.search = '';
+        urls.add(canonical.href);
+      }
     } catch { /* 外部リンクや HTTP は巡回しない */ }
   });
   return [...urls];

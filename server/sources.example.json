@@ -1,53 +1,65 @@
 {
   "artist": "ゆるめるモ！",
   "aliases": ["ゆるめるモ!", "You'll Melt More!"],
+  "venueAliases": {
+    "大塚 Live House Hearts+/他": "大塚 YOIMACHI 会場",
+    "大塚 Hearts+、Hearts Next、Deepa、MEETS、LIVE BAR〇、お風呂ステージ(大塚記念湯)、ラーメンステージ(麺屋いぶすけ)": "大塚 YOIMACHI 会場"
+  },
   "sources": [
     {
-      "id": "tiget",
-      "name": "TIGET",
-      "allowedHosts": ["tiget.net"],
-      "listingUrls": [],
-      "eventUrls": [],
-      "eventPathPattern": "^/events/[0-9]+$"
-    },
-    {
-      "id": "livepocket",
-      "name": "LivePocket",
-      "allowedHosts": ["t.livepocket.jp"],
-      "listingUrls": [],
-      "eventUrls": [],
-      "eventPathPattern": "^/e/[A-Za-z0-9_-]+$"
-    },
-    {
-      "id": "ticketdive",
-      "name": "TicketDive",
+      "id": "ticketdive", "name": "TicketDive", "adapter": "ticketdive",
       "allowedHosts": ["ticketdive.com"],
-      "listingUrls": [],
-      "eventUrls": [],
-      "eventPathPattern": "^/event/[A-Za-z0-9_-]+$"
+      "listingUrls": ["https://ticketdive.com/search?q=%E3%82%86%E3%82%8B%E3%82%81%E3%82%8B%E3%83%A2"],
+      "eventPathPattern": "^/event/[A-Za-z0-9_-]+$",
+      "listingSelector": "[class*=\"SearchPage_container__\"]",
+      "listingReadySelector": "[class*=\"SearchPage_container__\"]",
+      "emptyPattern": "(?:イベント|検索結果).*(?:ありません|見つかりません|0件)",
+      "stripQuery": true
     },
     {
-      "id": "eplus",
-      "name": "イープラス",
+      "id": "livepocket", "name": "LivePocket", "adapter": "livepocket",
+      "allowedHosts": ["livepocket.jp"],
+      "listingUrls": ["https://livepocket.jp/event/search?word=%E3%82%86%E3%82%8B%E3%82%81%E3%82%8B%E3%83%A2"],
+      "eventPathPattern": "^/e/[A-Za-z0-9_-]+$",
+      "listingSelector": ".event-list .event-card-list",
+      "listingReadySelector": ".event-list h1",
+      "emptyPattern": "(?:0件|見つかりません|ありません)",
+      "stripQuery": true
+    },
+    {
+      "id": "tiget", "name": "TIGET", "adapter": "tiget",
+      "allowedHosts": ["tiget.net"],
+      "listingUrls": ["https://tiget.net/events?q%5Bwords%5D=%E3%82%86%E3%82%8B%E3%82%81%E3%82%8B%E3%83%A2"],
+      "eventPathPattern": "^/events/[0-9]+$",
+      "listingSelector": ".events-archive-body",
+      "listingReadySelector": ".events-archive-body",
+      "emptyPattern": "(?:検索結果:0件|見つかりません|ありません)",
+      "stripQuery": true
+    },
+    {
+      "id": "eplus", "name": "イープラス", "adapter": "eplus",
       "allowedHosts": ["eplus.jp"],
-      "listingUrls": [],
-      "eventUrls": [],
-      "eventPathPattern": "^/sf/detail/"
+      "listingUrls": ["https://eplus.jp/sf/word/0000058243"],
+      "eventPathPattern": "^/sf/detail/[0-9]+(?:-[A-Za-z0-9]+)?$",
+      "listingSelector": ".section--ticket-list",
+      "listingReadySelector": ".page-header__title",
+      "emptyPattern": "(?:該当する公演はありません|チケット情報0件)",
+      "stripQuery": true
     },
     {
-      "id": "l-tike",
-      "name": "ローチケ",
+      "id": "l-tike", "name": "ローチケ",
       "allowedHosts": ["l-tike.com"],
-      "listingUrls": [],
-      "eventUrls": [],
-      "eventPathPattern": "^/concert/"
+      "listingUrls": ["https://l-tike.com/artist/000000000539488/"],
+      "eventPathPattern": "^/(?:order/|search/po/|concert/)",
+      "listingSelector": "main",
+      "listingReadySelector": ".artist_headingName",
+      "emptyPattern": "現在受け付け中.*チケットはございません",
+      "stripQuery": false
     },
     {
-      "id": "buzz-ticket",
-      "name": "Buzzチケ",
+      "id": "buzz-ticket", "name": "Buzzチケ",
       "allowedHosts": ["buzz-ticket.com"],
-      "listingUrls": [],
-      "eventUrls": []
+      "probeUrl": "https://buzz-ticket.com/"
     }
   ]
 }

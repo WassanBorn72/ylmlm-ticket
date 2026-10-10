@@ -24,7 +24,11 @@ export function ingest(state, source, events, now = new Date().toISOString(), fi
     const keep = (previous?.offers ?? []).filter(offer => offer.sourceId !== source.id);
     state.events[event.id] = {
       ...event,
+      venue: previous && previous.venue.length > event.venue.length ? previous.venue : event.venue,
+      address: event.address || previous?.address || '',
+      doorsAt: event.doorsAt || previous?.doorsAt || null,
       offers: [...keep, ...event.offers],
+      notes: [...(previous?.notes ?? []).filter(note => note.sourceId !== source.id), ...(event.notes ?? [])],
       sourceUrls: [...new Set([...(previous?.sourceUrls ?? []), ...event.sourceUrls])],
       firstSeenAt: previous?.firstSeenAt ?? now,
       updatedAt: now,

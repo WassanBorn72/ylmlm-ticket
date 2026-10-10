@@ -13,6 +13,7 @@
     "test": "node --test server/*.test.mjs",
     "typecheck": "tsc --noEmit",
     "test:web": "node scripts/smoke-web.mjs",
+    "test:live": "node scripts/smoke-live.mjs",
     "build:web": "expo export --platform web"
   },
   "dependencies": {
