@@ -11,6 +11,10 @@ const browser = await chromium.launch({
 });
 const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
 const errors = [];
+await page.addInitScript(() => {
+  window.openedMapUrls = [];
+  window.open = url => { window.openedMapUrls.push(String(url)); return null; };
+});
 page.on('pageerror', error => errors.push(error.message));
 let phase = 'initial';
 let requests = 0;
@@ -58,6 +62,12 @@ try {
   await page.goto(process.env.WEB_TEST_URL || 'http://127.0.0.1:8081');
   await waitIdle();
   await expectCards(3);
+  await page.getByRole('link', { name: '新宿Nine Spiceを地図で開く', exact: true }).click();
+  let mapUrls = await page.evaluate(() => window.openedMapUrls);
+  assert.equal(mapUrls.length, 1);
+  assert.equal(new URL(mapUrls[0]).origin, 'https://www.google.com');
+  assert.match(new URL(mapUrls[0]).searchParams.get('query'), /新宿Nine Spice/);
+  assert.equal(await page.getByText('公演・チケット詳細', { exact: true }).count(), 0);
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
   assert.equal(await page.getByText('推しに会える日を、見つけよう。').count(), 0);
   assert.equal(await page.getByRole('button', { name: 'ローチケ', exact: true }).count(), 0);
@@ -71,7 +81,7 @@ try {
   await waitIdle();
   await page.getByRole('tab', { name: 'お気に入り', exact: true }).click();
   await expectCards(1);
-  await cards().first().click();
+  await cards().first().click({ position: { x: 10, y: 10 } });
   await page.getByRole('button', { name: /ハロウィンパーティー.*をお気に入りから解除$/ }).last().click();
   await page.getByRole('button', { name: /ハロウィンパーティー.*をお気に入りに登録$/ }).waitFor();
   await page.getByRole('button', { name: '閉じる', exact: true }).click();
@@ -91,11 +101,16 @@ try {
   await page.getByLabel('公演名・会場で検索').fill('ハロウィンパーティー');
   await expectCards(1);
   await page.getByText('時間の記載に差があります · 詳細を確認').waitFor();
-  await cards().first().click();
+  await cards().first().click({ position: { x: 10, y: 10 } });
   await page.getByText(/TicketDive: 概要と詳細で時間が異なります/).waitFor();
+  const previousMapCount = (await page.evaluate(() => window.openedMapUrls)).length;
+  await page.getByRole('link', { name: '新宿Nine Spiceを地図で開く', exact: true }).last().click();
+  mapUrls = await page.evaluate(() => window.openedMapUrls);
+  assert.equal(mapUrls.length, previousMapCount + 1);
+  assert.match(new URL(mapUrls.at(-1)).searchParams.get('query'), /新宿Nine Spice/);
   await page.getByRole('button', { name: '閉じる', exact: true }).click();
   await page.getByLabel('公演名・会場で検索').fill('YOIMACHI');
-  await cards().first().click();
+  await cards().first().click({ position: { x: 10, y: 10 } });
   assert.equal(await page.getByRole('link', { name: /LivePocket/ }).count(), 1);
   assert.equal(await page.getByRole('link', { name: /イープラス.*購入先で確認/ }).count(), 1);
   await page.getByRole('button', { name: '閉じる', exact: true }).click();
@@ -106,6 +121,9 @@ try {
   phase = 'addition';
   await refresh();
   await expectCards(4);
+  await page.getByRole('link', { name: '西永福JAMを地図で開く', exact: true }).click();
+  mapUrls = await page.evaluate(() => window.openedMapUrls);
+  assert.match(new URL(mapUrls.at(-1)).searchParams.get('query'), /西永福JAM.*東京都杉並区/);
   await page.getByRole('tab', { name: /^新着/ }).click();
   await expectCards(1);
   await page.getByRole('button', { name: 'すべて既読にする', exact: true }).click();
@@ -144,5 +162,5 @@ try {
   assert.equal(requests, before);
   assert.deepEqual(unexpected, []);
   assert.deepEqual(errors, []);
-  console.log('PASS: 端末直接取得・検索・詳細・重複統合・新着/既読保存・お気に入り登録/解除/保存・掲載終了・403/オフライン・自動巡回なし');
+  console.log('PASS: 端末直接取得・検索・詳細・会場の地図リンク・重複統合・新着/既読保存・お気に入り登録/解除/保存・掲載終了・403/オフライン・自動巡回なし');
 } finally { await browser.close(); }
