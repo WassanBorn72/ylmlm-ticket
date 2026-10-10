@@ -72,21 +72,6 @@
       "listingReadySelector": ".page-header__title",
       "emptyPattern": "(?:該当する公演はありません|チケット情報0件)",
       "stripQuery": true
-    },
-    {
-      "id": "l-tike",
-      "name": "ローチケ",
-      "allowedHosts": [
-        "l-tike.com"
-      ],
-      "listingUrls": [
-        "https://l-tike.com/artist/000000000539488/"
-      ],
-      "eventPathPattern": "^/(?:order/|search/po/|concert/)",
-      "listingSelector": "main",
-      "listingReadySelector": ".artist_headingName",
-      "emptyPattern": "現在受け付け中.*チケットはございません",
-      "stripQuery": false
     }
   ]
 }

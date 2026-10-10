@@ -69,15 +69,16 @@ test('検証した会場の表記対応で LivePocket とイープラスの同�
   assert.equal(feed.events[0].notes.length, 1);
 });
 
-test('ローチケの該当なしは成功扱いにして新着判定の基準を保存', async () => {
-  const only = { ...config, sources: [source('l-tike')] };
-  const results = await collectTickets(only, { fetchPage: async url => ({ url, html: '<main><h1 class="artist_headingName">ゆるめるモ!のチケット</h1><p>現在受け付け中のゆるめるモ!のチケットはございません。</p></main>' }) });
+test('該当なしは成功扱いにして新着判定の基準を保存', async () => {
+  const emptySource = { ...source('tiget'), emptyPattern: '検索結果:0件' };
+  const only = { ...config, sources: [emptySource] };
+  const results = await collectTickets(only, { fetchPage: async url => ({ url, html: '<main class="events-archive-body">検索結果:0件</main>' }) });
   assert.equal(results[0].status, 'ok');
   assert.equal(results[0].found, 0);
   const state = applyResults(emptyState(), results, only, now);
-  assert.ok(state.snapshots['l-tike'].initialized);
+  assert.ok(state.snapshots.tiget.initialized);
   const [event] = parse('eplus', 'eplus', 'https://eplus.jp/sf/detail/4586830001-P0030001P021001');
-  const updated = applyResults(state, [{ ...results[0], events: [{ ...event, offers: [{ ...event.offers[0], sourceId: 'l-tike', sourceName: 'ローチケ' }] }] }], only, now);
+  const updated = applyResults(state, [{ ...results[0], events: [{ ...event, offers: [{ ...event.offers[0], sourceId: 'tiget', sourceName: 'TIGET' }] }] }], only, now);
   assert.deepEqual(updated.unreadIds, [event.id]);
 });
 
@@ -90,8 +91,8 @@ test('HTML の形式変更や HTTP 200 のアクセス確認画面を掲載ゼ�
   }
 });
 
-test('Buzzチケは取得対象から除外する', () => {
-  assert.ok(!config.sources.some(item => item.id === 'buzz-ticket'));
+test('Buzzチケとローチケは取得対象から除外する', () => {
+  assert.deepEqual(config.sources.map(item => item.id), ['ticketdive', 'livepocket', 'tiget', 'eplus']);
 });
 
 test('同じ検索条件のページ送りを辿り、別検索には広げない', async () => {
