@@ -38,10 +38,10 @@ jobs:
       - run: npm test
       - name: Build with private release key
         env:
-          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          YURU_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          YURU_ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          YURU_ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          YLMLM_TICKET_ANDROID_KEYSTORE_BASE64: ${{ secrets.YLMLM_TICKET_ANDROID_KEYSTORE_BASE64 }}
+          YURU_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.YLMLM_TICKET_ANDROID_KEYSTORE_PASSWORD }}
+          YURU_ANDROID_KEY_ALIAS: ${{ secrets.YLMLM_TICKET_ANDROID_KEY_ALIAS }}
+          YURU_ANDROID_KEY_PASSWORD: ${{ secrets.YLMLM_TICKET_ANDROID_KEY_PASSWORD }}
           EXPO_NO_TELEMETRY: '1'
         run: |
           set -euo pipefail
@@ -49,11 +49,11 @@ jobs:
           python3 - <<'PY'
           import base64, os
           from pathlib import Path
-          for name in ['ANDROID_KEYSTORE_BASE64', 'YURU_ANDROID_KEYSTORE_PASSWORD', 'YURU_ANDROID_KEY_ALIAS', 'YURU_ANDROID_KEY_PASSWORD']:
+          for name in ['YLMLM_TICKET_ANDROID_KEYSTORE_BASE64', 'YURU_ANDROID_KEYSTORE_PASSWORD', 'YURU_ANDROID_KEY_ALIAS', 'YURU_ANDROID_KEY_PASSWORD']:
               if not os.environ.get(name):
                   raise SystemExit(f'Missing GitHub Actions secret: {name}')
           key = Path(os.environ['YURU_ANDROID_KEYSTORE_PATH'])
-          key.write_bytes(base64.b64decode(''.join(os.environ['ANDROID_KEYSTORE_BASE64'].split()), validate=True))
+          key.write_bytes(base64.b64decode(''.join(os.environ['YLMLM_TICKET_ANDROID_KEYSTORE_BASE64'].split()), validate=True))
           key.chmod(0o600)
           PY
           trap 'rm -f "$YURU_ANDROID_KEYSTORE_PATH"' EXIT

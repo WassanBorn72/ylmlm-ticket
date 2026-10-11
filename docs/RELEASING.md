@@ -50,10 +50,10 @@ GitHub のリポジトリ Settings → Secrets and variables → Actions に、�
 
 | Secret 名 | 内容 |
 | --- | --- |
-| `ANDROID_KEYSTORE_BASE64` | keystore ファイルを Base64 エンコードした値 |
-| `ANDROID_KEYSTORE_PASSWORD` | keystore のパスワード |
-| `ANDROID_KEY_ALIAS` | 鍵の alias（今回：`ylmlm-unofficial-release`） |
-| `ANDROID_KEY_PASSWORD` | 鍵のパスワード |
+| `YLMLM_TICKET_ANDROID_KEYSTORE_BASE64` | keystore ファイルを Base64 エンコードした値 |
+| `YLMLM_TICKET_ANDROID_KEYSTORE_PASSWORD` | keystore のパスワード |
+| `YLMLM_TICKET_ANDROID_KEY_ALIAS` | 鍵の alias（今回：`ylmlm-unofficial-release`） |
+| `YLMLM_TICKET_ANDROID_KEY_PASSWORD` | 鍵のパスワード |
 
 Base64 は暗号化ではありません。変換した内容も秘密情報として取り扱ってください。署名鍵とパスワードはクラウド開発環境の通常変数には入れず、GitHub Actions の Secrets を利用します。
 
