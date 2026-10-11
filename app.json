@@ -2,19 +2,19 @@
   "expo": {
     "name": "モ！のチケット帳（非公式）",
     "slug": "ylmlm-ticket",
-    "version": "0.2.5",
+    "version": "0.2.6",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "scheme": "yuruticket",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "jp.ylmlm.ticket",
-      "buildNumber": "7"
+      "buildNumber": "8"
     },
     "android": {
       "package": "jp.ylmlm.ticket",
       "permissions": [],
-      "versionCode": 7,
+      "versionCode": 8,
       "blockedPermissions": [
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
@@ -23,15 +23,15 @@
         "android.permission.POST_NOTIFICATIONS"
       ],
       "adaptiveIcon": {
-        "foregroundImage": "./assets/app-icon.png",
+        "foregroundImage": "./assets/launcher-icon.png",
         "backgroundColor": "#CAE9D7"
       }
     },
     "web": {
       "name": "モ！のチケット帳（非公式）",
       "bundler": "metro",
-      "favicon": "./assets/app-icon.png"
+      "favicon": "./assets/launcher-icon.png"
     },
-    "icon": "./assets/app-icon.png"
+    "icon": "./assets/launcher-icon.png"
   }
 }
