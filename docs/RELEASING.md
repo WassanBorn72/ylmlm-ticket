@@ -22,7 +22,7 @@
 2. 初回は新着ゼロ、次回の追加は新着、価格変更・他サイトの重複掲載は新着にしないことを確認する。
 3. アプリを閉じると取得しない、復帰／手動更新で取得する、オフラインや取得拒否は前回情報として表示することを確認する。
 4. `npm run typecheck`、`npm test`、各 OS のバンドル生成と画面テストを通す。
-5. package.json / app.json のバージョンを一致させ、Android versionCode と iOS buildNumber を前回より増やす。公開内容に合ったリリースノートを作る。
+5. package.json / app.json のバージョンを一致させ、Android versionCode と iOS buildNumber を前回より増やす。`docs/RELEASE_NOTES_TEMPLATE.md` の利用者向け説明を確認し、公開内容に合った変更点を追記する。
 
 ## Android：署名付き APK
 
