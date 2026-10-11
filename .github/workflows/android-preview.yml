@@ -33,7 +33,7 @@ jobs:
           const file = 'app.json';
           const config = JSON.parse(fs.readFileSync(file, 'utf8'));
           config.expo.name = 'モ！のチケット帳（非公式・試用版）';
-          config.expo.android.package = 'jp.ylmlm.ticket.preview';
+          config.expo.android.package = 'jp.ylmlm.unofficial.ticket.preview';
           fs.writeFileSync(file, JSON.stringify(config, null, 2) + '\n');
           JS
       - name: Build an installable trial APK with the Expo debug key
@@ -58,7 +58,7 @@ jobs:
           ZIPを展開し、yuru-ticket-android-preview.apkをAndroidで開いてインストールしてください。
           起動すると端末からチケットサイトに接続します。初回の取得は新着ゼロです。
           ハートからお気に入りを登録できます。お気に入りはこの端末だけに保存します。
-          以前の試用版には上書きインストールできます。
+          同じアプリIDの試用版には上書きインストールできます。旧IDの試用版とは別アプリになり、お気に入りは自動移行しません。
           Expoのdebug鍵で署名しています。正式版にはこの鍵を使用しません。
           試用版と正式版は別アプリとしてインストールされ、保存データは共有しません。
           EOF

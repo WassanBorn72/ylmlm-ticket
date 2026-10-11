@@ -2,6 +2,18 @@
 
 正式リリースの公開先は https://github.com/WassanBorn72/ylmlm-ticket/releases です。ストアには提出しません。現在はソースと配布準備の段階で、インストール可能な正式 APK / IPA は未公開です。
 
+## アプリの識別子
+
+| 項目 | 設定値 |
+| --- | --- |
+| Android Application ID（正式版） | `jp.ylmlm.unofficial.ticket` |
+| iOS Bundle ID | `jp.ylmlm.unofficial.ticket` |
+| Android Application ID（試用版） | `jp.ylmlm.unofficial.ticket.preview` |
+| Expo slug | `ylmlm-unofficial-ticket` |
+| URLスキーム | `ylmlm-unofficial-ticket` |
+
+識別子にも `unofficial`（非公式）を含めています。旧試用版のIDは `jp.ylmlm.ticket.preview` で、新IDとは別アプリです。保存済みのお気に入りは自動移行されません。正式版の初回公開後はIDと署名鍵を維持します。
+
 ## 公開前に確認すること
 
 1. Android と iPhone の実機から、4 サイトの会場・券種別料金・開場／開演を実ページと照合する。お気に入りの登録・解除と再起動後の保存、会場名からの地図アプリ起動、カレンダーでの月移動・日付の選択・絞り込み解除、新しい名前・非公式表記・ホーム画面のアイコン内のアプリ名・「非公式」の読みやすさ、アプリ内左上の文字なしアイコンも確認する。
