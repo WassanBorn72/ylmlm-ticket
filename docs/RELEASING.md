@@ -14,7 +14,7 @@
 | Expo slug | `ylmlm-unofficial-ticket` |
 | URLスキーム | `ylmlm-unofficial-ticket` |
 
-識別子にも `unofficial`（非公式）を含めています。旧試用版のIDは `jp.ylmlm.ticket.preview` で、新IDとは別アプリです。保存済みのお気に入りは自動移行されません。正式版の初回公開後はIDと署名鍵を維持します。
+識別子にも `unofficial`（非公式）を含めています。正式版の初回公開後はIDと署名鍵を維持します。
 
 ## 公開前に確認すること
 
