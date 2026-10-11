@@ -1,6 +1,8 @@
 # GitHub での配布
 
-正式リリースの公開先は https://github.com/WassanBorn72/ylmlm-ticket/releases です。ストアには提出しません。現在はソースと配布準備の段階で、インストール可能な正式 APK / IPA は未公開です。
+正式リリースの公開先は https://github.com/WassanBorn72/ylmlm-ticket/releases です。ストアには提出しません。正式公開はまだ行っていません。2026年10月11日に `v0.2.6` の署名付きAndroid APKを作成し、[GitHub Release下書き](https://github.com/WassanBorn72/ylmlm-ticket/releases/tag/untagged-ddf378ed956f86c7f169)へ添付しました。実機での最終確認後に公開します。iPhone向けIPAは作成していません。
+
+[正式版ビルド](https://github.com/WassanBorn72/ylmlm-ticket/actions/runs/38115256222)は成功し、署名検証、APKのSHA-256照合、正式版Application ID、試用版と異なる署名証明書を確認済みです。APKのSHA-256は `3a878e296cdf937b224cbb158172a624cb67b840bd0a0b7a0f85c00fed23c931` です。
 
 ## アプリの識別子
 
@@ -32,6 +34,7 @@
 - アルゴリズム：RSA 3072 / SHA256withRSA
 - 有効期間：作成日から10,000日
 - Alias：`ylmlm-unofficial-release`
+- 正式APKの証明書SHA-256：`F9:1C:D7:32:E1:49:21:B6:52:DF:93:61:17:42:A7:B2:4E:A7:24:D4:4D:19:CB:1D:85:93:E6:A4:AA:26:15:52`
 
 Macの `ylmlm-ticket-signing` フォルダーには署名鍵と登録用ファイルが入っています。所有者は暗号化された保管先などへ安全にバックアップしてください。公開・Gitへの追加・チャットへの貼り付けはしないでください。Macで作った鍵を初回公開と以後の更新に使用します。
 
