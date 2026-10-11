@@ -1,0 +1,46 @@
+name: Normalize draft release asset names
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing draft release tag
+        required: true
+        default: v0.2.6
+        type: string
+  push:
+    branches: [main]
+    paths: ['.github/workflows/release-asset-names.yml']
+permissions:
+  contents: write
+jobs:
+  rename:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RELEASE_TAG: ${{ inputs.tag || 'v0.2.6' }}
+    steps:
+      - name: Rename draft APK and refresh checksum
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          draft=$(gh release view "$RELEASE_TAG" --json isDraft --jq '.isDraft')
+          test "$draft" = true
+          mkdir -p "$RUNNER_TEMP/release-assets"
+          cd "$RUNNER_TEMP/release-assets"
+          gh release download "$RELEASE_TAG" --pattern '*.apk'
+          mapfile -t apks < <(find . -maxdepth 1 -name '*.apk' -type f)
+          test "${#apks[@]}" -eq 1
+          current=$(basename "${apks[0]}")
+          expected="ylmlm-unofficial-ticket-${RELEASE_TAG}.apk"
+          if [ "$current" != "$expected" ]; then
+            test "$current" = "yuru-ticket-${RELEASE_TAG}-android.apk"
+            release_url=$(gh release view "$RELEASE_TAG" --json apiUrl --jq '.apiUrl')
+            asset_id=$(gh api "$release_url/assets" --jq ".[] | select(.name == \"$current\") | .id")
+            test -n "$asset_id"
+            gh api --method PATCH "repos/$GH_REPO/releases/assets/$asset_id" -f name="$expected" > /dev/null
+            mv "$current" "$expected"
+          fi
+          sha256sum "$expected" > SHA256SUMS.txt
+          sha256sum --check SHA256SUMS.txt
+          gh release upload "$RELEASE_TAG" SHA256SUMS.txt --clobber

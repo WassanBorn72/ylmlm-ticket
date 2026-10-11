@@ -66,7 +66,7 @@ git push origin v0.2.6
 
 `Android GitHub Release` ワークフローが、テスト → Expo prebuild → 専用鍵で署名した release APK の生成 → 署名検証 → チェックサム生成 → GitHub Release 下書き作成を行います。秘密情報がない場合は停止し、debug 鍵で代用しません。既存タグは Actions の手動実行でも指定できます。同じ下書きの再作成は自動上書きせず失敗するため、既存の内容を確認して扱ってください。
 
-下書きには `yuru-ticket-v0.2.6-android.apk` と `SHA256SUMS.txt` が添付されます。APK を実機にインストールして確認し、リリースノートを書き直してから下書きを公開します。ワークフロー自体は正式公開を自動実行しません。
+下書きには `ylmlm-unofficial-ticket-v0.2.6.apk` と `SHA256SUMS.txt` が添付されます。APK を実機にインストールして確認し、リリースノートを書き直してから下書きを公開します。ワークフロー自体は正式公開を自動実行しません。
 
 ローカルでビルドする場合は Android SDK / JDK 17 以降を用意し、以下の変数を安全な方法でプロセスに設定して `npm run build:android` を実行します。
 

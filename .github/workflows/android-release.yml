@@ -63,7 +63,7 @@ jobs:
           test -n "$verifier"
           "$verifier" verify "$apk"
           mkdir -p release-artifacts
-          cp "$apk" "release-artifacts/yuru-ticket-${RELEASE_TAG}-android.apk"
+          cp "$apk" "release-artifacts/ylmlm-unofficial-ticket-${RELEASE_TAG}.apk"
           cd release-artifacts
           sha256sum *.apk > SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
