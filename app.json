@@ -1,31 +1,37 @@
 {
   "expo": {
-    "name": "ゆるチケ（非公式）",
+    "name": "モ！のチケット帳（非公式）",
     "slug": "ylmlm-ticket",
-    "version": "0.2.4",
+    "version": "0.2.5",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "scheme": "yuruticket",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "jp.ylmlm.ticket",
-      "buildNumber": "6"
+      "buildNumber": "7"
     },
     "android": {
       "package": "jp.ylmlm.ticket",
       "permissions": [],
-      "versionCode": 6,
+      "versionCode": 7,
       "blockedPermissions": [
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.SYSTEM_ALERT_WINDOW",
         "android.permission.VIBRATE",
         "android.permission.POST_NOTIFICATIONS"
-      ]
+      ],
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/app-icon.png",
+        "backgroundColor": "#CAE9D7"
+      }
     },
     "web": {
-      "name": "ゆるチケ（非公式）",
-      "bundler": "metro"
-    }
+      "name": "モ！のチケット帳（非公式）",
+      "bundler": "metro",
+      "favicon": "./assets/app-icon.png"
+    },
+    "icon": "./assets/app-icon.png"
   }
 }

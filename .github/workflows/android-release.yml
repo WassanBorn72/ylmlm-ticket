@@ -89,11 +89,11 @@ jobs:
         run: |
           set -euo pipefail
           cat > "$RUNNER_TEMP/release-notes.md" <<'EOF'
-          ゆるチケ（非公式）：開いたときにチケットサイトから掲載情報を直接取得する非公式アプリです。
+          モ！のチケット帳（非公式）：開いたときにチケットサイトから掲載情報を直接取得する非公式アプリです。
 
           Android: APK と SHA256SUMS.txt を添付しています。更新時は同じ署名鍵を使用します。
           iPhone: APK は利用できません。README の iOS ビルド・署名手順を参照してください。
 
           公開前に Android / iPhone の実機でサイトへの直接接続、掲載情報、新着・既読の動作を確認してください。
           EOF
-          gh release create "$RELEASE_TAG" release-artifacts/* --verify-tag --draft --title "ゆるチケ（非公式） ${RELEASE_TAG}" --notes-file "$RUNNER_TEMP/release-notes.md"
+          gh release create "$RELEASE_TAG" release-artifacts/* --verify-tag --draft --title "モ！のチケット帳（非公式） ${RELEASE_TAG}" --notes-file "$RUNNER_TEMP/release-notes.md"

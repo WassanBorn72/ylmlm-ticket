@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['.github/workflows/android-preview.yml', 'App.tsx', 'index.ts', 'src/**', 'app.json', 'package.json', 'package-lock.json']
+    paths: ['.github/workflows/android-preview.yml', 'App.tsx', 'index.ts', 'src/**', 'assets/**', 'app.json', 'package.json', 'package-lock.json']
 permissions:
   contents: read
 jobs:
@@ -32,7 +32,7 @@ jobs:
           import fs from 'node:fs';
           const file = 'app.json';
           const config = JSON.parse(fs.readFileSync(file, 'utf8'));
-          config.expo.name = 'ゆるチケ（非公式・試用版）';
+          config.expo.name = 'モ！のチケット帳（非公式・試用版）';
           config.expo.android.package = 'jp.ylmlm.ticket.preview';
           fs.writeFileSync(file, JSON.stringify(config, null, 2) + '\n');
           JS
@@ -54,7 +54,7 @@ jobs:
           mkdir -p preview-artifacts
           cp "$apk" preview-artifacts/yuru-ticket-android-preview.apk
           cat > preview-artifacts/README.txt <<'EOF'
-          ゆるチケ（非公式）のAndroid試用版です。正式リリースではありません。
+          モ！のチケット帳（非公式）のAndroid試用版です。正式リリースではありません。
           ZIPを展開し、yuru-ticket-android-preview.apkをAndroidで開いてインストールしてください。
           起動すると端末からチケットサイトに接続します。初回の取得は新着ゼロです。
           ハートからお気に入りを登録できます。お気に入りはこの端末だけに保存します。

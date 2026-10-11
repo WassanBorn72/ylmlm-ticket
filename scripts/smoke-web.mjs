@@ -68,6 +68,9 @@ try {
   await page.goto(process.env.WEB_TEST_URL || 'http://127.0.0.1:8081');
   await waitIdle();
   await expectCards(3);
+  await page.getByText('モ！のチケット帳', { exact: true }).waitFor();
+  await page.getByText('（非公式）', { exact: true }).waitFor();
+  assert.equal(await page.getByText('ゆるチケ', { exact: true }).count(), 0);
   await page.getByRole('link', { name: '新宿Nine Spiceを地図で開く', exact: true }).click();
   let mapUrls = await page.evaluate(() => window.openedMapUrls);
   assert.equal(mapUrls.length, 1);
