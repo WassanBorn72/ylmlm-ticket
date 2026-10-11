@@ -24,9 +24,23 @@
 
 ## Android：署名付き APK
 
+### 準備済みの署名鍵
+
+2026年10月11日に、このプロジェクト用の正式版Android署名鍵を作成・検証しました。鍵本体とパスワードはリポジトリに保存していません。
+
+- 形式：JKS
+- アルゴリズム：RSA 3072 / SHA256withRSA
+- 有効期間：作成日から10,000日
+- Alias：`ylmlm-unofficial-release`
+- 証明書SHA-256：`92:E6:B9:1C:F4:5F:81:20:15:FC:4F:44:CB:F9:8A:E8:87:A5:30:C0:57:0E:53:34:4E:7D:FE:D8:9F:5C:38:3F`
+
+所有者は秘密のバックアップZIPを安全な場所に保存してください。ZIPには署名鍵と、4件のGitHub Actions Secrets登録用の値が入っています。ZIPは暗号化されていません。公開・Gitへの追加・チャットへの貼り付けはしないでください。クラウド環境内の一時ファイルだけでは永続バックアップになりません。
+
+GitHub連携にはSecretsを設定する権限がないため、登録は所有者が設定画面から行います。登録完了後、正式APKの署名ビルドを検証します。新しい鍵を再作成せず、今回の鍵を初回公開と以後の更新に使用してください。
+
 GitHub からダウンロードしてインストールできる形式です。インストール時には Android の「この提供元のアプリを許可」などの操作が必要です。更新版にも**同じ署名鍵**を使用してください。鍵を失うと既存アプリをそのまま更新できなくなるため、安全な場所にバックアップします。
 
-JDK の `keytool` でリリース鍵を作れます。パスワードは対話入力し、コマンド履歴やリポジトリに残しません。
+以下は鍵を新規作成する場合の参考手順です。準備済みの鍵を使う場合は実行不要です。JDK の `keytool` でリリース鍵を作れます。パスワードは対話入力し、コマンド履歴やリポジトリに残しません。
 
 ```sh
 keytool -genkeypair -v -keystore /安全な保存先/yuru-release.jks -alias yuru-release -keyalg RSA -keysize 3072 -validity 10000
@@ -38,7 +52,7 @@ GitHub のリポジトリ Settings → Secrets and variables → Actions に、�
 | --- | --- |
 | `ANDROID_KEYSTORE_BASE64` | keystore ファイルを Base64 エンコードした値 |
 | `ANDROID_KEYSTORE_PASSWORD` | keystore のパスワード |
-| `ANDROID_KEY_ALIAS` | 鍵の alias（例：`yuru-release`） |
+| `ANDROID_KEY_ALIAS` | 鍵の alias（今回：`ylmlm-unofficial-release`） |
 | `ANDROID_KEY_PASSWORD` | 鍵のパスワード |
 
 Base64 は暗号化ではありません。変換した内容も秘密情報として取り扱ってください。署名鍵とパスワードはクラウド開発環境の通常変数には入れず、GitHub Actions の Secrets を利用します。
