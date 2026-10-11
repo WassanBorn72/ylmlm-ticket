@@ -13,7 +13,7 @@
     "test:web": "node scripts/smoke-web.mjs",
     "test:live": "node --use-env-proxy scripts/check-live.mjs",
     "build:web": "expo export --platform web",
-    "build:android": "expo prebuild --platform android --no-install && node scripts/configure-android-signing.mjs && cd android && ./gradlew assembleRelease --no-daemon --max-workers 2"
+    "build:android": "expo prebuild --platform android --no-install && node scripts/configure-android-signing.mjs && cd android && ./gradlew assembleRelease --no-daemon --max-workers 2 -PreactNativeArchitectures=arm64-v8a,armeabi-v7a '-Dorg.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=1g'"
   },
   "dependencies": {
     "@expo/metro-runtime": "~55.0.12",

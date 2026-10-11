@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Existing version tag to build (for example v0.2.0)
+        description: Existing version tag to build (for example v0.2.6)
         required: true
         type: string
 permissions:
@@ -91,7 +91,9 @@ jobs:
           cat > "$RUNNER_TEMP/release-notes.md" <<'EOF'
           モ！のチケット帳（非公式）：開いたときにチケットサイトから掲載情報を直接取得する非公式アプリです。
 
-          Android: APK と SHA256SUMS.txt を添付しています。更新時は同じ署名鍵を使用します。
+          TicketDive・LivePocket・TIGET・イープラスの掲載情報を、アプリを開いたとき／手動更新時に端末から取得します。会場・料金・開場／開演の表示、日付のカレンダー絞り込み、端末内のお気に入り、新着・既読の管理、会場からの地図検索に対応します。閉じている間の取得・通知はありません。
+
+          Android: 署名付きAPK（ARM64 / ARM32）とSHA256SUMS.txtを添付しています。正式版IDはjp.ylmlm.unofficial.ticketです。試用版とは別アプリで、お気に入りは自動移行されません。正式版の更新には同じ署名鍵を使用します。
           iPhone: APK は利用できません。README の iOS ビルド・署名手順を参照してください。
 
           公開前に Android / iPhone の実機でサイトへの直接接続、掲載情報、新着・既読の動作を確認してください。
