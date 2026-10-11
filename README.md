@@ -2,6 +2,8 @@
 
 ゆるめるモ！の会場・券種別料金・開場／開演時間をまとめる、非公式の iPhone / Android アプリです。**起動時、バックグラウンドから戻ったとき、手動更新時に、スマホから各チケットサイトを直接取得します。** 正式な配布先は GitHub Releases とし、ストアへの提出は行いません。
 
+[Android APKをダウンロード](https://github.com/WassanBorn72/ylmlm-ticket/releases/download/v0.2.6/ylmlm-unofficial-ticket-v0.2.6.apk)
+
 アプリ名は「モ！のチケット帳（非公式）」です。ホーム画面のアイコンは、ノート・チケット・しおりの図柄に「モ！のチケット帳」と「非公式」の文字を入れています。アプリ内左上は従来の文字なしアイコンを使用し、名前の下に「（非公式）」を表示します。
 
 正式版のAndroid / iOSのIDは `jp.ylmlm.unofficial.ticket`、試用版は `jp.ylmlm.unofficial.ticket.preview` です。識別子にも非公式を表す `unofficial` を含めています。詳細は [配布手順](docs/RELEASING.md#アプリの識別子) を参照してください。
@@ -23,7 +25,7 @@
 
 ## 開発状況と制約
 
-現在は端末直接取得方式の試作版（0.2.6）です。34 件のテスト、スマホ幅での画面操作、Web / iOS / Android の JavaScript バンドル生成を確認しました。2026年10月11日（日本時間）に、アプリと同じ取得コードを Node.js から実行して重複統合後 **11 公演**を取得しました。
+現在は端末直接取得方式の公開版（0.2.6）です。34 件のテスト、スマホ幅での画面操作、Web / iOS / Android の JavaScript バンドル生成を確認しました。2026年10月11日（日本時間）に、アプリと同じ取得コードを Node.js から実行して重複統合後 **11 公演**を取得しました。
 
 | サイト | URL | 確認結果 |
 | --- | --- | --- |
@@ -92,7 +94,7 @@ WEB_TEST_URL=http://127.0.0.1:4173 npm run test:web
 
 GitHub に置く場合でも iPhone の署名・プロビジョニング制約は残ります。無料の Apple ID による個人用インストールには期限があり、通常 7 日で再署名が必要です。有料登録での Ad Hoc 配布も登録済み端末に限られ、Android の APK のような一般配布にはなりません。
 
-`.github/workflows/ci.yml` でテストと各 OS のバンドル生成を実行します。`android-release.yml` はバージョンタグから署名付き APK を作成し、GitHub Release の**下書き**に添付する手順です。正式な署名鍵の登録と Android / iPhone 実機検証は未完了で、今回の変更だけでインストール可能な正式リリースを公開したわけではありません。
+`.github/workflows/ci.yml` でテストと各 OS のバンドル生成を実行します。`android-release.yml` はバージョンタグから署名付き APK を作成し、GitHub Release の**下書き**に添付する手順です。正式な署名鍵を登録し、`v0.2.6` のAndroid APKを公開済みです。Android / iPhoneの実機検証結果はまだ記録されていません。
 
 専用サーバーの運用費は不要です。GitHub Actions はリポジトリの公開範囲・プラン・使用量による制限があります。Android の GitHub 配布にはストア登録料が不要です。iPhone の個人用ビルドには macOS / Xcode が必要です。
 
@@ -112,4 +114,4 @@ GitHub に置く場合でも iPhone の署名・プロビジョニング制約�
 
 このアプリは、ゆるめるモ！および各チケットサイトの公式アプリではありません。購入・販売状況と料金・日時の最終確認は各チケットサイトで行ってください。
 
-正式版 `v0.2.6` の署名付きAndroid APKはGitHub Releaseの下書きに作成済みです。まだ正式公開していません。[配布手順と検証結果](docs/RELEASING.md)を参照してください。
+正式版 `v0.2.6` の署名付きAndroid APKを2026年10月11日（日本時間）に[GitHub Releases](https://github.com/WassanBorn72/ylmlm-ticket/releases/tag/v0.2.6)で公開しました。[配布手順と検証結果](docs/RELEASING.md)を参照してください。

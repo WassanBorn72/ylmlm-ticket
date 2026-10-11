@@ -1,6 +1,6 @@
 # GitHub での配布
 
-正式リリースの公開先は https://github.com/WassanBorn72/ylmlm-ticket/releases です。ストアには提出しません。正式公開はまだ行っていません。2026年10月11日に `v0.2.6` の署名付きAndroid APKを作成し、[GitHub Release下書き](https://github.com/WassanBorn72/ylmlm-ticket/releases/tag/untagged-ddf378ed956f86c7f169)へ添付しました。実機での最終確認後に公開します。iPhone向けIPAは作成していません。
+正式リリースの公開先は https://github.com/WassanBorn72/ylmlm-ticket/releases です。ストアには提出しません。2026年10月11日14:59（日本時間）に、正式版 `v0.2.6` の署名付きAndroid APKを[GitHub Releases](https://github.com/WassanBorn72/ylmlm-ticket/releases/tag/v0.2.6)で公開しました。iPhone向けIPAは作成していません。
 
 [正式版ビルド](https://github.com/WassanBorn72/ylmlm-ticket/actions/runs/38115256222)は成功し、署名検証、APKのSHA-256照合、正式版Application ID、試用版と異なる署名証明書を確認済みです。APKのSHA-256は `3a878e296cdf937b224cbb158172a624cb67b840bd0a0b7a0f85c00fed23c931` です。
 
@@ -66,7 +66,7 @@ git push origin v0.2.6
 
 `Android GitHub Release` ワークフローが、テスト → Expo prebuild → 専用鍵で署名した release APK の生成 → 署名検証 → チェックサム生成 → GitHub Release 下書き作成を行います。秘密情報がない場合は停止し、debug 鍵で代用しません。既存タグは Actions の手動実行でも指定できます。同じ下書きの再作成は自動上書きせず失敗するため、既存の内容を確認して扱ってください。
 
-下書きには `ylmlm-unofficial-ticket-v0.2.6.apk` と `SHA256SUMS.txt` が添付されます。APK を実機にインストールして確認し、リリースノートを書き直してから下書きを公開します。ワークフロー自体は正式公開を自動実行しません。
+今後のリリースでも下書きには `ylmlm-unofficial-ticket-vバージョン.apk` と `SHA256SUMS.txt` が添付されます。APK を実機にインストールして確認し、リリースノートを書き直してから下書きを公開します。ワークフロー自体は正式公開を自動実行しません。
 
 ローカルでビルドする場合は Android SDK / JDK 17 以降を用意し、以下の変数を安全な方法でプロセスに設定して `npm run build:android` を実行します。
 
