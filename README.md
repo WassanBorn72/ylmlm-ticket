@@ -8,7 +8,7 @@
 
 ### Android
 
-**v0.3.0（公開準備中）**：公式告知の詳細と、イベント固有の補足表示を追加しました。
+正式版 **v0.3.0** を公開しています。公式告知の出演時間・特典会時間と、イベント固有の補足表示を追加しました。
 
 **[Androidアプリをダウンロード](https://github.com/WassanBorn72/ylmlm-ticket/releases/download/v0.3.0/ylmlm-unofficial-ticket-v0.3.0.apk)** · [リリース一覧](https://github.com/WassanBorn72/ylmlm-ticket/releases)
 
