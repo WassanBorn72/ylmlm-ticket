@@ -8,7 +8,7 @@
 
 ### Android
 
-このバージョンは **v0.4.1** です。購入先を補足より上に表示し、公式サイト・公式Xへの共通リンクをトップページにまとめました。
+正式版 **v0.4.1** を公開しています。購入先を補足より上に表示し、公式サイト・公式Xへの共通リンクをトップページにまとめました。
 
 **[Androidアプリをダウンロード](https://github.com/WassanBorn72/ylmlm-ticket/releases/download/v0.4.1/ylmlm-unofficial-ticket-v0.4.1.apk)** · [リリース一覧](https://github.com/WassanBorn72/ylmlm-ticket/releases)
 

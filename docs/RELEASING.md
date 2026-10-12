@@ -1,8 +1,11 @@
 # GitHub での配布
 
-正式リリースの公開先は https://github.com/WassanBorn72/ylmlm-ticket/releases です。ストアには提出しません。今回の配布対象は購入先の表示順と公式リンクの配置を改善した `v0.4.1` です。iPhone向けIPAは作成していません。
+正式リリースの公開先は https://github.com/WassanBorn72/ylmlm-ticket/releases です。ストアには提出しません。購入先の表示順と公式リンクの配置を改善した [v0.4.1](https://github.com/WassanBorn72/ylmlm-ticket/releases/tag/v0.4.1) を2026年10月12日17:46（日本時間）に正式公開しました。iPhone向けIPAは作成していません。
 
 APK名は `ylmlm-unofficial-ticket-v0.4.1.apk` です。更新でもApplication IDと署名鍵を維持します。
+
+[署名付きビルド](https://github.com/WassanBorn72/ylmlm-ticket/actions/runs/38224580514)と[CI](https://github.com/WassanBorn72/ylmlm-ticket/actions/runs/38224576786)は成功しています。46件のテスト、画面操作、各OS向けバンドル生成、公開APKのチェックサム、既存正式版と同じ署名証明書、APK内のversionName `0.4.1`・versionCode `13` を確認しました。APKのSHA-256は `9aa6612e76b348c286160e9b80b3eb31c9ea53fcb7e09a7a9892c72b8f8b678b` です。
+
 ## アプリの識別子
 
 | 項目 | 設定値 |
