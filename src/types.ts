@@ -5,7 +5,7 @@ export type Offer = {
 };
 export type OfficialDetails = {
   performance: string[]; meetAndGreet: string[]; supplements: string[];
-  url: string; checkedAt: string; stale: boolean;
+  url: string; checkedAt: string; stale: boolean; postUrls?: string[];
 };
 export type TicketEvent = {
   id: string; title: string; date: string; startAt: string | null; doorsAt: string | null;

@@ -8,7 +8,7 @@ export function parseState(raw) {
   if (!state.unreadIds.every(id => typeof id === 'string') ||
     Object.values(state.snapshots).some(snapshot => !snapshot || !Array.isArray(snapshot.events) || !Array.isArray(snapshot.errors) || snapshot.events.some(event => !event || typeof event.id !== 'string' || typeof event.date !== 'string' || typeof event.title !== 'string' || typeof event.venue !== 'string' || !Array.isArray(event.offers) || !Array.isArray(event.sourceUrls))) ||
     Object.values(state.seen).some(item => !item || typeof item.date !== 'string' || typeof item.firstSeenAt !== 'string')) throw new Error('保存した情報の形式が不正です');
-  if (state.official && (!Array.isArray(state.official.announcements) || !Array.isArray(state.official.errors) || state.official.announcements.some(item => !item || typeof item.date !== 'string' || typeof item.title !== 'string' || typeof item.venue !== 'string' || typeof item.text !== 'string' || !['ticketUrls', 'performance', 'meetAndGreet'].every(field => Array.isArray(item[field]) && item[field].every(value => typeof value === 'string'))))) delete state.official;
+  if (state.official && (!Array.isArray(state.official.announcements) || !Array.isArray(state.official.errors) || state.official.announcements.some(item => !item || typeof item.date !== 'string' || typeof item.title !== 'string' || typeof item.venue !== 'string' || typeof item.text !== 'string' || item.postUrls !== undefined && (!Array.isArray(item.postUrls) || !item.postUrls.every(value => typeof value === 'string')) || !['ticketUrls', 'performance', 'meetAndGreet'].every(field => Array.isArray(item[field]) && item[field].every(value => typeof value === 'string'))))) delete state.official;
   return state;
 }
 

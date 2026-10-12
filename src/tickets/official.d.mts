@@ -1,6 +1,6 @@
 import type { TicketEvent } from '../types';
 import type { Source, FetchPage } from './collector.mjs';
-export type OfficialAnnouncement = { date: string; title: string; venue: string; ticketUrls: string[]; performance: string[]; meetAndGreet: string[]; text: string; url: string };
+export type OfficialAnnouncement = { date: string; title: string; venue: string; ticketUrls: string[]; performance: string[]; meetAndGreet: string[]; text: string; postUrls?: string[]; url: string };
 export type OfficialResult = { status: string; announcements: OfficialAnnouncement[]; checkedAt: string; errors: string[] };
 export type OfficialSnapshot = OfficialResult & { lastSuccessAt: string | null };
 export const officialSource: Source;

@@ -15,6 +15,14 @@ const ticketUrl = value => {
     return `${host}${path}`;
   } catch { return null; }
 };
+const officialPostUrl = value => {
+  try {
+    const url = new URL(value);
+    if (url.protocol !== 'https:' || !['x.com', 'twitter.com', 'www.x.com', 'www.twitter.com'].includes(url.hostname)) return null;
+    const match = url.pathname.match(/^\/ylmlm_official\/status\/(\d+)\/?$/i);
+    return match ? `https://x.com/ylmlm_official/status/${match[1]}` : null;
+  } catch { return null; }
+};
 const timePattern = '(?:[01]?\\d|2[0-3]):[0-5]\\d(?:\\s*[-〜～~–—]\\s*(?:[01]?\\d|2[0-3]):[0-5]\\d)?';
 function labelledTimes(lines, label) {
   const before = new RegExp(`^[^\\p{L}\\p{N}]*${label}[\\s:：.…・|｜]*(${timePattern})(?!\\d)`, 'u');
@@ -66,10 +74,12 @@ export function extractOfficialAnnouncements(html) {
     const links = [];
     entry.find('a[href]').each((_, a) => links.push($(a).attr('href')));
     links.push(...[...text.matchAll(/(?:https?:\/\/)?(?:ticketdive\.com|t-dv\.com|(?:t\.)?livepocket\.jp|tiget\.net|eplus\.jp)\/[A-Za-z0-9_/?=&%-]+/g)].filter(match => !/[.…]/.test(text[match.index + match[0].length] ?? '')).map(match => match[0]));
+    links.push(...(text.match(/https:\/\/(?:www\.)?(?:x\.com|twitter\.com)\/ylmlm_official\/status\/\d+(?:\?[A-Za-z0-9_=&%-]*)?(?=$|[\s<>()。、「」])/gi) ?? []));
+    const postUrls = [...new Set(links.map(officialPostUrl).filter(Boolean))];
     const venue = entry.find('[itemprop="location"]').text().trim() || lines.find(line => /会場|🏟|📍/.test(line) && !/開場|OPEN|START/.test(line))?.replace(/^.*?(?:会場[:：]|[🏟📍]️?[|｜\s]*)/u, '').trim() || '';
     const performance = labelledTimes(lines, '(?:ライブ|出演時間|出演時刻|出番)');
     const meetAndGreet = labelledTimes(lines, '(?:特典会(?:時間)?|物販(?:時間)?)');
-    announcements.push({ date, title, venue, ticketUrls: [...new Set(links.map(ticketUrl).filter(Boolean))], performance, meetAndGreet, text, url: 'https://ylmlm.jp/#schedule' });
+    announcements.push({ date, title, venue, ticketUrls: [...new Set(links.map(ticketUrl).filter(Boolean))], performance, meetAndGreet, text, postUrls, url: 'https://ylmlm.jp/#schedule' });
   });
   if ($('.simcal-event-details').length && !announcements.length) throw new Error('公式告知の本文を確認できません');
   return announcements;
@@ -107,6 +117,6 @@ export function enrichWithOfficialDetails(events, snapshot) {
   return events.map(event => {
     const notices = assignments.filter(item => item.candidates[0].id === event.id).map(item => item.announcement);
     if (!notices.length) return event;
-    return { ...event, officialDetails: { performance: [...new Set(notices.flatMap(n => n.performance))], meetAndGreet: [...new Set(notices.flatMap(n => n.meetAndGreet))], supplements: [...new Set(notices.flatMap(n => extractOfficialSupplements(n.text, n.title, n.venue)))], url: 'https://ylmlm.jp/#schedule', checkedAt: snapshot.lastSuccessAt ?? snapshot.checkedAt, stale: snapshot.status !== 'ok' } };
+    return { ...event, officialDetails: { performance: [...new Set(notices.flatMap(n => n.performance))], meetAndGreet: [...new Set(notices.flatMap(n => n.meetAndGreet))], supplements: [...new Set(notices.flatMap(n => extractOfficialSupplements(n.text, n.title, n.venue)))], postUrls: [...new Set(notices.flatMap(n => (n.postUrls ?? []).map(officialPostUrl).filter(Boolean)))], url: 'https://ylmlm.jp/#schedule', checkedAt: snapshot.lastSuccessAt ?? snapshot.checkedAt, stale: snapshot.status !== 'ok' } };
   });
 }

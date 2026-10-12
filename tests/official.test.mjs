@@ -64,3 +64,23 @@ test('注意事項の未知の文言と長い本文の末尾にある固有の�
  const text=`【注意事項】\nお申し込み時の番号で列を作ります。\n予めご了承ください。\n日時:2030年10月27日\n${'最新の情報は公式サイトで確認してください。\n'.repeat(150)}※10月3日のチケット持参で入場無料`;
  assert.deepEqual(extractOfficialSupplements(text),['お申し込み時の番号で列を作ります。','※10月3日のチケット持参で入場無料']);
 });
+test('同じイベントの告知内にある公式アカウントの投稿だけをリンクとして保持', () => {
+ const linked=html;
+ const $links='<a href="https://x.com/ylmlm_official/status/123456789?t=900">公式</a><a href="https://twitter.com/ylmlm_official/status/123456789">同じ投稿</a><a href="https://x.com/other_account/status/999">他アカウント</a><a href="https://x.com/ylmlm_official">プロフィール</a><a href="https://evil.example/ylmlm_official/status/777">許可外</a>';
+ const input=linked.replace(/(<div class="simcal-event-description"[^>]*>)/g, '$1'+$links);
+ const parsed=extractOfficialAnnouncements(input);
+ assert.ok(parsed.every(n=>n.postUrls.length===1 && n.postUrls[0]==='https://x.com/ylmlm_official/status/123456789'));
+ const detail=enrichWithOfficialDetails([event],{...snapshot,announcements:parsed})[0].officialDetails;
+ assert.deepEqual(detail.postUrls,['https://x.com/ylmlm_official/status/123456789']);
+ assert.deepEqual(enrichWithOfficialDetails([event],snapshot)[0].officialDetails.postUrls,[]);
+});
+
+test('投稿リンクを別日のイベントへ流用せず、テキスト内の不完全なURLも採用しない', () => {
+ const first=html.replace(/(<div class="simcal-event-description"[^>]*>)/, '$1<a href="https://x.com/ylmlm_official/status/123456789">投稿</a>');
+ const parsed=extractOfficialAnnouncements(first);
+ assert.deepEqual(enrichWithOfficialDetails([event],{...snapshot,announcements:parsed})[0].officialDetails.postUrls,[]);
+ const astro={...event,date:'2026-10-19',sourceUrls:['https://ticketdive.com/event/20261019_night']};
+ assert.deepEqual(enrichWithOfficialDetails([astro],{...snapshot,announcements:parsed})[0].officialDetails.postUrls,['https://x.com/ylmlm_official/status/123456789']);
+ const invalid=html.replace(/(<div class="simcal-event-description"[^>]*>)/g,'$1https://x.com/ylmlm_official/status/123456789bad ');
+ assert.ok(extractOfficialAnnouncements(invalid).every(n=>n.postUrls.length===0));
+});

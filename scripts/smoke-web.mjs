@@ -85,6 +85,13 @@ try {
   assert.equal(await page.getByText(/OPEN 19:35\/START 20:00/).count(), 0);
   await page.getByRole('link', { name: '公式告知を確認', exact: true }).click();
   assert.ok((await page.evaluate(() => window.openedMapUrls)).includes('https://ylmlm.jp/#schedule'));
+  await page.getByRole('link', { name: '公式サイトを開く', exact: true }).click();
+  await page.getByRole('link', { name: '公式Xを開く', exact: true }).click();
+  const officialUrls = await page.evaluate(() => window.openedMapUrls);
+  assert.ok(officialUrls.includes('https://ylmlm.jp/'));
+  assert.ok(officialUrls.includes('https://x.com/ylmlm_official'));
+  assert.equal(await page.getByRole('link', { name: 'この公演の公式X投稿を開く', exact: true }).count(), 0);
+
   await page.evaluate(() => { window.openedMapUrls = []; });
   await page.getByRole('button', { name: '閉じる', exact: true }).click();
   await page.getByText('公演・チケット詳細', { exact: true }).waitFor({ state: 'hidden' });
