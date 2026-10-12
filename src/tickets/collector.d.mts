@@ -5,7 +5,7 @@ export type Source = {
   listingSelector?: string; listingReadySelector?: string; emptyPattern?: string;
   stripQuery?: boolean; paginationSelector?: string;
 };
-export type Config = { artist: string; targets?: { id: string; name: string; kind: string; aliases?: string[] }[]; officialHints?: { url: string; date: string; artists: { id: string; name: string; kind: string }[] }[]; aliases?: string[]; venueAliases?: Record<string, string>; sources: Source[] };
+export type Config = { artist: string; targets?: { id: string; name: string; kind: string; aliases?: string[]; participantIds?: string[] }[]; officialHints?: { url: string; date: string; artists: { id: string; name: string; kind: string }[] }[]; aliases?: string[]; venueAliases?: Record<string, string>; sources: Source[] };
 export type ParsedEvent = Omit<TicketEvent, 'firstSeenAt' | 'updatedAt' | 'isBaseline' | 'staleSourceIds'>;
 export type SourceResult = {
   sourceId: string; name: string; events: ParsedEvent[]; checkedAt: string;

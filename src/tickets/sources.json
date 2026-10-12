@@ -167,7 +167,10 @@
     {
       "id": "collaboration-1",
       "name": "桃組暴想族",
-      "kind": "collaboration"
+      "kind": "collaboration",
+      "participantIds": [
+        "member-2"
+      ]
     },
     {
       "id": "collaboration-2",
@@ -175,6 +178,9 @@
       "kind": "collaboration",
       "aliases": [
         "Babywiper or Gangstar"
+      ],
+      "participantIds": [
+        "member-4"
       ]
     }
   ]

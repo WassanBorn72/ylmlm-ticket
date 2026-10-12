@@ -2,6 +2,7 @@ import React from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import config from './tickets/sources.json';
+import { performerLabel } from './performers';
 type Props = { visible: boolean; selectedId: string | null; onSelect: (id: string | null) => void; onClose: () => void };
 export default function PerformerFilter({ visible, selectedId, onSelect, onClose }: Props) {
   const choose = (id: string | null) => { onSelect(id); onClose(); };
@@ -13,7 +14,7 @@ export default function PerformerFilter({ visible, selectedId, onSelect, onClose
       <Text style={s.note}>掲載情報に出演が明記された公演を表示します。個人を選んでも、参加ユニットの公演は自動で含めません。</Text>
       {option(null, 'すべての出演者')}
       <Text style={s.heading}>グループ</Text>{option('group', config.artist)}
-      {([['member', '個人'], ['unit', 'グループ内ユニット'], ['collaboration', '外部コラボ']] as const).map(([kind, label]) => <View key={kind}><Text style={s.heading}>{label}</Text>{config.targets.filter(artist => artist.kind === kind).map(artist => option(artist.id, artist.name))}</View>)}
+      {([['member', '個人'], ['unit', 'グループ内ユニット'], ['collaboration', '外部コラボ']] as const).map(([kind, label]) => <View key={kind}><Text style={s.heading}>{label}</Text>{config.targets.filter(artist => artist.kind === kind).map(artist => option(artist.id, performerLabel(artist, false)))}</View>)}
       <Pressable style={s.option} onPress={onClose} accessibilityRole="button" accessibilityLabel="出演者選択を閉じる"><Text style={s.text}>閉じる</Text></Pressable>
     </ScrollView></SafeAreaView>
   </View></Modal>;
