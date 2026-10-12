@@ -214,6 +214,8 @@ try {
   await expectCards(3);
   await page.getByText('一部は前回取得の情報です · 取得状況を確認').waitFor();
   await page.getByRole('tab', { name: '設定', exact: true }).click();
+  const appVersion = JSON.parse(readFileSync(new URL('../app.json', import.meta.url), 'utf8')).expo.version;
+  await page.getByText(`バージョン ${appVersion}`, { exact: true }).waitFor();
   await page.getByText('取得先の応答: HTTP 403', { exact: true }).waitFor();
   assert.equal(await page.getByRole('button', { name: /通知をオン/ }).count(), 0);
   assert.equal(await page.getByText('Buzzチケ', { exact: true }).count(), 0);

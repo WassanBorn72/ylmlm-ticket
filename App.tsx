@@ -6,6 +6,7 @@ import { ArrowDownUp, ArrowUpRight, Bell, CalendarDays, Check, ChevronRight, Clo
 import { Feed, TicketEvent } from './src/types';
 import DateFilter from './src/DateFilter';
 import config from './src/tickets/sources.json';
+import appConfig from './app.json';
 import { collectOfficialDetails, applyOfficialResult, officialSource } from './src/tickets/official.mjs';
 import { collectTickets } from './src/tickets/collector.mjs';
 import { applyResults, emptyState, feedFromState, markAllRead, parseState } from './src/tickets/state.mjs';
@@ -200,7 +201,7 @@ function AppContent() {
             const status = name === officialSource.name ? { ...deviceState.current.official, found: deviceState.current.official?.announcements.length } : feed.sources.find(source => source.name === name);
             return <View key={name} style={s.sourceStatus}><View style={s.between}><Text style={s.sourceName}>{name}</Text><Text style={[s.statusText, status?.status === 'ok' && { color: c.green }]}>{status?.status === 'ok' ? `確認済み・${status.found ?? 0} 件` : status?.status === 'error' ? '取得エラー' : status?.status === 'pending' ? '確認中' : '未設定'}</Text></View>{status?.errors?.map((message, index) => <Text key={index} style={s.smallText}>{message}</Text>)}{status?.lastSuccessAt && <Text style={s.smallText}>前回成功: {new Date(status.lastSuccessAt).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}</Text>}</View>;
           })}<Text style={s.smallText}>最終確認: {feed.lastSyncAt ? new Date(feed.lastSyncAt).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }) : '未取得'}</Text></View>
-          <View style={s.settingsCard}><Text style={s.sectionTitle}>モ！のチケット帳（非公式）について</Text><Text style={s.bodyText}>ゆるめるモ！のチケット情報をまとめる非公式アプリです。ゆるめるモ！および各チケット販売サイトが提供・運営する公式アプリではありません。料金・時間・販売状況の最終確認は各チケットサイトでお願いします。取得できない料金は「購入先で確認」、時間は「未掲載」と表示します。</Text></View>
+          <View style={s.settingsCard}><Text style={s.sectionTitle}>モ！のチケット帳（非公式）について</Text><Text style={s.smallText}>バージョン {appConfig.expo.version}</Text><Text style={s.bodyText}>ゆるめるモ！のチケット情報をまとめる非公式アプリです。ゆるめるモ！および各チケット販売サイトが提供・運営する公式アプリではありません。料金・時間・販売状況の最終確認は各チケットサイトでお願いします。取得できない料金は「購入先で確認」、時間は「未掲載」と表示します。</Text></View>
         </> : <>
           {tab === 'favorites' && <View style={s.intro}><View style={s.row}><Heart size={24} color={c.pink} /><Text style={s.pageTitle}>お気に入り</Text></View><Text style={s.subtitle}>登録した公演のうち、掲載中の情報を表示。</Text></View>}
           {tab === 'new' && <View style={s.intro}><View style={s.row}><Sparkles size={24} color={c.green} /><Text style={s.pageTitle}>新着チケット</Text></View><Text style={s.subtitle}>前回から新しく見つかった掲載情報。</Text><Pressable onPress={markRead} disabled={loading || !preferencesReady || unread === 0} style={s.readButton} accessibilityRole="button"><Check size={16} color={c.green} /><Text style={s.readText}>すべて既読にする</Text></Pressable></View>}

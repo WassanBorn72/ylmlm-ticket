@@ -1,12 +1,8 @@
 # GitHub での配布
 
-正式リリースの公開先は https://github.com/WassanBorn72/ylmlm-ticket/releases です。ストアには提出しません。2026年10月11日14:59（日本時間）に、正式版 `v0.2.6` の署名付きAndroid APKを[GitHub Releases](https://github.com/WassanBorn72/ylmlm-ticket/releases/tag/v0.2.6)で公開しました。iPhone向けIPAは作成していません。
+正式リリースの公開先は https://github.com/WassanBorn72/ylmlm-ticket/releases です。ストアには提出しません。公式告知の詳細と補足表示を追加した `v0.3.0` を公開準備中です。iPhone向けIPAは作成していません。
 
-[正式版ビルド](https://github.com/WassanBorn72/ylmlm-ticket/actions/runs/38115256222)は成功し、署名検証、APKのSHA-256照合、正式版Application ID、試用版と異なる署名証明書を確認済みです。APKのSHA-256は `3a878e296cdf937b224cbb158172a624cb67b840bd0a0b7a0f85c00fed23c931` です。
-
-公式告知の詳細を追加した `v0.2.7`（versionCode 9 / iOS buildNumber 9）は、[確認用Release下書き](https://github.com/WassanBorn72/ylmlm-ticket/releases/tag/untagged-f819fa7080f78433d7f1)へ署名付きAPKを添付しています。まだ公開していません。[ビルド](https://github.com/WassanBorn72/ylmlm-ticket/actions/runs/38211906121)の成功、41件のテスト、画面操作、実サイトの公式告知照合、APKのチェックサム、v0.2.6と同じ署名証明書を確認しました。APK名は `ylmlm-unofficial-ticket-v0.2.7.apk`、SHA-256は `2801aa86af5cd0624c5e7d4cc68e5aab1528527bbbb7a2ef0489e35eeb23fa8e` です。
-
-補足をイベント固有の注意事項・特典・参加条件に短縮した `v0.2.8`（versionCode 10 / iOS buildNumber 10）は、[確認用Release下書き](https://github.com/WassanBorn72/ylmlm-ticket/releases/tag/untagged-9361e9a6f21ae6450659)に署名付きAPKを添付済みです。未公開です。[ビルド](https://github.com/WassanBorn72/ylmlm-ticket/actions/runs/38213508389)、44件のテスト、スマホ画面の操作、APKのチェックサムと既存正式版と同じ署名証明書を確認しました。APK名は `ylmlm-unofficial-ticket-v0.2.8.apk`、SHA-256は `f34b472aeabb19cfa1d2f15d449b686161bba8694494140ccdc25c7a25530c3d` です。
+公開するAPK名は `ylmlm-unofficial-ticket-v0.3.0.apk` です。更新でもApplication IDと署名鍵を維持します。以前の `v0.2.7` / `v0.2.8` は検証用のRelease下書きで、公開版ではありません。
 
 ## アプリの識別子
 
@@ -19,6 +15,15 @@
 | URLスキーム | `ylmlm-unofficial-ticket` |
 
 識別子にも `unofficial`（非公式）を含めています。正式版の初回公開後はIDと署名鍵を維持します。
+
+## バージョンの付け方
+
+表示バージョンは `MAJOR.MINOR.PATCH` 形式です。1.0未満では仕様の変更があり得る開発段階として扱い、新機能の追加はMINOR、不具合修正はPATCHを上げます。公開ごとの変更内容を [CHANGELOG.md](CHANGELOG.md) に記録します。
+
+- `app.json` の `expo.version`、`package.json` とロックファイルのversion、Gitタグ、Releaseタイトル、APK名を一致させます。
+- AndroidのversionCodeとiOSのbuildNumberは、表示バージョンとは別の更新用の番号として増やします。今回の値は両方 `11` です。
+- アプリ内の表示は `app.json` から読み取り、設定画面に表示します。
+- 公開済みタグ・APKを別のビルドで置き換えません。公開後の修正は新しいバージョンで配布します。
 
 ## 公開前に確認すること
 
@@ -61,11 +66,11 @@ GitHub のリポジトリ Settings → Secrets and variables → Actions に、�
 
 Base64 は暗号化ではありません。変換した内容も秘密情報として取り扱ってください。署名鍵とパスワードはクラウド開発環境の通常変数には入れず、GitHub Actions の Secrets を利用します。
 
-準備と実機確認後、バージョンと一致するタグ（例：`v0.2.6`）を作り、GitHub に push します。
+準備と実機確認後、バージョンと一致するタグ（例：`v0.3.0`）を作り、GitHub に push します。
 
 ```sh
-git tag v0.2.6
-git push origin v0.2.6
+git tag v0.3.0
+git push origin v0.3.0
 ```
 
 `Android GitHub Release` ワークフローが、テスト → Expo prebuild → 専用鍵で署名した release APK の生成 → 署名検証 → チェックサム生成 → GitHub Release 下書き作成を行います。秘密情報がない場合は停止し、debug 鍵で代用しません。既存タグは Actions の手動実行でも指定できます。同じ下書きの再作成は自動上書きせず失敗するため、既存の内容を確認して扱ってください。
