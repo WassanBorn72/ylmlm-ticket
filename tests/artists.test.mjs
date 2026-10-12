@@ -49,3 +49,12 @@ test('グループと同じ対バンに同名の別人がいてもメンバー�
  const artists=matchingArtists('対バン公演','ゆるめるモ！ / まこと','',config);
  assert.ok(artists.some(a=>a.kind==='group'));assert.ok(!artists.some(a=>a.name==='まこと'));
 });
+
+test('外部コラボの別表記を照合し、個人出演を推測で追加しない', () => {
+ for (const name of ['桃組暴想族', 'Babywiper or Gangster', 'Babywiper or Gangstar']) {
+  const artists = matchingArtists('コラボ公演', name, '', config);
+  assert.equal(artists.length, 1);
+  assert.equal(artists[0].kind, 'collaboration');
+  assert.ok(officialArtistHints([{title:name,date:'2030-11-03',ticketUrls:['tiget.net/events/123']}], config)[0].artists.some(a=>a.kind==='collaboration'));
+ }
+});

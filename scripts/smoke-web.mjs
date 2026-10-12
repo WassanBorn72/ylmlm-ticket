@@ -136,7 +136,7 @@ try {
   await expectCards(3);
   await chooseDate('2035-10-21');
   await expectCards(0);
-  await page.getByText('日付や検索条件を変更してください。', { exact: true }).waitFor();
+  await page.getByText('出演者・日付・検索条件を変更してください。', { exact: true }).waitFor();
   await page.getByRole('button', { name: '日付の絞り込みを解除', exact: true }).click();
   await expectCards(3);
   const favorite = page.getByRole('button', { name: /ハロウィンパーティー.*をお気に入りに登録$/ });
@@ -251,6 +251,15 @@ try {
   await page.getByRole('button', { name: '閉じる', exact: true }).click();
   await page.getByText('公演・チケット詳細', { exact: true }).waitFor({ state: 'hidden' });
   await page.getByLabel('公演名・会場で検索').fill('');
+  const beforePerformerFilter = await cards().count();
+  await page.getByRole('button', { name: '出演者で絞り込む', exact: true }).click();
+  await page.getByRole('button', { name: 'なにぬねるんで絞り込む', exact: true }).click();
+  await expectCards(1);
+  await page.getByRole('button', { name: '出演者で絞り込む', exact: true }).click();
+  await page.getByRole('button', { name: 'なにで絞り込む', exact: true }).click();
+  await expectCards(0);
+  await page.getByRole('button', { name: '出演者の絞り込みを解除', exact: true }).click();
+  await expectCards(beforePerformerFilter);
   // No timed polling while the screen stays open.
   await page.clock.install();
   const before = requests;

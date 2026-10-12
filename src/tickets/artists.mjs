@@ -6,7 +6,7 @@ const clean = value => String(value ?? '').normalize('NFKC').toLowerCase().repla
 export function matchingArtists(title, performers, description, config) {
   const searchable = clean([title, performers, description].join(' '));
   const group = [config.artist, ...(config.aliases ?? [])].some(alias => searchable.includes(clean(alias)));
-  const units = (config.targets ?? []).filter(target => target.kind === 'unit' && [target.name, ...(target.aliases ?? [])].some(alias => searchable.includes(clean(alias))));
+  const units = (config.targets ?? []).filter(target => ['unit', 'collaboration'].includes(target.kind) && [target.name, ...(target.aliases ?? [])].some(alias => searchable.includes(clean(alias))));
   const tokens = String(performers ?? '').normalize('NFKC').split(/[,、/／|\n;；]/).map(clean);
   const members = (config.targets ?? []).filter(target => target.kind === 'member' && group && [target.name, ...(target.aliases ?? [])].some(alias => {
     const name = clean(alias);
@@ -19,7 +19,7 @@ export function officialArtistHints(announcements, config) {
   const hints = [];
   for (const announcement of announcements ?? []) {
     let artists = matchingArtists(announcement.title, '', '', config);
-    if (!artists.some(a => a.kind === 'unit')) {
+    if (!artists.some(a => ['unit', 'collaboration'].includes(a.kind))) {
       const title = announcement.title;
       const members = (config.targets ?? []).filter(target => target.kind === 'member' && [target.name, ...(target.aliases ?? [])].some(name => memberMention(title, name)));
       artists = [...artists, ...members.map(({ id, name, kind }) => ({ id, name, kind }))];
