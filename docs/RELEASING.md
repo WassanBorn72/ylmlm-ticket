@@ -6,6 +6,8 @@
 
 公式告知の詳細を追加した `v0.2.7`（versionCode 9 / iOS buildNumber 9）は、[確認用Release下書き](https://github.com/WassanBorn72/ylmlm-ticket/releases/tag/untagged-f819fa7080f78433d7f1)へ署名付きAPKを添付しています。まだ公開していません。[ビルド](https://github.com/WassanBorn72/ylmlm-ticket/actions/runs/38211906121)の成功、41件のテスト、画面操作、実サイトの公式告知照合、APKのチェックサム、v0.2.6と同じ署名証明書を確認しました。APK名は `ylmlm-unofficial-ticket-v0.2.7.apk`、SHA-256は `2801aa86af5cd0624c5e7d4cc68e5aab1528527bbbb7a2ef0489e35eeb23fa8e` です。
 
+補足をイベント固有の注意事項・特典・参加条件に短縮した `v0.2.8`（versionCode 10 / iOS buildNumber 10）は、[確認用Release下書き](https://github.com/WassanBorn72/ylmlm-ticket/releases/tag/untagged-9361e9a6f21ae6450659)に署名付きAPKを添付済みです。未公開です。[ビルド](https://github.com/WassanBorn72/ylmlm-ticket/actions/runs/38213508389)、44件のテスト、スマホ画面の操作、APKのチェックサムと既存正式版と同じ署名証明書を確認しました。APK名は `ylmlm-unofficial-ticket-v0.2.8.apk`、SHA-256は `f34b472aeabb19cfa1d2f15d449b686161bba8694494140ccdc25c7a25530c3d` です。
+
 ## アプリの識別子
 
 | 項目 | 設定値 |
