@@ -5,7 +5,7 @@ export type Source = {
   listingSelector?: string; listingReadySelector?: string; emptyPattern?: string;
   stripQuery?: boolean; paginationSelector?: string;
 };
-export type Config = { artist: string; aliases?: string[]; venueAliases?: Record<string, string>; sources: Source[] };
+export type Config = { artist: string; targets?: { id: string; name: string; kind: string; aliases?: string[] }[]; officialHints?: { url: string; date: string; artists: { id: string; name: string; kind: string }[] }[]; aliases?: string[]; venueAliases?: Record<string, string>; sources: Source[] };
 export type ParsedEvent = Omit<TicketEvent, 'firstSeenAt' | 'updatedAt' | 'isBaseline' | 'staleSourceIds'>;
 export type SourceResult = {
   sourceId: string; name: string; events: ParsedEvent[]; checkedAt: string;
@@ -14,4 +14,4 @@ export type SourceResult = {
 export type FetchPage = (url: string, source: Source) => Promise<{ html: string; url: string }>;
 export function fetchHtml(url: string, source: Source, options?: { signal?: AbortSignal; fetcher?: typeof fetch; timeoutMs?: number }): Promise<{ html: string; url: string }>;
 export function collectSource(source: Source, config: Config, fetchPage: FetchPage, signal?: AbortSignal): Promise<SourceResult>;
-export function collectTickets(config: Config, options?: { signal?: AbortSignal; fetchPage?: FetchPage; onSource?: (result: SourceResult) => void }): Promise<SourceResult[]>;
+export function collectTickets(config: Config, options?: { signal?: AbortSignal; fetchPage?: FetchPage; announcements?: import('./official.mjs').OfficialAnnouncement[]; onSource?: (result: SourceResult) => void }): Promise<SourceResult[]>;

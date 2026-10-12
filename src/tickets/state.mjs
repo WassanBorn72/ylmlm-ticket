@@ -21,7 +21,7 @@ export function mergeEvents(events) {
     const previous = merged.get(event.id);
     if (!previous) { merged.set(event.id, event); continue; }
     merged.set(event.id, {
-      ...event, venue: previous.venue.length > event.venue.length ? previous.venue : event.venue,
+      ...event, artists: [...new Map([...(previous.artists ?? []), ...(event.artists ?? [])].map(artist => [artist.id, artist])).values()], venue: previous.venue.length > event.venue.length ? previous.venue : event.venue,
       address: event.address || previous.address, doorsAt: event.doorsAt || previous.doorsAt,
       offers: [...previous.offers, ...event.offers], notes: [...(previous.notes ?? []), ...(event.notes ?? [])],
       sourceUrls: [...new Set([...previous.sourceUrls, ...event.sourceUrls])],

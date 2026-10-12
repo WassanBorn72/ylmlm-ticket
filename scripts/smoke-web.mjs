@@ -40,6 +40,7 @@ for (const source of config.sources) {
         '/sf/detail/4586830001-P0030001P021001': 'eplus',
       }[url.pathname];
       html = html && fixture(html);
+      if (phase === 'unit' && source.id === 'tiget' && html) html = html.replaceAll('絶対少女物語vol.3', 'トークイベント（ユニット出演）').replaceAll('ゆるめるモ！', 'なにぬねるん / へくしょんめくしょん / ねるんポクぽく / なにQ');
     }
     if (!html) { unexpected.push(url.href); return route.abort(); }
     await route.fulfill({ status: 200, headers, body: html });
@@ -240,6 +241,16 @@ try {
   await page.getByRole('tab', { name: 'チケット', exact: true }).click();
   await expectCards(3);
   assert.equal(await page.getByText('一部は前回取得の情報です · 取得状況を確認').count(), 3);
+  phase = 'unit';
+  await refresh();
+  await page.getByLabel('公演名・会場で検索').fill('なにぬねるん');
+  await expectCards(1);
+  await cards().first().click({ position: { x: 10, y: 10 } });
+  await page.getByText(/^対象の出演者：なにぬねるん.*なにQ/).waitFor();
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+  await page.getByRole('button', { name: '閉じる', exact: true }).click();
+  await page.getByText('公演・チケット詳細', { exact: true }).waitFor({ state: 'hidden' });
+  await page.getByLabel('公演名・会場で検索').fill('');
   // No timed polling while the screen stays open.
   await page.clock.install();
   const before = requests;

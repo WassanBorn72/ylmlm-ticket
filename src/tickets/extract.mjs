@@ -1,3 +1,4 @@
+import { matchingArtists } from './artists.mjs';
 import { load } from 'cheerio/slim';
 import { sha256 } from '@noble/hashes/sha2.js';
 import { bytesToHex } from '@noble/hashes/utils.js';
@@ -62,10 +63,11 @@ export function extractEvents(html, pageUrl, source, config) {
 }
 
 export function normalizeEvents(structuredEvents, pageUrl, source, config) {
-  const aliases = [config.artist, ...(config.aliases ?? [])].map(normalize);
   return structuredEvents.flatMap(item => {
-    const searchable = normalize([item.name, item.description, ...[].concat(item.performer ?? []).map(p => typeof p === 'string' ? p : p.name)].join(' '));
-    if (!aliases.some(alias => searchable.includes(alias))) return [];
+    let artists = matchingArtists(item.name, [].concat(item.performer ?? []).map(p => typeof p === 'string' ? p : p.name).join(' / '), item.description, config);
+    const hint = config.officialHints?.find(hint => hint.url === pageUrl && hint.date === dateInfo(item.startDate)?.date);
+    if (hint) artists = [...new Map([...artists, ...hint.artists].map(artist => [artist.id, artist])).values()];
+    if (!artists.length) return [];
     const time = dateInfo(item.startDate);
     if (!time || !item.name) throw new Error('対象公演のタイトルまたは開催日を読み取れません');
     const location = Array.isArray(item.location) ? item.location[0] : item.location;
@@ -89,7 +91,7 @@ export function normalizeEvents(structuredEvents, pageUrl, source, config) {
     const doors = doorValue ? dateInfo(doorValue)?.startAt ?? null : null;
     return [{
       id: hash(`${time.date}|${time.startAt ?? 'unknown'}|${normalize(item.name)}|${normalize(venueAlias)}`),
-      title: String(item.name), ...time, doorsAt: doors, venue, address,
+      artists, title: String(item.name), ...time, doorsAt: doors, venue, address,
       offers: normalizedOffers, sourceUrls: [pageUrl],
       notes: (item.notes ?? []).map(text => ({ sourceId: source.id, text: `${source.name}: ${text}` })),
     }];

@@ -8,6 +8,7 @@ export type OfficialDetails = {
   url: string; checkedAt: string; stale: boolean; postUrls?: string[];
 };
 export type TicketEvent = {
+  artists?: { id: string; name: string; kind: string }[];
   id: string; title: string; date: string; startAt: string | null; doorsAt: string | null;
   venue: string; address: string; offers: Offer[]; sourceUrls: string[];
   firstSeenAt: string; updatedAt: string; isBaseline: boolean;

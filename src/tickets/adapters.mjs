@@ -1,3 +1,4 @@
+import { matchingArtists } from './artists.mjs';
 import { load } from 'cheerio/slim';
 import { extractEvents, normalizeEvents, normalize } from './extract.mjs';
 
@@ -18,7 +19,7 @@ const definitions = ($, scope = '') => {
   });
   return result;
 };
-const performerMatches = (value, config) => [config.artist, ...(config.aliases ?? [])].some(alias => normalize(value).includes(normalize(alias)));
+const performerMatches = (value, config, pageUrl) => matchingArtists(value, value, '', config).length > 0 || config.officialHints?.some(hint => hint.url === pageUrl);
 const price = value => {
   const match = text(value).match(/(?:[¥￥]\s*([\d,]+)|([\d,]+)\s*円)/);
   return match ? Number((match[1] ?? match[2]).replace(/,/g, '')) : /^(?:無料|FREE)$/i.test(text(value)) ? 0 : null;
@@ -29,7 +30,7 @@ function tiget($, pageUrl, source, config) {
   if (!title) throw new Error('TIGET の公演情報欄が見つかりません');
   const fields = definitions($);
   const performers = fields.get('出演者')?.text() ?? '';
-  if (!performerMatches(`${title} ${performers}`, config)) return [];
+  if (!performerMatches(`${title} ${performers}`, config, pageUrl)) return [];
   const day = date(fields.get('開催日')?.text());
   const venueNode = fields.get('会場');
   const venue = text(venueNode?.find('a').first().text() || venueNode?.text());
@@ -61,7 +62,7 @@ function ticketdive($, pageUrl, source, config) {
     const label = text($(el).text());
     if (['公演日時', '会場', '出演'].includes(label)) fields.set(label, $(el).next('span').text());
   });
-  if (!performerMatches(`${title} ${fields.get('出演') ?? ''}`, config)) return [];
+  if (!performerMatches(`${title} ${fields.get('出演') ?? ''}`, config, pageUrl)) return [];
   const day = date(fields.get('公演日時'));
   const timing = fields.get('公演日時');
   const start = clock(timing, '開演');
@@ -93,7 +94,7 @@ function livepocket($, pageUrl, source, config) {
   const title = text($('.event-detail h1').first().text());
   if (!title) throw new Error('LivePocket の公演情報欄が見つかりません');
   const performers = fields.get('出演者')?.text() ?? '';
-  if (!performerMatches(`${title} ${performers}`, config)) return [];
+  if (!performerMatches(`${title} ${performers}`, config, pageUrl)) return [];
   const day = date(fields.get('開催日')?.text());
   const timing = fields.get('時間')?.text();
   const venueNode = fields.get('会場');

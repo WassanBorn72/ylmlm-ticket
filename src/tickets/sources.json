@@ -17,7 +17,17 @@
         "ticketdive.com"
       ],
       "listingUrls": [
-        "https://ticketdive.com/search?q=%E3%82%86%E3%82%8B%E3%82%81%E3%82%8B%E3%83%A2"
+        "https://ticketdive.com/search?q=%E3%82%86%E3%82%8B%E3%82%81%E3%82%8B%E3%83%A2",
+        "https://ticketdive.com/search?q=%E3%81%AA%E3%81%AB%E3%81%AC%E3%81%AD%E3%82%8B%E3%82%93",
+        "https://ticketdive.com/search?q=%E3%81%B8%E3%81%8F%E3%81%97%E3%82%87%E3%82%93%E3%82%81%E3%81%8F%E3%81%97%E3%82%87%E3%82%93",
+        "https://ticketdive.com/search?q=%E3%81%AD%E3%82%8B%E3%82%93%E3%83%9D%E3%82%AF%E3%81%BD%E3%81%8F",
+        "https://ticketdive.com/search?q=%E3%81%AA%E3%81%ABQ",
+        "https://ticketdive.com/search?q=%E3%81%AA%E3%81%AB+%E3%82%86%E3%82%8B%E3%82%81%E3%82%8B%E3%83%A2",
+        "https://ticketdive.com/search?q=%E3%81%AD%E3%82%8B%E3%82%93+%E3%82%86%E3%82%8B%E3%82%81%E3%82%8B%E3%83%A2",
+        "https://ticketdive.com/search?q=%E3%81%B8%E3%81%9D+%E3%82%86%E3%82%8B%E3%82%81%E3%82%8B%E3%83%A2",
+        "https://ticketdive.com/search?q=%E3%82%81%E3%81%82%E3%82%8A+%E3%82%86%E3%82%8B%E3%82%81%E3%82%8B%E3%83%A2",
+        "https://ticketdive.com/search?q=%E3%82%89%E3%81%8D+%E3%82%86%E3%82%8B%E3%82%81%E3%82%8B%E3%83%A2",
+        "https://ticketdive.com/search?q=%E3%81%BE%E3%81%93%E3%81%A8+%E3%82%86%E3%82%8B%E3%82%81%E3%82%8B%E3%83%A2"
       ],
       "eventPathPattern": "^/event/[A-Za-z0-9_-]+$",
       "listingSelector": "[class*=\"SearchPage_container__\"]",
@@ -33,7 +43,17 @@
         "livepocket.jp"
       ],
       "listingUrls": [
-        "https://livepocket.jp/event/search?word=%E3%82%86%E3%82%8B%E3%82%81%E3%82%8B%E3%83%A2"
+        "https://livepocket.jp/event/search?word=%E3%82%86%E3%82%8B%E3%82%81%E3%82%8B%E3%83%A2",
+        "https://livepocket.jp/event/search?word=%E3%81%AA%E3%81%AB%E3%81%AC%E3%81%AD%E3%82%8B%E3%82%93",
+        "https://livepocket.jp/event/search?word=%E3%81%B8%E3%81%8F%E3%81%97%E3%82%87%E3%82%93%E3%82%81%E3%81%8F%E3%81%97%E3%82%87%E3%82%93",
+        "https://livepocket.jp/event/search?word=%E3%81%AD%E3%82%8B%E3%82%93%E3%83%9D%E3%82%AF%E3%81%BD%E3%81%8F",
+        "https://livepocket.jp/event/search?word=%E3%81%AA%E3%81%ABQ",
+        "https://livepocket.jp/event/search?word=%E3%81%AA%E3%81%AB+%E3%82%86%E3%82%8B%E3%82%81%E3%82%8B%E3%83%A2",
+        "https://livepocket.jp/event/search?word=%E3%81%AD%E3%82%8B%E3%82%93+%E3%82%86%E3%82%8B%E3%82%81%E3%82%8B%E3%83%A2",
+        "https://livepocket.jp/event/search?word=%E3%81%B8%E3%81%9D+%E3%82%86%E3%82%8B%E3%82%81%E3%82%8B%E3%83%A2",
+        "https://livepocket.jp/event/search?word=%E3%82%81%E3%81%82%E3%82%8A+%E3%82%86%E3%82%8B%E3%82%81%E3%82%8B%E3%83%A2",
+        "https://livepocket.jp/event/search?word=%E3%82%89%E3%81%8D+%E3%82%86%E3%82%8B%E3%82%81%E3%82%8B%E3%83%A2",
+        "https://livepocket.jp/event/search?word=%E3%81%BE%E3%81%93%E3%81%A8+%E3%82%86%E3%82%8B%E3%82%81%E3%82%8B%E3%83%A2"
       ],
       "eventPathPattern": "^/e/[A-Za-z0-9_-]+$",
       "listingSelector": ".event-list .event-card-list",
@@ -49,7 +69,17 @@
         "tiget.net"
       ],
       "listingUrls": [
-        "https://tiget.net/events?q%5Bwords%5D=%E3%82%86%E3%82%8B%E3%82%81%E3%82%8B%E3%83%A2"
+        "https://tiget.net/events?q%5Bwords%5D=%E3%82%86%E3%82%8B%E3%82%81%E3%82%8B%E3%83%A2",
+        "https://tiget.net/events?q%5Bwords%5D=%E3%81%AA%E3%81%AB%E3%81%AC%E3%81%AD%E3%82%8B%E3%82%93",
+        "https://tiget.net/events?q%5Bwords%5D=%E3%81%B8%E3%81%8F%E3%81%97%E3%82%87%E3%82%93%E3%82%81%E3%81%8F%E3%81%97%E3%82%87%E3%82%93",
+        "https://tiget.net/events?q%5Bwords%5D=%E3%81%AD%E3%82%8B%E3%82%93%E3%83%9D%E3%82%AF%E3%81%BD%E3%81%8F",
+        "https://tiget.net/events?q%5Bwords%5D=%E3%81%AA%E3%81%ABQ",
+        "https://tiget.net/events?q%5Bwords%5D=%E3%81%AA%E3%81%AB+%E3%82%86%E3%82%8B%E3%82%81%E3%82%8B%E3%83%A2",
+        "https://tiget.net/events?q%5Bwords%5D=%E3%81%AD%E3%82%8B%E3%82%93+%E3%82%86%E3%82%8B%E3%82%81%E3%82%8B%E3%83%A2",
+        "https://tiget.net/events?q%5Bwords%5D=%E3%81%B8%E3%81%9D+%E3%82%86%E3%82%8B%E3%82%81%E3%82%8B%E3%83%A2",
+        "https://tiget.net/events?q%5Bwords%5D=%E3%82%81%E3%81%82%E3%82%8A+%E3%82%86%E3%82%8B%E3%82%81%E3%82%8B%E3%83%A2",
+        "https://tiget.net/events?q%5Bwords%5D=%E3%82%89%E3%81%8D+%E3%82%86%E3%82%8B%E3%82%81%E3%82%8B%E3%83%A2",
+        "https://tiget.net/events?q%5Bwords%5D=%E3%81%BE%E3%81%93%E3%81%A8+%E3%82%86%E3%82%8B%E3%82%81%E3%82%8B%E3%83%A2"
       ],
       "eventPathPattern": "^/events/[0-9]+$",
       "listingSelector": ".events-archive-body",
@@ -72,6 +102,58 @@
       "listingReadySelector": ".page-header__title",
       "emptyPattern": "(?:該当する公演はありません|チケット情報0件)",
       "stripQuery": true
+    }
+  ],
+  "targets": [
+    {
+      "id": "member-1",
+      "name": "なに",
+      "kind": "member"
+    },
+    {
+      "id": "member-2",
+      "name": "ねるん",
+      "kind": "member"
+    },
+    {
+      "id": "member-3",
+      "name": "へそ",
+      "kind": "member"
+    },
+    {
+      "id": "member-4",
+      "name": "めあり",
+      "kind": "member"
+    },
+    {
+      "id": "member-5",
+      "name": "らき",
+      "kind": "member"
+    },
+    {
+      "id": "member-6",
+      "name": "まこと",
+      "kind": "member"
+    },
+    {
+      "id": "unit-1",
+      "name": "なにぬねるん",
+      "kind": "unit"
+    },
+    {
+      "id": "unit-2",
+      "name": "へくしょんめくしょん",
+      "kind": "unit"
+    },
+    {
+      "id": "unit-3",
+      "name": "ねるんポクぽく",
+      "kind": "unit"
+    },
+    {
+      "id": "unit-4",
+      "name": "なにQ",
+      "kind": "unit"
     }
   ]
 }
