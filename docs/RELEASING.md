@@ -1,11 +1,8 @@
 # GitHub での配布
 
-正式リリースの公開先は https://github.com/WassanBorn72/ylmlm-ticket/releases です。ストアには提出しません。購入先の表示順と公式リンクの配置を改善した [v0.4.1](https://github.com/WassanBorn72/ylmlm-ticket/releases/tag/v0.4.1) を2026年10月12日17:46（日本時間）に正式公開しました。iPhone向けIPAは作成していません。
+正式リリースの公開先は https://github.com/WassanBorn72/ylmlm-ticket/releases です。ストアには提出しません。今回の配布対象は個人・ユニット出演に対応した `v0.5.0` です。iPhone向けIPAは作成していません。
 
-APK名は `ylmlm-unofficial-ticket-v0.4.1.apk` です。更新でもApplication IDと署名鍵を維持します。
-
-[署名付きビルド](https://github.com/WassanBorn72/ylmlm-ticket/actions/runs/38224580514)と[CI](https://github.com/WassanBorn72/ylmlm-ticket/actions/runs/38224576786)は成功しています。46件のテスト、画面操作、各OS向けバンドル生成、公開APKのチェックサム、既存正式版と同じ署名証明書、APK内のversionName `0.4.1`・versionCode `13` を確認しました。APKのSHA-256は `9aa6612e76b348c286160e9b80b3eb31c9ea53fcb7e09a7a9892c72b8f8b678b` です。
-
+APK名は `ylmlm-unofficial-ticket-v0.5.0.apk` です。更新でもApplication IDと署名鍵を維持します。
 ## アプリの識別子
 
 | 項目 | 設定値 |
@@ -23,7 +20,7 @@ APK名は `ylmlm-unofficial-ticket-v0.4.1.apk` です。更新でもApplication 
 表示バージョンは `MAJOR.MINOR.PATCH` 形式です。1.0未満では仕様の変更があり得る開発段階として扱い、新機能の追加はMINOR、不具合修正はPATCHを上げます。公開ごとの変更内容を [CHANGELOG.md](CHANGELOG.md) に記録します。
 
 - `app.json` の `expo.version`、`package.json` とロックファイルのversion、Gitタグ、Releaseタイトル、APK名を一致させます。
-- AndroidのversionCodeとiOSのbuildNumberは、表示バージョンとは別の更新用の番号として増やします。今回の値は両方 `13` です。
+- AndroidのversionCodeとiOSのbuildNumberは、表示バージョンとは別の更新用の番号として増やします。今回の値は両方 `14` です。
 - アプリ内の表示は `app.json` から読み取り、設定画面に表示します。
 - 公開済みタグ・APKを別のビルドで置き換えません。公開後の修正は新しいバージョンで配布します。
 
@@ -68,11 +65,11 @@ GitHub のリポジトリ Settings → Secrets and variables → Actions に、�
 
 Base64 は暗号化ではありません。変換した内容も秘密情報として取り扱ってください。署名鍵とパスワードはクラウド開発環境の通常変数には入れず、GitHub Actions の Secrets を利用します。
 
-準備と実機確認後、バージョンと一致するタグ（例：`v0.4.1`）を作り、GitHub に push します。
+準備と実機確認後、バージョンと一致するタグ（例：`v0.5.0`）を作り、GitHub に push します。
 
 ```sh
-git tag v0.4.1
-git push origin v0.4.1
+git tag v0.5.0
+git push origin v0.5.0
 ```
 
 `Android GitHub Release` ワークフローが、テスト → Expo prebuild → 専用鍵で署名した release APK の生成 → 署名検証 → チェックサム生成 → GitHub Release 下書き作成を行います。秘密情報がない場合は停止し、debug 鍵で代用しません。既存タグは Actions の手動実行でも指定できます。同じ下書きの再作成は自動上書きせず失敗するため、既存の内容を確認して扱ってください。
