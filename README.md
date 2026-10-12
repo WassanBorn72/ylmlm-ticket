@@ -8,12 +8,12 @@
 
 ### Android
 
-正式版 **v0.3.0** を公開しています。公式告知の出演時間・特典会時間と、イベント固有の補足表示を追加しました。
+このバージョンは **v0.4.0** です。公演詳細から公式サイト・公式Xを開けるリンクを追加しました。
 
-**[Androidアプリをダウンロード](https://github.com/WassanBorn72/ylmlm-ticket/releases/download/v0.3.0/ylmlm-unofficial-ticket-v0.3.0.apk)** · [リリース一覧](https://github.com/WassanBorn72/ylmlm-ticket/releases)
+**[Androidアプリをダウンロード](https://github.com/WassanBorn72/ylmlm-ticket/releases/download/v0.4.0/ylmlm-unofficial-ticket-v0.4.0.apk)** · [リリース一覧](https://github.com/WassanBorn72/ylmlm-ticket/releases)
 
 1. AndroidスマホでAPKをダウンロードします。
-2. ダウンロードした `ylmlm-unofficial-ticket-v0.3.0.apk` を開きます。
+2. ダウンロードした `ylmlm-unofficial-ticket-v0.4.0.apk` を開きます。
 3. インストール許可を求められたら、ブラウザーや「Files」など今回使う提供元を許可します。
 4. 「モ！のチケット帳（非公式）」を開きます。
 
@@ -44,7 +44,7 @@
 - **その他補足**：券種限定の特典、仮装、当日支払い、再入場・撮影の条件などを短い箇条書きで表示します。券種限定の特典は、対象券種も明記します。
 - **確認元・確認日時**：リンクから公式告知の全文を確認できます。
 
-次回更新では、公演詳細から公式サイト・公式Xを開けるリンクも追加します。公式サイトの該当告知に公式Xの投稿URLがある場合は、その公演の投稿へ直接移動できます。X APIや追加費用は不要です。
+公演詳細から公式サイト・公式Xを開けます。公式サイトの該当告知に公式Xの投稿URLがある場合は、その公演の投稿へ直接移動できます。X APIや追加費用は不要です。
 
 公演名・開催日・購入先などから同じ公演だと照合できた場合に表示します。告知全文や共通案内、一覧と重複する料金・時間・出演者一覧は補足に載せません。情報を推測して埋めることはありません。
 
