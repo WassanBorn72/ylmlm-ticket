@@ -139,7 +139,7 @@ XのプロフィールページはJavaScriptで投稿を読み込むため、今
 
 `PerformerFilter.tsx` で単一の出演者を選択する。検索・開催日・新着・お気に入りと AND 条件で絞り込む。タブ切り替えで解除する。個人を選んでもユニット出演を自動展開しない。古いキャッシュに出演者情報がない場合はグループとして扱い、更新時に照合した出演者を反映する。
 
-取得対象の `kind: collaboration` は外部コラボとして表示する。桃組暴想族と Babywiper or Gangster を追加し、後者は TicketDive に存在する Gangstar 表記も同じ対象に照合する。利用者から提供された情報に基づき `participantIds` に桃組暴想族＝member-2（ねるん）、Babywiper or Gangster＝member-4（めあり）を設定し、一覧・詳細・出演者選択に表示する。この対応表は個人フィルターの条件には使わず、公演ごとの出演確認を代替しない。活動継続は推測しない。TicketDive・LivePocket・TIGET の検索を追加し、イープラスは従来の公式告知リンクによる補完を使う。
+取得対象の `kind: collaboration` は外部コラボとして表示する。桃組暴想族と Babywiper or Gangster を追加し、後者は TicketDive に存在する Gangstar 表記も同じ対象に照合する。利用者から提供された情報に基づき `participantIds` に桃組暴想族＝member-2（ねるん）、Babywiper or Gangster＝member-4（めあり）を設定する。参加メンバー情報は内部に保持し、一覧・詳細・出演者選択では「○○参加」を表示しない。この対応表は個人フィルターの条件には使わず、公演ごとの出演確認を代替しない。活動継続は推測しない。TicketDive・LivePocket・TIGET の検索を追加し、イープラスは従来の公式告知リンクによる補完を使う。
 
 2026-10-12 調査：公式サイトの「桃組暴想族」「Babywiper」「ユニット」「コラボ」記事検索を確認。桃組暴想族への言及は「ねるんがTBSテレビ『私のサントラ』に出演！」記事に存在。Babywiper or Gangster / Gangstar は TicketDive の検索結果に別々のアーティスト登録がある。これらは現在の活動予定や構成を証明するものではない。他の現役関連ユニットを裏付ける追加情報は今回の調査範囲では確認できなかった。
 
