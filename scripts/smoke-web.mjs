@@ -48,7 +48,7 @@ for (const source of config.sources) {
 await page.route('https://ylmlm.jp/**', async route => {
   requests++;
   if (phase === 'offline') return route.abort('internetdisconnected');
-  await route.fulfill({ status: 200, headers, body: fixture('official-calendar') });
+  await route.fulfill({ status: 200, headers, body: fixture('official-calendar').replace('t-dv.com/youllhalloween', 't-dv.com/youllhalloween<a href="https://x.com/ylmlm_official/status/123456789">公式投稿（テスト用）</a>') });
 });
 const cards = () => page.getByRole('button', { name: /詳細を表示$/ });
 const expectCards = async count => {
@@ -75,6 +75,12 @@ try {
   await expectCards(3);
   await page.getByText('モ！のチケット帳', { exact: true }).waitFor();
   await page.getByText('（非公式）', { exact: true }).waitFor();
+  await page.getByRole('link', { name: '公式サイトを開く', exact: true }).click();
+  await page.getByRole('link', { name: '公式Xを開く', exact: true }).click();
+  const homeOfficialUrls = await page.evaluate(() => window.openedMapUrls);
+  assert.ok(homeOfficialUrls.includes('https://ylmlm.jp/'));
+  assert.ok(homeOfficialUrls.includes('https://x.com/ylmlm_official'));
+  await page.evaluate(() => { window.openedMapUrls = []; });
   await cards().filter({ hasText: 'ハロウィン' }).first().click({ position: { x: 10, y: 10 } });
   await page.getByText('公式告知の詳細', { exact: true }).waitFor();
   await page.getByText('出演時間：未掲載', { exact: true }).waitFor();
@@ -83,14 +89,15 @@ try {
   await page.getByText('その他補足', { exact: true }).waitFor();
   assert.equal(await page.getByText('その他補足（公式告知本文）', { exact: true }).count(), 0);
   assert.equal(await page.getByText(/OPEN 19:35\/START 20:00/).count(), 0);
-  await page.getByRole('link', { name: '公式告知を確認', exact: true }).click();
-  assert.ok((await page.evaluate(() => window.openedMapUrls)).includes('https://ylmlm.jp/#schedule'));
-  await page.getByRole('link', { name: '公式サイトを開く', exact: true }).click();
-  await page.getByRole('link', { name: '公式Xを開く', exact: true }).click();
-  const officialUrls = await page.evaluate(() => window.openedMapUrls);
-  assert.ok(officialUrls.includes('https://ylmlm.jp/'));
-  assert.ok(officialUrls.includes('https://x.com/ylmlm_official'));
-  assert.equal(await page.getByRole('link', { name: 'この公演の公式X投稿を開く', exact: true }).count(), 0);
+  const detailSheet = page.getByText('公演・チケット詳細', { exact: true }).locator('..').locator('..');
+  assert.equal(await detailSheet.getByRole('link', { name: '公式サイトを開く', exact: true }).count(), 0);
+  assert.equal(await detailSheet.getByRole('link', { name: '公式Xを開く', exact: true }).count(), 0);
+  assert.equal(await detailSheet.getByRole('link', { name: '公式告知を確認', exact: true }).count(), 0);
+  const purchasePosition = await page.getByText('購入先を選ぶ', { exact: true }).boundingBox();
+  const supplementPosition = await page.getByText('その他補足', { exact: true }).boundingBox();
+  assert.ok(purchasePosition && supplementPosition && purchasePosition.y < supplementPosition.y);
+  await detailSheet.getByRole('link', { name: 'この公演の公式X投稿を開く', exact: true }).click();
+  assert.ok((await page.evaluate(() => window.openedMapUrls)).includes('https://x.com/ylmlm_official/status/123456789'));
 
   await page.evaluate(() => { window.openedMapUrls = []; });
   await page.getByRole('button', { name: '閉じる', exact: true }).click();
