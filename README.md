@@ -8,7 +8,7 @@
 
 ### Android
 
-このバージョンは **v0.4.0** です。公演詳細から公式サイト・公式Xを開けるリンクを追加しました。
+正式版 **v0.4.0** を公開しています。公演詳細から公式サイト・公式Xを開けるリンクを追加しました。
 
 **[Androidアプリをダウンロード](https://github.com/WassanBorn72/ylmlm-ticket/releases/download/v0.4.0/ylmlm-unofficial-ticket-v0.4.0.apk)** · [リリース一覧](https://github.com/WassanBorn72/ylmlm-ticket/releases)
 
