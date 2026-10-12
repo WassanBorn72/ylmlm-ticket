@@ -8,12 +8,12 @@
 
 ### Android
 
-正式版 **v0.6.0** を公開しています。出演者の絞り込みと外部コラボの出演に対応しました。
+正式版 **v0.6.1** を公開しています。出演者選択のユニット分類を統一しました。
 
-**[Androidアプリをダウンロード](https://github.com/WassanBorn72/ylmlm-ticket/releases/download/v0.6.0/ylmlm-unofficial-ticket-v0.6.0.apk)** · [リリース一覧](https://github.com/WassanBorn72/ylmlm-ticket/releases)
+**[Androidアプリをダウンロード](https://github.com/WassanBorn72/ylmlm-ticket/releases/download/v0.6.1/ylmlm-unofficial-ticket-v0.6.1.apk)** · [リリース一覧](https://github.com/WassanBorn72/ylmlm-ticket/releases)
 
 1. AndroidスマホでAPKをダウンロードします。
-2. ダウンロードした `ylmlm-unofficial-ticket-v0.6.0.apk` を開きます。
+2. ダウンロードした `ylmlm-unofficial-ticket-v0.6.1.apk` を開きます。
 3. インストール許可を求められたら、ブラウザーや「Files」など今回使う提供元を許可します。
 4. 「モ！のチケット帳（非公式）」を開きます。
 
@@ -84,6 +84,4 @@ Android／iPhone実機での接続検証結果は、まだ記録されていま�
 
 ### 出演者の絞り込み
 
-現在のソースでは、出演者をグループ・個人・ユニットから選択し、日付や検索、お気に入りと併用して絞り込めます。個人の選択にユニット出演は自動で含めません。桃組暴想族、Babywiper or Gangster（Gangstar 表記にも対応）もユニットに含めています。掲載された公演のみを表示し、画面にはユニット名を表示します。活動継続や公演ごとの出演変更は推測せず、購入先でご確認ください。
-
-公開APK v0.6.0ではユニットの分類が分かれています。分類を「ユニット」にまとめる表示変更は、次回リリースに反映します。
+出演者をグループ・個人・ユニットから選択し、日付や検索、お気に入りと併用して絞り込めます。個人の選択にユニット出演は自動で含めません。桃組暴想族、Babywiper or Gangster（Gangstar 表記にも対応）もユニットに含めています。掲載された公演のみを表示し、画面にはユニット名を表示します。活動継続や公演ごとの出演変更は推測せず、購入先でご確認ください。
