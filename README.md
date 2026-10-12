@@ -8,7 +8,7 @@
 
 ### Android
 
-このバージョンは **v0.5.0** です。6人の個人出演と4ユニットの出演に対応しました。
+正式版 **v0.5.0** を公開しています。6人の個人出演と4ユニットの出演に対応しました。
 
 **[Androidアプリをダウンロード](https://github.com/WassanBorn72/ylmlm-ticket/releases/download/v0.5.0/ylmlm-unofficial-ticket-v0.5.0.apk)** · [リリース一覧](https://github.com/WassanBorn72/ylmlm-ticket/releases)
 

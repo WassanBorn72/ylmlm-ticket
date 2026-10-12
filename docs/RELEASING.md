@@ -1,8 +1,11 @@
 # GitHub での配布
 
-正式リリースの公開先は https://github.com/WassanBorn72/ylmlm-ticket/releases です。ストアには提出しません。今回の配布対象は個人・ユニット出演に対応した `v0.5.0` です。iPhone向けIPAは作成していません。
+正式リリースの公開先は https://github.com/WassanBorn72/ylmlm-ticket/releases です。ストアには提出しません。個人・ユニット出演に対応した [v0.5.0](https://github.com/WassanBorn72/ylmlm-ticket/releases/tag/v0.5.0) を2026年10月12日23:38（日本時間）に正式公開しました。iPhone向けIPAは作成していません。
 
 APK名は `ylmlm-unofficial-ticket-v0.5.0.apk` です。更新でもApplication IDと署名鍵を維持します。
+
+[署名付きビルド](https://github.com/WassanBorn72/ylmlm-ticket/actions/runs/38263131397)と[CI](https://github.com/WassanBorn72/ylmlm-ticket/actions/runs/38263129094)は成功しています。53件のテスト、出演者名での検索・表示を含む画面操作、各OS向けバンドル生成、公開APKのチェックサム、既存正式版と同じ署名証明書、APK内のversionName `0.5.0`・versionCode `14` を確認しました。APKのSHA-256は `a728e90eb68f4073fe525e4145183932bc8d3b26f05f6b78eef1c9be0d014a8b` です。
+
 ## アプリの識別子
 
 | 項目 | 設定値 |
