@@ -2,19 +2,19 @@
   "expo": {
     "name": "モ！のチケット帳（非公式）",
     "slug": "ylmlm-unofficial-ticket",
-    "version": "0.2.6",
+    "version": "0.2.7",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "scheme": "ylmlm-unofficial-ticket",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "jp.ylmlm.unofficial.ticket",
-      "buildNumber": "8"
+      "buildNumber": "9"
     },
     "android": {
       "package": "jp.ylmlm.unofficial.ticket",
       "permissions": [],
-      "versionCode": 8,
+      "versionCode": 9,
       "blockedPermissions": [
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",

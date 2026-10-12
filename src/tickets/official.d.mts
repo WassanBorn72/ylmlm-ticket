@@ -1,0 +1,10 @@
+import type { TicketEvent } from '../types';
+import type { Source, FetchPage } from './collector.mjs';
+export type OfficialAnnouncement = { date: string; title: string; venue: string; ticketUrls: string[]; performance: string[]; meetAndGreet: string[]; text: string; url: string };
+export type OfficialResult = { status: string; announcements: OfficialAnnouncement[]; checkedAt: string; errors: string[] };
+export type OfficialSnapshot = OfficialResult & { lastSuccessAt: string | null };
+export const officialSource: Source;
+export function extractOfficialAnnouncements(html: string): OfficialAnnouncement[];
+export function collectOfficialDetails(options?: { signal?: AbortSignal; fetchPage?: FetchPage }): Promise<OfficialResult>;
+export function applyOfficialResult(previous: OfficialSnapshot | undefined, result: OfficialResult): OfficialSnapshot;
+export function enrichWithOfficialDetails(events: TicketEvent[], snapshot?: OfficialSnapshot): TicketEvent[];

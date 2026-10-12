@@ -45,6 +45,11 @@ for (const source of config.sources) {
     await route.fulfill({ status: 200, headers, body: html });
   });
 }
+await page.route('https://ylmlm.jp/**', async route => {
+  requests++;
+  if (phase === 'offline') return route.abort('internetdisconnected');
+  await route.fulfill({ status: 200, headers, body: fixture('official-calendar') });
+});
 const cards = () => page.getByRole('button', { name: /詳細を表示$/ });
 const expectCards = async count => {
   await page.waitForFunction(expected => document.querySelectorAll('[role="button"][aria-label$="詳細を表示"]').length === expected, count);
@@ -70,6 +75,17 @@ try {
   await expectCards(3);
   await page.getByText('モ！のチケット帳', { exact: true }).waitFor();
   await page.getByText('（非公式）', { exact: true }).waitFor();
+  await cards().filter({ hasText: 'ハロウィン' }).first().click({ position: { x: 10, y: 10 } });
+  await page.getByText('公式告知の詳細', { exact: true }).waitFor();
+  await page.getByText('出演時間：未掲載', { exact: true }).waitFor();
+  await page.getByText('特典会時間：未掲載', { exact: true }).waitFor();
+  assert.match(await page.getByText(/ハロウィンの準備する権/).innerText(), /19:00-19:30/);
+  await page.getByRole('link', { name: '公式告知を確認', exact: true }).click();
+  assert.ok((await page.evaluate(() => window.openedMapUrls)).includes('https://ylmlm.jp/#schedule'));
+  await page.evaluate(() => { window.openedMapUrls = []; });
+  await page.getByRole('button', { name: '閉じる', exact: true }).click();
+  await page.getByText('公演・チケット詳細', { exact: true }).waitFor({ state: 'hidden' });
+
   assert.equal(await page.getByText('ゆるチケ', { exact: true }).count(), 0);
   await page.getByRole('link', { name: '新宿Nine Spiceを地図で開く', exact: true }).click();
   let mapUrls = await page.evaluate(() => window.openedMapUrls);

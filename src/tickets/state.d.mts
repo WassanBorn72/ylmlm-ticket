@@ -1,6 +1,8 @@
 import type { Feed, TicketEvent } from '../types';
+import type { OfficialSnapshot } from './official.mjs';
 import type { Config, SourceResult } from './collector.mjs';
 export type DeviceState = {
+  official?: OfficialSnapshot;
   version: number; snapshots: Record<string, SourceResult & { initialized: boolean; lastSuccessAt: string | null }>;
   seen: Record<string, { date: string; firstSeenAt: string }>; unreadIds: string[]; lastSyncAt: string | null;
 };

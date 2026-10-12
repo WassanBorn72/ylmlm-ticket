@@ -1,3 +1,4 @@
+import { enrichWithOfficialDetails } from './official.mjs';
 export const emptyState = () => ({ version: 1, snapshots: {}, seen: {}, unreadIds: [], lastSyncAt: null });
 
 export function parseState(raw) {
@@ -7,6 +8,7 @@ export function parseState(raw) {
   if (!state.unreadIds.every(id => typeof id === 'string') ||
     Object.values(state.snapshots).some(snapshot => !snapshot || !Array.isArray(snapshot.events) || !Array.isArray(snapshot.errors) || snapshot.events.some(event => !event || typeof event.id !== 'string' || typeof event.date !== 'string' || typeof event.title !== 'string' || typeof event.venue !== 'string' || !Array.isArray(event.offers) || !Array.isArray(event.sourceUrls))) ||
     Object.values(state.seen).some(item => !item || typeof item.date !== 'string' || typeof item.firstSeenAt !== 'string')) throw new Error('保存した情報の形式が不正です');
+  if (state.official && (!Array.isArray(state.official.announcements) || !Array.isArray(state.official.errors) || state.official.announcements.some(item => !item || typeof item.date !== 'string' || typeof item.title !== 'string' || typeof item.venue !== 'string' || typeof item.text !== 'string' || !['ticketUrls', 'performance', 'meetAndGreet'].every(field => Array.isArray(item[field]) && item[field].every(value => typeof value === 'string'))))) delete state.official;
   return state;
 }
 
@@ -75,7 +77,7 @@ export function feedFromState(state, config, now = new Date().toISOString()) {
   }));
   // Collect stale provenance after merging offers from multiple sources.
   for (const event of events) event.staleSourceIds = config.sources.filter(source => state.snapshots[source.id]?.status !== 'ok' && event.offers.some(offer => offer.sourceId === source.id)).map(source => source.id);
-  return { events, lastSyncAt: state.lastSyncAt, sources: config.sources.map(source => {
+  return { events: enrichWithOfficialDetails(events, state.official), lastSyncAt: state.lastSyncAt, sources: config.sources.map(source => {
     const snapshot = state.snapshots[source.id];
     return { id: source.id, name: source.name, status: snapshot?.status ?? 'pending', errors: snapshot?.errors ?? [], checkedAt: snapshot?.checkedAt, found: snapshot?.found, lastSuccessAt: snapshot?.lastSuccessAt };
   }) };
