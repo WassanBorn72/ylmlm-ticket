@@ -4,6 +4,8 @@
 
 [正式版ビルド](https://github.com/WassanBorn72/ylmlm-ticket/actions/runs/38115256222)は成功し、署名検証、APKのSHA-256照合、正式版Application ID、試用版と異なる署名証明書を確認済みです。APKのSHA-256は `3a878e296cdf937b224cbb158172a624cb67b840bd0a0b7a0f85c00fed23c931` です。
 
+公式告知の詳細を追加した `v0.2.7`（versionCode 9 / iOS buildNumber 9）は、[確認用Release下書き](https://github.com/WassanBorn72/ylmlm-ticket/releases/tag/untagged-f819fa7080f78433d7f1)へ署名付きAPKを添付しています。まだ公開していません。[ビルド](https://github.com/WassanBorn72/ylmlm-ticket/actions/runs/38211906121)の成功、41件のテスト、画面操作、実サイトの公式告知照合、APKのチェックサム、v0.2.6と同じ署名証明書を確認しました。APK名は `ylmlm-unofficial-ticket-v0.2.7.apk`、SHA-256は `2801aa86af5cd0624c5e7d4cc68e5aab1528527bbbb7a2ef0489e35eeb23fa8e` です。
+
 ## アプリの識別子
 
 | 項目 | 設定値 |
