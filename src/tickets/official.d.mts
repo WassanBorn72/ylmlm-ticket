@@ -8,3 +8,5 @@ export function extractOfficialAnnouncements(html: string): OfficialAnnouncement
 export function collectOfficialDetails(options?: { signal?: AbortSignal; fetchPage?: FetchPage }): Promise<OfficialResult>;
 export function applyOfficialResult(previous: OfficialSnapshot | undefined, result: OfficialResult): OfficialSnapshot;
 export function enrichWithOfficialDetails(events: TicketEvent[], snapshot?: OfficialSnapshot): TicketEvent[];
+
+export function extractOfficialSupplements(text: string, title?: string, venue?: string): string[];

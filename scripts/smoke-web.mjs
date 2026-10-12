@@ -79,7 +79,10 @@ try {
   await page.getByText('公式告知の詳細', { exact: true }).waitFor();
   await page.getByText('出演時間：未掲載', { exact: true }).waitFor();
   await page.getByText('特典会時間：未掲載', { exact: true }).waitFor();
-  assert.match(await page.getByText(/ハロウィンの準備する権/).innerText(), /19:00-19:30/);
+  assert.match(await page.getByText(/ハロウィンの準備する権/).innerText(), /Sチケット.*19:00-19:30/);
+  await page.getByText('その他補足', { exact: true }).waitFor();
+  assert.equal(await page.getByText('その他補足（公式告知本文）', { exact: true }).count(), 0);
+  assert.equal(await page.getByText(/OPEN 19:35\/START 20:00/).count(), 0);
   await page.getByRole('link', { name: '公式告知を確認', exact: true }).click();
   assert.ok((await page.evaluate(() => window.openedMapUrls)).includes('https://ylmlm.jp/#schedule'));
   await page.evaluate(() => { window.openedMapUrls = []; });
