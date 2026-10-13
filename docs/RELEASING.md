@@ -1,10 +1,10 @@
 # GitHub での配布
 
-正式リリースの公開先は https://github.com/WassanBorn72/ylmlm-ticket/releases です。ストアには提出しません。ユニットの表示を統一した [v0.6.1](https://github.com/WassanBorn72/ylmlm-ticket/releases/tag/v0.6.1) を2026年10月13日03:56（日本時間）に正式公開しました。iPhone向けIPAは作成していません。
+正式リリースの公開先は https://github.com/WassanBorn72/ylmlm-ticket/releases です。ストアには提出しません。ユニット名の表記を修正した [v0.6.2](https://github.com/WassanBorn72/ylmlm-ticket/releases/tag/v0.6.2) を2026年10月13日09:21（日本時間）に正式公開しました。iPhone向けIPAは作成していません。
 
-APK名は `ylmlm-unofficial-ticket-v0.6.1.apk` です。更新でもApplication IDと署名鍵を維持します。
+APK名は `ylmlm-unofficial-ticket-v0.6.2.apk` です。更新でもApplication IDと署名鍵を維持します。
 
-[署名付きビルド](https://github.com/WassanBorn72/ylmlm-ticket/actions/runs/38293225490)と[CI](https://github.com/WassanBorn72/ylmlm-ticket/actions/runs/38293223056)は成功しています。54件のテスト、出演者の絞り込み・解除を含む画面操作、各OS向けバンドル生成、公開APKのチェックサム、既存正式版と同じ署名証明書、APK内のversionName `0.6.1`・versionCode `16` を確認しました。APKのSHA-256は `74cc4e9b743911be3ae530c6a4c388a9c233894f3cdd604c2f0286d033e98f14` です。
+[署名付きビルド](https://github.com/WassanBorn72/ylmlm-ticket/actions/runs/38326101134)と[CI](https://github.com/WassanBorn72/ylmlm-ticket/actions/runs/38326099238)は成功しています。55件のテスト、表記修正・出演者の絞り込みを含む画面操作、各OS向けバンドル生成、公開APKのチェックサム、既存正式版と同じ署名証明書、APK内のversionName `0.6.2`・versionCode `17` を確認しました。APKのSHA-256は `9827d52bca8d315bc71dfadbf0012b83de13800afcdde2ddc54aa7a8a35b8251` です。
 
 ## アプリの識別子
 
@@ -23,7 +23,7 @@ APK名は `ylmlm-unofficial-ticket-v0.6.1.apk` です。更新でもApplication 
 表示バージョンは `MAJOR.MINOR.PATCH` 形式です。1.0未満では仕様の変更があり得る開発段階として扱い、新機能の追加はMINOR、不具合修正はPATCHを上げます。公開ごとの変更内容を [CHANGELOG.md](CHANGELOG.md) に記録します。
 
 - `app.json` の `expo.version`、`package.json` とロックファイルのversion、Gitタグ、Releaseタイトル、APK名を一致させます。
-- AndroidのversionCodeとiOSのbuildNumberは、表示バージョンとは別の更新用の番号として増やします。今回の値は両方 `16` です。
+- AndroidのversionCodeとiOSのbuildNumberは、表示バージョンとは別の更新用の番号として増やします。今回の値は両方 `17` です。
 - アプリ内の表示は `app.json` から読み取り、設定画面に表示します。
 - 公開済みタグ・APKを別のビルドで置き換えません。公開後の修正は新しいバージョンで配布します。
 
@@ -68,11 +68,11 @@ GitHub のリポジトリ Settings → Secrets and variables → Actions に、�
 
 Base64 は暗号化ではありません。変換した内容も秘密情報として取り扱ってください。署名鍵とパスワードはクラウド開発環境の通常変数には入れず、GitHub Actions の Secrets を利用します。
 
-準備と実機確認後、バージョンと一致するタグ（例：`v0.6.1`）を作り、GitHub に push します。
+準備と実機確認後、バージョンと一致するタグ（例：`v0.6.2`）を作り、GitHub に push します。
 
 ```sh
-git tag v0.6.1
-git push origin v0.6.1
+git tag v0.6.2
+git push origin v0.6.2
 ```
 
 `Android GitHub Release` ワークフローが、テスト → Expo prebuild → 専用鍵で署名した release APK の生成 → 署名検証 → チェックサム生成 → GitHub Release 下書き作成を行います。秘密情報がない場合は停止し、debug 鍵で代用しません。既存タグは Actions の手動実行でも指定できます。同じ下書きの再作成は自動上書きせず失敗するため、既存の内容を確認して扱ってください。
