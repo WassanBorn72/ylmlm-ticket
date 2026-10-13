@@ -58,3 +58,19 @@ test('外部コラボの別表記を照合し、個人出演を推測で追加�
   assert.ok(officialArtistHints([{title:name,date:'2030-11-03',ticketUrls:['tiget.net/events/123']}], config)[0].artists.some(a=>a.kind==='collaboration'));
  }
 });
+
+test('ユニットの表記揺れを同じID・正式名称で照合する', () => {
+ for (const [id, variants] of [
+  ['unit-1', ['なにぬねるん？', 'なにぬねるん?', 'なにぬねるん']],
+  ['unit-4', ['なにQ', 'なにＱ', 'なにq']],
+  ['collaboration-2', ['Babywiper or Gangster', 'Babywiper or Gangstar', 'BABYWIPER OR GANGSTER', 'Babywiper　or　Gangster']],
+ ]) {
+  const target = config.targets.find(target => target.id === id);
+  for (const variant of variants) {
+   const artists = matchingArtists('イベント', variant, '', config);
+   assert.equal(artists.length, 1);
+   assert.equal(artists[0].id, id);
+   assert.equal(artists[0].name, target.name);
+  }
+ }
+});

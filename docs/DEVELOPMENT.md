@@ -146,3 +146,10 @@ XのプロフィールページはJavaScriptで投稿を読み込むため、今
 - https://ylmlm.jp/?s=桃組暴想族
 - https://ticketdive.com/artist/JvhtJzZ3eFxX9SfeoEhl
 - https://ticketdive.com/artist/lebe9XHkuMx3aMXO8DLG
+
+### ユニットの名称・表記揺れ（2026-10-13確認）
+
+- `unit-1` の正式表示名は「なにぬねるん？」。「なにぬねるん」は取得用別名として保持する。公式カレンダー https://ylmlm.jp/ と https://ticketdive.com/artist/R4TuOMJd1uV30d7rp93p で疑問符付きの表記を確認。検索URLは疑問符なしを維持し、両表記を検索する。
+- へくしょんめくしょん、ねるんポクぽく、なにQ、桃組暴想族はTicketDiveの検索結果で現設定と一致。なにQの全角Ｑ・小文字qは既存のNFKC・小文字化で照合する。
+- Babywiper or Gangster / Gangstarは引き続き同じ対象として照合する。英字の大小・全角半角・空白の違いも既存の正規化で扱う。未確認の別名は追加しない。
+- 対象IDと公演IDを維持し、既存キャッシュの一覧・詳細も対象IDから現在の表示名を参照する。お気に入りや既読は変更しない。

@@ -253,7 +253,7 @@ try {
   await page.getByLabel('公演名・会場で検索').fill('');
   const beforePerformerFilter = await cards().count();
   await page.getByRole('button', { name: '出演者で絞り込む', exact: true }).click();
-  await page.getByRole('button', { name: 'なにぬねるんで絞り込む', exact: true }).click();
+  await page.getByRole('button', { name: 'なにぬねるん？で絞り込む', exact: true }).click();
   await expectCards(1);
   await page.getByRole('button', { name: '出演者で絞り込む', exact: true }).click();
   await page.getByRole('button', { name: 'なにで絞り込む', exact: true }).click();

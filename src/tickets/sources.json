@@ -146,8 +146,11 @@
     },
     {
       "id": "unit-1",
-      "name": "なにぬねるん",
-      "kind": "unit"
+      "name": "なにぬねるん？",
+      "kind": "unit",
+      "aliases": [
+        "なにぬねるん"
+      ]
     },
     {
       "id": "unit-2",
