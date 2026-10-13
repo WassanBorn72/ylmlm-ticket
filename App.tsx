@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, AppState, Image, Linking, Modal, Platform, Pressable, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ArrowDownUp, ArrowUpRight, Bell, CalendarDays, Check, ChevronRight, Clock3, Heart, MapPin, RefreshCw, Search, Settings, Sparkles, Ticket, X } from 'lucide-react-native';
+import { ArrowDownUp, ArrowUpRight, Bell, CalendarDays, Check, ChevronRight, Clock3, Heart, MapPin, RefreshCw, Search, Settings, Sparkles, Ticket, Users, X } from 'lucide-react-native';
 import { Feed, TicketEvent } from './src/types';
 import DateFilter from './src/DateFilter';
 import PerformerFilter from './src/PerformerFilter';
@@ -216,7 +216,7 @@ function AppContent() {
           {tab === 'new' && <View style={s.intro}><View style={s.row}><Sparkles size={24} color={c.green} /><Text style={s.pageTitle}>新着チケット</Text></View><Text style={s.subtitle}>前回から新しく見つかった掲載情報。</Text><Pressable onPress={markRead} disabled={loading || !preferencesReady || unread === 0} style={s.readButton} accessibilityRole="button"><Check size={16} color={c.green} /><Text style={s.readText}>すべて既読にする</Text></Pressable></View>}
           <View style={s.searchBox}><Search size={19} color={c.muted} /><TextInput style={s.searchInput} value={query} onChangeText={setQuery} placeholder="公演名・会場でさがす" placeholderTextColor="#999f9c" accessibilityLabel="公演名・会場で検索" />{query !== '' && <Pressable onPress={() => setQuery('')} accessibilityRole="button" accessibilityLabel="検索をクリア"><X size={18} color={c.muted} /></Pressable>}</View>
           <View style={s.dateFilterRow}>
-            <Pressable onPress={() => setPerformerOpen(true)} style={[s.dateFilterButton, performerId !== null && s.dateFilterSelected]} accessibilityRole="button" accessibilityLabel="出演者で絞り込む" accessibilityState={{ expanded: performerOpen }}><Text style={s.dateFilterText}>{performerId === 'group' ? config.artist : config.targets.find(artist => artist.id === performerId)?.name || '出演者で絞り込む'}</Text><ChevronRight size={16} color={c.green} /></Pressable>
+            <Pressable onPress={() => setPerformerOpen(true)} style={[s.dateFilterButton, performerId !== null && s.dateFilterSelected]} accessibilityRole="button" accessibilityLabel="出演者で絞り込む" accessibilityState={{ expanded: performerOpen }}><Users size={18} color={c.green} /><Text style={s.dateFilterText}>{performerId === 'group' ? config.artist : config.targets.find(artist => artist.id === performerId)?.name || '出演者で絞り込む'}</Text><ChevronRight size={16} color={c.green} /></Pressable>
             {performerId !== null && <Pressable style={s.clearDateButton} onPress={() => setPerformerId(null)} accessibilityRole="button" accessibilityLabel="出演者の絞り込みを解除"><X size={16} color={c.muted} /><Text style={s.clearDateText}>解除</Text></Pressable>}
           </View>
           <View style={s.dateFilterRow}>

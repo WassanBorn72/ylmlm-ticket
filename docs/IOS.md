@@ -31,7 +31,7 @@ mkdir -p "$HOME/Developer"
 cd "$HOME/Developer"
 git clone https://github.com/WassanBorn72/ylmlm-ticket.git
 cd ylmlm-ticket
-git checkout v0.6.2
+git checkout v0.6.3
 npm ci
 npx expo prebuild --platform ios
 ```
