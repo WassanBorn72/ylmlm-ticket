@@ -96,9 +96,15 @@ try {
   assert.equal(await detailSheet.getByRole('link', { name: '公式サイトを開く', exact: true }).count(), 0);
   assert.equal(await detailSheet.getByRole('link', { name: '公式Xを開く', exact: true }).count(), 0);
   assert.equal(await detailSheet.getByRole('link', { name: '公式告知を確認', exact: true }).count(), 0);
+  const calendarPosition = await page.getByRole('button', {name:'端末のカレンダーに追加',exact:true}).boundingBox();
+  const reminderPosition = await page.getByRole('switch', {name:'この公演の発売開始通知',exact:true}).boundingBox();
+  assert.ok(calendarPosition && calendarPosition.height >= 56);
+  assert.ok(reminderPosition && reminderPosition.height >= 68);
+  if(process.env.DETAIL_SCREENSHOT_PATH)await page.screenshot({path:process.env.DETAIL_SCREENSHOT_PATH});
   const purchasePosition = await page.getByText('購入先を選ぶ', { exact: true }).boundingBox();
   const supplementPosition = await page.getByText('その他補足', { exact: true }).boundingBox();
   assert.ok(purchasePosition && supplementPosition && purchasePosition.y < supplementPosition.y);
+  assert.ok(calendarPosition.y < purchasePosition.y && reminderPosition.y < purchasePosition.y);
   await detailSheet.getByRole('link', { name: 'この公演の公式X投稿を開く', exact: true }).click();
   assert.ok((await page.evaluate(() => window.openedMapUrls)).includes('https://x.com/ylmlm_official/status/123456789'));
 
@@ -107,6 +113,8 @@ try {
   assert.ok(calendarUrl);
   assert.match(new URL(calendarUrl).searchParams.get('text'), /ハロウィン/);
   assert.match(new URL(calendarUrl).searchParams.get('details'), /終了時間は未掲載/);
+  assert.match(new URL(calendarUrl).searchParams.get('details'), /OPEN（開場）/);
+  assert.ok(new URL(calendarUrl).searchParams.get('dates').startsWith('20351027T100000Z/'));
   await page.evaluate(() => { window.openedMapUrls = []; });
   await page.getByRole('button', { name: '閉じる', exact: true }).click();
   await page.getByText('公演・チケット詳細', { exact: true }).waitFor({ state: 'hidden' });
@@ -151,6 +159,8 @@ try {
   await page.getByRole('button', { name: /ハロウィンパーティー.*をお気に入りから解除$/ }).waitFor();
   assert.equal(await page.getByText('公演・チケット詳細', { exact: true }).count(), 0);
   await page.getByRole('tab', { name: 'お気に入り', exact: true }).click();
+  const quickReminder = await page.getByRole('switch', {name:'お気に入りの発売開始リマインダー',exact:true}).boundingBox();
+  assert.ok(quickReminder && quickReminder.height >= 68);
   await expectCards(1);
   await page.reload();
   await waitIdle();

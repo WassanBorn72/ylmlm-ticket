@@ -1,6 +1,7 @@
 export function calendarEvent(event) {
-  const allDay = !event.startAt;
-  const startDate = allDay ? `${event.date}T00:00:00+09:00` : event.startAt;
+  const startAt = event.doorsAt || event.startAt;
+  const allDay = !startAt;
+  const startDate = allDay ? `${event.date}T00:00:00+09:00` : startAt;
   const endDate = new Date(Date.parse(startDate) + (allDay ? 86400000 : 3600000)).toISOString();
   const urls = [...new Set(event.offers.map(offer=>offer.url).filter(Boolean))];
   const details = event.officialDetails;
@@ -20,7 +21,8 @@ export function calendarEvent(event) {
   }
   const ticketNotes = unique(event.notes?.map(note => note.text));
   const notes = [
-    allDay ? '開演時間は未掲載です。日時を購入先で確認してください。' : '終了時間は未掲載のため、仮に開演から1時間で設定しています。保存前に修正してください。',
+    allDay ? '開場・開演時間は未掲載です。日時を購入先で確認してください。' : `予定の開始は${event.doorsAt ? 'OPEN（開場）' : 'START（開演）'}時間です。終了時間は未掲載のため、仮に開始から1時間で設定しています。保存前に修正してください。`,
+    ...((event.doorsAt || event.startAt) ? [[event.doorsAt ? `OPEN（開場）：${new Date(event.doorsAt).toLocaleTimeString('ja-JP',{timeZone:'Asia/Tokyo',hour:'2-digit',minute:'2-digit',hour12:false})}` : '',event.startAt ? `START（開演）：${new Date(event.startAt).toLocaleTimeString('ja-JP',{timeZone:'Asia/Tokyo',hour:'2-digit',minute:'2-digit',hour12:false})}` : ''].filter(Boolean).join('\n')] : []),
     ...officialNotes,
     ...(ticketNotes.length ? [`【チケットサイトの補足】\n${ticketNotes.map(text => `・${text}`).join('\n')}`] : []),
     ...(urls.length ? [`【購入先】\n${urls.join('\n')}`] : []),

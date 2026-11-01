@@ -51,8 +51,8 @@ test('欠損から判明した値と別サイトの追加は料金変更と扱�
  const changed=applyResults(initial,[result([event()])],config,now,['one']);assert.deepEqual(changed.favoriteChanges,{});
 });
 test('カレンダーにはJST・会場・購入先を渡し、終了未定と開始時刻未掲載を明記する',()=>{
- const timed=calendarEvent(event());assert.equal(timed.allDay,false);assert.equal(timed.endDate,'2030-02-01T10:00:00.000Z');assert.ok(timed.notes.includes('仮に'));assert.ok(timed.notes.includes('https://example.com/1'));
- const allDay=calendarEvent(event({startAt:null}));assert.equal(allDay.allDay,true);assert.equal(allDay.startDate,'2030-02-01T00:00:00+09:00');assert.equal(allDay.timeZone,'Asia/Tokyo');
+ const timed=calendarEvent(event());assert.equal(timed.allDay,false);assert.equal(timed.startDate,'2030-02-01T08:30:00Z');assert.equal(timed.endDate,'2030-02-01T09:30:00.000Z');assert.ok(timed.notes.includes('仮に'));assert.ok(timed.notes.includes('https://example.com/1'));
+ const allDay=calendarEvent(event({startAt:null,doorsAt:null}));assert.equal(allDay.allDay,true);assert.equal(allDay.startDate,'2030-02-01T00:00:00+09:00');assert.equal(allDay.timeZone,'Asia/Tokyo');
 });
 
 test('カレンダーのメモに取得済みの出演・特典会時間と補足を載せ、未掲載項目は省く',()=>{
@@ -65,7 +65,13 @@ test('カレンダーのメモに取得済みの出演・特典会時間と補�
  assert.match(data.notes,/前回取得/);
  assert.match(data.notes,/公式情報の確認日時/);
  assert.match(data.notes,/【購入先】\nhttps:\/\/example.com\/1/);
- assert.equal(data.startDate,e.startAt);
+ assert.equal(data.startDate,e.doorsAt);assert.match(data.notes,/START（開演）：18:00/);
  const empty=calendarEvent(event({officialDetails:{performance:[],meetAndGreet:[],supplements:[],stale:false}}));
  assert.doesNotMatch(empty.notes,/【出演時間】|【特典会時間】|【補足】|undefined|Invalid Date/);
+});
+
+
+test('カレンダーは開場を優先し、開場不明なら開演、開演不明でも開場だけで予定を作る',()=>{
+ const onlyStart=calendarEvent(event({doorsAt:null}));assert.equal(onlyStart.startDate,event().startAt);assert.match(onlyStart.notes,/START（開演）/);
+ const onlyDoors=calendarEvent(event({startAt:null}));assert.equal(onlyDoors.allDay,false);assert.equal(onlyDoors.startDate,event().doorsAt);assert.match(onlyDoors.notes,/OPEN（開場）/);
 });
