@@ -11,3 +11,8 @@ const allowed=name=>entries.some(entry=>entry.$['android:name']===name&&entry.$[
 assert.ok(allowed('android.permission.POST_NOTIFICATIONS'),'Local notifications need Android notification permission');
 for(const permission of ['READ_CALENDAR','WRITE_CALENDAR','SCHEDULE_EXACT_ALARM'])assert.ok(!allowed(`android.permission.${permission}`),`Unexpected ${permission} permission`);
 console.log('PASS: local notifications without APNs/exact-alarm entitlement; calendar access stays blocked');
+
+const autolinking=fileURLToPath(new URL('../node_modules/expo-modules-autolinking/bin/expo-modules-autolinking.js',import.meta.url));
+const linked=JSON.parse(execFileSync(process.execPath,[autolinking,'resolve','--platform','android','--json'],{encoding:'utf8'}));
+assert.ok(linked.modules.some(module=>module.packageName==='ticket-widget'&&module.projects.some(project=>project.modules.some(item=>item.classifier==='jp.ylmlm.unofficial.ticket.widget.TicketWidgetModule'))),'Widget module must be linked into Android');
+console.log('PASS: Android home widgets module is autolinked');

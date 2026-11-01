@@ -59,7 +59,8 @@ export function useSaleReminders(events:TicketEvent[],favoriteIds:string[],favor
         if(!current())return;
         const canNotify=allowed(permission);setDenied(enabled&&!canNotify);
         if(enabled&&canNotify&&Platform.OS==='android')await Notifications.setNotificationChannelAsync(channelId,{name:'チケット発売開始',importance:Notifications.AndroidImportance.HIGH,sound:'default',enableVibrate:false});
-        const ids=await reconcileReminders(nativeApi,enabled&&canNotify?plan:[],current);
+        const preserved=enabled&&canNotify?events.filter(event=>event.staleSourceIds?.length&&(favoriteIds.includes(event.id)||favoriteIds.includes(favoriteChanges?.[event.id]?.favoriteId??''))).flatMap(event=>[event.id,favoriteChanges?.[event.id]?.favoriteId??'']):[];
+        const ids=await reconcileReminders(nativeApi,enabled&&canNotify?plan:[],current,preserved);
         if(current()){setScheduledIds(ids);setError('');}
       }catch{if(current())setError('発売開始リマインダーを予約できませんでした。通知設定を確認して再試行してください。');}
       finally{if(current())setBusy(false);}

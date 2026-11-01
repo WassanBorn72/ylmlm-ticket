@@ -67,6 +67,13 @@ jobs:
           cp "$apk" "release-artifacts/ylmlm-unofficial-ticket-${RELEASE_TAG}.apk"
           cd release-artifacts
           sha256sum *.apk > SHA256SUMS.txt
+      - name: Preserve widget native test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: widget-native-tests
+          path: modules/ticket-widget/android/build/test-results/
+          if-no-files-found: ignore
       - uses: actions/upload-artifact@v4
         with:
           name: android-release

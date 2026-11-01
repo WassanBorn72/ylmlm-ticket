@@ -13,3 +13,5 @@ export function applyResults(previous: DeviceState, results: SourceResult[], con
 export function mergeEvents(events: TicketEvent[]): TicketEvent[];
 export function feedFromState(state: DeviceState, config: Config, now?: string): Feed;
 export function markAllRead(state: DeviceState): DeviceState;
+
+export function settleIncompleteState(state: DeviceState): DeviceState;

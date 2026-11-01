@@ -11,7 +11,7 @@ export function parseState(raw) {
     Object.values(state.seen).some(item => !item || typeof item.date !== 'string' || typeof item.firstSeenAt !== 'string')) throw new Error('保存した情報の形式が不正です');
   if (state.official && (!Array.isArray(state.official.announcements) || !Array.isArray(state.official.errors) || state.official.announcements.some(item => !item || typeof item.date !== 'string' || typeof item.title !== 'string' || typeof item.venue !== 'string' || typeof item.text !== 'string' || item.postUrls !== undefined && (!Array.isArray(item.postUrls) || !item.postUrls.every(value => typeof value === 'string')) || !['ticketUrls', 'performance', 'meetAndGreet'].every(field => Array.isArray(item[field]) && item[field].every(value => typeof value === 'string'))))) delete state.official;
   if (state.favoriteChanges && (typeof state.favoriteChanges !== 'object' || Object.values(state.favoriteChanges).some(change => !change || typeof change.favoriteId !== 'string' || !Array.isArray(change.fields) || change.fields.some(field => !field || ![field.key, field.label, field.before, field.after].every(value => typeof value === 'string'))))) delete state.favoriteChanges;
-  return state;
+  return settleIncompleteState(state);
 }
 
 const todayInJapan = now => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(now));
@@ -87,3 +87,9 @@ export function feedFromState(state, config, now = new Date().toISOString()) {
 }
 
 export const markAllRead = state => ({ ...state, unreadIds: [] });
+
+
+// A persisted preview is useful, but is never evidence of a completed refresh.
+export function settleIncompleteState(state) {
+  return {...state,snapshots:Object.fromEntries(Object.entries(state.snapshots).map(([id,snapshot])=>[id,snapshot.status==='pending'?{...snapshot,status:'error',errors:[...snapshot.errors,'更新が完了していません。再度更新してください。']}:snapshot]))};
+}

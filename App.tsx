@@ -1,5 +1,5 @@
 import React, { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, AppState, Image, Linking, Modal, Platform, Pressable, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, AppState, Linking, Modal, Platform, Pressable, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ArrowDownUp, ArrowUpRight, Bell, CalendarDays, Check, ChevronRight, Clock3, Heart, MapPin, RefreshCw, Search, Settings, Sparkles, Ticket, Users, X } from 'lucide-react-native';
@@ -11,11 +11,12 @@ import config from './src/tickets/sources.json';
 import appConfig from './app.json';
 import * as Calendar from 'expo-calendar';
 import {useSaleReminders} from './src/useSaleReminders';
+import {useTicketWidget} from './src/useTicketWidget';
 import { calendarEvent } from './src/calendarEvent.mjs';
 import { offerStatus, eventSalesStatus } from './src/tickets/sales.mjs';
 import { collectOfficialDetails, applyOfficialResult, officialSource } from './src/tickets/official.mjs';
 import { collectTickets } from './src/tickets/collector.mjs';
-import { applyResults, emptyState, feedFromState, markAllRead, parseState } from './src/tickets/state.mjs';
+import { applyResults, emptyState, feedFromState, markAllRead, parseState, settleIncompleteState } from './src/tickets/state.mjs';
 
 const artistName = (artist: { id: string; name: string }) => config.targets.find(target => target.id === artist.id)?.name || artist.name;
 const searchKey = (value: string) => value.normalize('NFKC').toLowerCase().replace(/\s+/g, '');
@@ -68,13 +69,36 @@ function AppContent() {
   const pendingNotification = useRef<Record<string,unknown>|null>(null);
   const [notificationRevision,setNotificationRevision] = useState(0);
   const reminders = useSaleReminders(feed.events,favoriteIds,deviceState.current.favoriteChanges,data=>{pendingNotification.current=data;setNotificationRevision(v=>v+1);},preferencesReady);
+  const widget = useTicketWidget(feed,favoriteIds,deviceState.current.favoriteChanges,preferencesReady);
+  useEffect(()=>{
+    let mounted=true;
+    const open=(url:string|null)=>{
+      if(!mounted||!url)return;
+      try{
+        const target=new URL(url);
+        if(target.protocol!=='ylmlm-unofficial-ticket:')return;
+        if(target.hostname==='event'){
+          const id=decodeURIComponent(target.pathname.slice(1));
+          if(!/^[a-zA-Z0-9_-]{1,128}$/.test(id))return;
+          pendingNotification.current={eventId:id,origin:'widget'};setNotificationRevision(value=>value+1);
+        }else if(target.hostname==='favorites'||target.hostname==='tickets'){
+          setTab(target.hostname);setSelected(null);setSelectedDate(null);setPerformerId(null);setQuery('');
+        }
+      }catch{/* Other URLs are not widget routes. */}
+    };
+    void Linking.getInitialURL().then(open).catch(()=>{});
+    const subscription=Linking.addEventListener('url',event=>open(event.url));
+    return()=>{mounted=false;subscription.remove();};
+  },[]);
+
   useEffect(()=>{
     const data=pendingNotification.current;
     if(!data)return;
     const event=feed.events.find(event=>event.id===data.eventId);
-    const matches=event?[event]:feed.events.filter(event=>event.date===data.eventDate&&event.title===data.eventTitle&&typeof data.url==='string'&&event.sourceUrls.includes(data.url));
+    const aliases=event?[]:feed.events.filter(event=>deviceState.current.favoriteChanges?.[event.id]?.favoriteId===data.eventId);
+    const matches=event?[event]:aliases.length?aliases:feed.events.filter(event=>event.date===data.eventDate&&event.title===data.eventTitle&&typeof data.url==='string'&&event.sourceUrls.includes(data.url));
     if(matches.length===1){setTab('tickets');setSelectedDate(null);setPerformerId(null);setQuery('');setSelected(matches[0]);pendingNotification.current=null;}
-    else if(preferencesReady&&!loading&&refreshedOnce.current){setNotice('通知の公演を確認できませんでした。掲載状況を確認してください。');pendingNotification.current=null;}
+    else if(preferencesReady&&!loading&&refreshedOnce.current){setNotice('公演を確認できませんでした。掲載状況を確認してください。');pendingNotification.current=null;}
   },[feed,notificationRevision,preferencesReady,loading]);
 
   useEffect(() => {
@@ -100,15 +124,26 @@ function AppContent() {
     setLoading(true);
     setProgress('チケットサイトを確認しています…');
     try {
-      const official = await collectOfficialDetails({ signal: controller.signal });
-      if (controller.signal.aborted) return;
-      const results = await collectTickets(config, {
-        announcements: official.status === 'ok' ? official.announcements : deviceState.current.official?.announcements,
+      const baseline = deviceState.current;
+      const completed = new Map<string, Awaited<ReturnType<typeof collectTickets>>[number]>();
+      const officialPromise = collectOfficialDetails({ signal: controller.signal });
+      const ticketsPromise = collectTickets(config, {
+        announcements: baseline.official?.announcements,
+        announcementsPromise: officialPromise.then(official => official.status === 'ok' ? official.announcements : baseline.official?.announcements ?? []),
         signal: controller.signal,
-        onSource: result => { if (!controller.signal.aborted) setProgress(`${result.name}を確認しました`); },
+        onSource: result => {
+          if (controller.signal.aborted || activeRequest.current !== controller) return;
+          completed.set(result.sourceId,result);
+          const partial = applyResults(baseline,[...completed.values()],config,new Date().toISOString(),favoriteRef.current);
+          deviceState.current = partial;
+          setFeed(feedFromState(partial,config));
+          setProgress(`${completed.size}/${config.sources.length}サイトを確認しました`);
+          void saveDeviceState(partial).catch(()=>setNotice('取得情報を端末に保存できませんでした。'));
+        },
       });
+      const [results, official] = await Promise.all([ticketsPromise,officialPromise]);
       if (controller.signal.aborted) return;
-      const next = applyResults(deviceState.current, results, config, new Date().toISOString(), favoriteRef.current);
+      const next = applyResults(baseline, results, config, new Date().toISOString(), favoriteRef.current);
       next.official = applyOfficialResult(deviceState.current.official, official);
       deviceState.current = next;
       refreshedOnce.current = true;
@@ -129,7 +164,13 @@ function AppContent() {
       if (!controller.signal.aborted) refreshedOnce.current = true;
       if (!controller.signal.aborted) setError(failure instanceof Error ? failure.message : '接続を確認して再試行してください。');
     } finally {
-      if (activeRequest.current === controller) { activeRequest.current = null; setLoading(false); setProgress(''); }
+      if (activeRequest.current === controller) {
+        if(controller.signal.aborted){
+          deviceState.current=settleIncompleteState(deviceState.current);setFeed(feedFromState(deviceState.current,config));
+          void saveDeviceState(deviceState.current).catch(()=>setNotice('取得情報を保存できませんでした。'));
+        }
+        activeRequest.current = null; setLoading(false); setProgress('');
+      }
     }
   }, [preferencesReady]);
 
@@ -141,6 +182,8 @@ function AppContent() {
       if (state === 'background') {
         wasBackground = true;
         activeRequest.current?.abort(); activeRequest.current = null;
+        deviceState.current=settleIncompleteState(deviceState.current);setFeed(feedFromState(deviceState.current,config));
+        void saveDeviceState(deviceState.current).catch(()=>setNotice('取得情報を保存できませんでした。'));
         setLoading(false); setProgress('');
       }
       if (state === 'active' && wasBackground) { wasBackground = false; void refresh(); }
@@ -259,7 +302,7 @@ function AppContent() {
         <View style={s.dateBox}><Text style={s.month}>{Number(event.date.slice(5, 7))}月</Text><Text style={s.day}>{Number(event.date.slice(8, 10))}</Text><Text style={s.weekday}>{shortDate(event.date).match(/\((.+)\)/)?.[1] || shortDate(event.date).slice(-3)}</Text></View>
         <View style={s.cardMain}>
           <View style={s.row}>{fresh(event) && <View style={s.newBadge}><Text style={s.newText}>NEW</Text></View>}<Text style={s.artist}>{event.artists?.filter(artist => artist.kind !== 'group').map(artistName).join(' / ') || config.artist}</Text></View>
-          <Text style={s.eventTitle}>{event.title}</Text><Text style={s.smallText}>販売状況：{eventSalesStatus(event)}{event.staleSourceIds?.length ? '（前回取得を含む）' : ''}</Text>{isFavorite(event) && !!deviceState.current.favoriteChanges?.[event.id]?.fields.length && <Text style={s.warningText}>お気に入りの公演に変更があります</Text>}
+          <Text style={s.eventTitle}>{event.title}</Text><Text style={s.smallText}>販売状況：{eventSalesStatus(event)}{event.staleSourceIds?.length ? (loading?'（更新中）':'（前回取得を含む）') : ''}</Text>{isFavorite(event) && !!deviceState.current.favoriteChanges?.[event.id]?.fields.length && <Text style={s.warningText}>お気に入りの公演に変更があります</Text>}
           <Pressable style={[s.metadata, s.mapLink]} disabled={!mapQuery(event)} onPress={press => { press.stopPropagation(); void openMap(event); }} accessibilityRole="link" accessibilityLabel={`${event.venue}を地図で開く`} accessibilityState={{ disabled: !mapQuery(event) }}><MapPin size={14} color={mapQuery(event) ? c.green : c.muted} /><Text style={[s.metaText, !!mapQuery(event) && s.mapText]}>{event.venue}</Text></Pressable>
         </View>
         {favoriteButton(event)}
@@ -277,16 +320,17 @@ function AppContent() {
   return <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
     <StatusBar barStyle="dark-content" />
     <View style={s.page}>
-      <View style={s.header}><View style={s.brandRow}><Image source={require('./assets/app-icon.png')} style={s.appIcon} accessibilityIgnoresInvertColors accessible={false} /><View style={{ flex: 1 }}><Text style={s.brand}>モ！のチケット帳</Text><Text style={s.unofficialName}>（非公式）</Text></View></View><View style={s.row}><Pressable disabled={loading || !preferencesReady} onPress={() => { void refresh(); }} style={s.bellButton} accessibilityRole="button" accessibilityLabel="チケット情報を更新"><RefreshCw size={22} color={c.ink} /></Pressable><Pressable onPress={() => { setTab('new'); setSelectedDate(null); setPerformerId(null); setQuery(''); }} style={s.bellButton} accessibilityRole="button" accessibilityLabel={`新着 ${unread} 件`}><Bell size={22} color={c.ink} />{unread > 0 && <View style={s.bellDot} />}</Pressable></View></View>
+      <View style={s.header}><View style={s.brandRow}><View style={{ flex: 1 }}><Text style={s.brand}>モ！のチケット帳</Text><Text style={s.unofficialName}>（非公式）</Text></View></View><View style={s.row}><Pressable disabled={loading || !preferencesReady} onPress={() => { void refresh(); }} style={s.bellButton} accessibilityRole="button" accessibilityLabel="チケット情報を更新"><RefreshCw size={22} color={c.ink} /></Pressable><Pressable onPress={() => { setTab('new'); setSelectedDate(null); setPerformerId(null); setQuery(''); }} style={s.bellButton} accessibilityRole="button" accessibilityLabel={`新着 ${unread} 件`}><Bell size={22} color={c.ink} />{unread > 0 && <View style={s.bellDot} />}</Pressable></View></View>
       <ScrollView style={s.scroll} contentContainerStyle={s.content} refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} tintColor={c.green} />}>
         {tab === 'tickets' && <View style={s.officialLinks}><Pressable style={s.officialLink} onPress={() => { void openTicket('https://ylmlm.jp/'); }} accessibilityRole="link" accessibilityLabel="公式サイトを開く"><Text style={s.officialLinkText}>公式サイト ↗</Text></Pressable><Pressable style={s.officialLink} onPress={() => { void openTicket('https://x.com/ylmlm_official'); }} accessibilityRole="link" accessibilityLabel="公式Xを開く"><Text style={s.officialLinkText}>公式X ↗</Text></Pressable></View>}
-        {loading && <View style={s.notice}><ActivityIndicator color={c.green} /><Text style={s.noticeText}>{progress}{feed.events.length ? ' · 前回の取得内容を表示中' : ''}</Text><Pressable style={s.clearDateButton} onPress={() => { activeRequest.current?.abort(); }} accessibilityRole="button" accessibilityLabel="チケット情報の更新を中止"><Text style={s.clearDateText}>中止</Text></Pressable></View>}
+        {loading && <View style={s.notice}><ActivityIndicator color={c.green} /><Text style={s.noticeText}>{progress}{feed.events.length ? ' · 取得済みの公演を表示中' : ''}</Text><Pressable style={s.clearDateButton} onPress={() => { activeRequest.current?.abort(); }} accessibilityRole="button" accessibilityLabel="チケット情報の更新を中止"><Text style={s.clearDateText}>中止</Text></Pressable></View>}
         {notice !== '' && <View style={s.notice}><Text style={s.noticeText}>{notice}</Text><Pressable onPress={() => setNotice('')} accessibilityRole="button" accessibilityLabel="メッセージを閉じる"><X size={18} color={c.ink} /></Pressable></View>}
         {error !== '' && <View style={s.error}><Text style={s.noticeText}>更新できませんでした。{feed.events.length ? '一部に前回取得の情報が含まれます。' : ''} {error}</Text><Pressable onPress={refresh} accessibilityRole="button" accessibilityLabel="再試行"><RefreshCw size={18} color={c.ink} /></Pressable></View>}
         {tab === 'settings' ? <>
           <Text style={s.pageTitle}>取得状況</Text><Text style={s.subtitle}>開いたときに、最新の掲載情報を確認。</Text>
           <View style={s.settingsCard}><Text style={s.sectionTitle}>このアプリの更新方法</Text><Text style={s.bodyText}>起動時・バックグラウンドから戻ったとき・手動更新時に、端末からチケットサイトへ接続します。アプリを閉じている間は取得しません。新着は次に開いたときに表示します。発売開始リマインダーを有効にした場合は、取得済みの発売日時を端末に予約して通知します。</Text><Pressable style={[s.primaryButton, loading && s.disabled]} disabled={loading || !preferencesReady} onPress={() => { void refresh(); }} accessibilityRole="button" accessibilityLabel="今すぐ更新"><Text style={s.primaryText}>{loading ? '確認中…' : '今すぐ更新'}</Text><RefreshCw size={17} color="white" /></Pressable><Text style={s.smallText}>お気に入りの料金・開場／開演時間・販売状況・受付期間が変わると、次回取得時に「変更」を表示します。取得できない情報や、別公演と区別できない変更は判定しません。公演情報の変更を閉じている間に検出することはできません。前回取得の公演ID・既読状態・お気に入りは、この端末だけに保存します。端末間の同期はありません。</Text></View>
           <View style={s.settingsCard}><Text style={s.sectionTitle}>お気に入りの発売開始リマインダー</Text><Text style={s.bodyText}>発売日時を取得できたお気に入り公演を、端末に予約して通知します。アプリを閉じていても通知できます。初期設定はオフです。</Text><ReminderControl enabled={reminders.enabled} busy={reminders.busy} disabled={!reminders.supported||!reminders.ready||reminders.busy} onToggle={()=>{void reminders.toggle();}}/><Text style={s.smallText}>{reminders.supported?`予約済み：${reminders.scheduledIds.length}件（近い日時から最大${reminders.limit}件）`:'通知はAndroid・iPhoneアプリで利用できます。ブラウザー版は対象外です。'}</Text>{reminders.error!==''&&<Text style={s.warningText}>{reminders.error}</Text>}{reminders.denied&&<Pressable style={s.readButton} onPress={()=>{void Linking.openSettings().catch(()=>setNotice('端末の設定を開けませんでした。'));}} accessibilityRole="button" accessibilityLabel="端末の通知設定を開く"><Text style={s.readText}>端末の通知設定を開く</Text></Pressable>}{reminders.error!==''&&<Pressable style={s.readButton} onPress={reminders.retry} accessibilityRole="button" accessibilityLabel="発売開始リマインダーを再試行"><Text style={s.readText}>予約を再試行</Text></Pressable>}<Text style={s.smallText}>お気に入り解除・通知オフ・取得時に分かった発売日時の変更は予約に反映します。発売日時が未掲載、すでに開始済み、完売・受付終了の券種は予約しません。取得できないサイトの前回予約は保持します。日時変更はアプリを再度開いて取得するまで反映できません。省電力設定や端末の状態により通知が遅れる場合があります。まだ取得していない新しい公演の通知は行いません。</Text></View>
+          <View style={s.settingsCard}><Text style={s.sectionTitle}>ホーム画面ウィジェット</Text><Text style={s.bodyText}>「お気に入りの公演」と「直近の公演」の2種類から選べます。サイズを広げると最大3公演を表示し、タップすると詳細を開きます。情報はアプリを開いて更新し、ウィジェットには取得時刻を表示します。</Text>{widget.supported?<><Pressable style={s.registerAction} onPress={()=>{void widget.add(true).then(ok=>setNotice(ok?'ホーム画面でウィジェットの追加を確認してください。':'ホーム画面を長押ししてウィジェット一覧から追加してください。')).catch(()=>setNotice('ウィジェットを追加できませんでした。ホーム画面を長押しして一覧から追加してください。'));}} accessibilityRole="button" accessibilityLabel="お気に入りのウィジェットを追加"><Text style={s.registerActionText}>お気に入りのウィジェットを追加</Text></Pressable><Pressable style={s.registerAction} onPress={()=>{void widget.add(false).then(ok=>setNotice(ok?'ホーム画面でウィジェットの追加を確認してください。':'ホーム画面を長押ししてウィジェット一覧から追加してください。')).catch(()=>setNotice('ウィジェットを追加できませんでした。ホーム画面を長押しして一覧から追加してください。'));}} accessibilityRole="button" accessibilityLabel="直近公演のウィジェットを追加"><Text style={s.registerActionText}>直近公演のウィジェットを追加</Text></Pressable></>:<Text style={s.smallText}>ウィジェットはAndroid版で利用できます。</Text>}{widget.error!==''&&<Text style={s.warningText}>{widget.error}</Text>}</View>
           <View style={s.settingsCard}><Text style={s.sectionTitle}>情報の取得状況</Text><Text style={s.bodyText}>取得エラーがある場合、最新のチケットが反映されていないことがあります。</Text>{Platform.OS === 'web' && <Text style={s.smallText}>ブラウザー版では一部のサイトに直接接続できません。スマホアプリでの接続をご確認ください。</Text>}{[...sites, officialSource.name].map(name => {
             const status = name === officialSource.name ? { ...deviceState.current.official, found: deviceState.current.official?.announcements.length } : feed.sources.find(source => source.name === name);
             return <View key={name} style={s.sourceStatus}><View style={s.between}><Text style={s.sourceName}>{name}</Text><Text style={[s.statusText, status?.status === 'ok' && { color: c.green }]}>{status?.status === 'ok' ? `確認済み・${status.found ?? 0} 件` : status?.status === 'error' ? '取得エラー' : status?.status === 'pending' ? '確認中' : '未設定'}</Text></View>{status?.errors?.map((message, index) => <Text key={index} style={s.smallText}>{message}</Text>)}{status?.lastSuccessAt && <Text style={s.smallText}>前回成功: {new Date(status.lastSuccessAt).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}</Text>}</View>;
@@ -323,7 +367,7 @@ function AppContent() {
         <Text style={s.actionHint}>{reminders.supported?'通知設定はすべてのお気に入り公演に共通です。':'通知はAndroid・iPhoneアプリで利用できます。'}</Text>
         {reminders.error!==''&&<Text style={s.warningText}>{reminders.error}</Text>}
         {reminders.denied&&<Pressable style={s.registerAction} onPress={()=>{void Linking.openSettings().catch(()=>setNotice('端末の設定を開けませんでした。'));}} accessibilityRole="button" accessibilityLabel="端末の通知設定を開く"><Text style={s.registerActionText}>端末の通知設定を開く</Text></Pressable>}
-      </View><Pressable style={[s.detailFact, s.mapLink]} disabled={!mapQuery(selected)} onPress={() => { void openMap(selected); }} accessibilityRole="link" accessibilityLabel={`${selected.venue}を地図で開く`} accessibilityState={{ disabled: !mapQuery(selected) }}><MapPin size={18} color={c.green} /><View style={{ flex: 1 }}><Text style={[s.sourceName, !!mapQuery(selected) && s.mapText]}>{selected.venue}</Text><Text style={s.smallText}>{selected.address || '住所未掲載'}{mapQuery(selected) ? ' · 地図で開く' : ''}</Text></View><ArrowUpRight size={18} color={c.green} /></Pressable><View style={s.detailFact}><Clock3 size={18} color={c.green} /><Text style={s.bodyText}>開場 {time(selected.doorsAt)}　開演 {time(selected.startAt)}</Text></View><Text style={s.detailHeading}>購入先を選ぶ</Text>{selected.offers.map((offer, index) => <Pressable key={`${offer.sourceId}-${index}`} disabled={!offer.url} onPress={() => { void openTicket(offer.url); }} style={[s.offer, !offer.url && s.sampleOffer]} accessibilityRole="link" accessibilityState={{ disabled: !offer.url }}><View style={{ flex: 1 }}><Text style={s.sourceName}>{offer.sourceName}</Text><Text style={s.smallText}>{offer.label}{selected.staleSourceIds?.includes(offer.sourceId) ? ' · 前回取得' : ''}</Text><Text style={s.smallText}>販売状況：{offerStatus(offer)}</Text>{(offer.salesStartAt || offer.salesEndAt) && <Text style={s.smallText}>受付期間：{offer.salesStartAt ? new Date(offer.salesStartAt).toLocaleString('ja-JP', {timeZone:'Asia/Tokyo'}) : '開始未掲載'} 〜 {offer.salesEndAt ? new Date(offer.salesEndAt).toLocaleString('ja-JP', {timeZone:'Asia/Tokyo'}) : '終了未掲載'}</Text>}{offer.note && <Text style={s.smallText}>{offer.note}</Text>}</View><Text style={s.offerPrice}>{money(offer.price, offer.currency)}</Text>{offer.url ? <ArrowUpRight size={19} color={c.green} /> : <Text style={s.smallText}>サンプル</Text>}</Pressable>)}{isFavorite(selected) && !!deviceState.current.favoriteChanges?.[selected.id]?.fields.length && <View style={s.detailNotice}><Text style={s.sectionTitle}>お気に入り公演の変更</Text>{deviceState.current.favoriteChanges[selected.id].fields.map(field => <Text key={field.key} style={s.bodyText}>{field.label}：{field.before} → {field.after}</Text>)}<Text style={s.smallText}>検出：{new Date(deviceState.current.favoriteChanges[selected.id].detectedAt).toLocaleString('ja-JP', {timeZone:'Asia/Tokyo'})}。取得時点の情報です。最新の内容は購入先で確認してください。</Text><Pressable disabled={loading} onPress={() => { void acknowledgeChanges(selected.id); }} style={s.readButton} accessibilityRole="button" accessibilityLabel="公演の変更を確認済みにする"><Text style={s.readText}>変更を確認しました</Text></Pressable></View>}
+      </View><Pressable style={[s.detailFact, s.mapLink]} disabled={!mapQuery(selected)} onPress={() => { void openMap(selected); }} accessibilityRole="link" accessibilityLabel={`${selected.venue}を地図で開く`} accessibilityState={{ disabled: !mapQuery(selected) }}><MapPin size={18} color={c.green} /><View style={{ flex: 1 }}><Text style={[s.sourceName, !!mapQuery(selected) && s.mapText]}>{selected.venue}</Text><Text style={s.smallText}>{selected.address || '住所未掲載'}{mapQuery(selected) ? ' · 地図で開く' : ''}</Text></View><ArrowUpRight size={18} color={c.green} /></Pressable><View style={s.detailFact}><Clock3 size={18} color={c.green} /><Text style={s.bodyText}>開場 {time(selected.doorsAt)}　開演 {time(selected.startAt)}</Text></View><Text style={s.detailHeading}>購入先を選ぶ</Text>{selected.offers.map((offer, index) => <Pressable key={`${offer.sourceId}-${index}`} disabled={!offer.url} onPress={() => { void openTicket(offer.url); }} style={[s.offer, !offer.url && s.sampleOffer]} accessibilityRole="link" accessibilityState={{ disabled: !offer.url }}><View style={{ flex: 1 }}><Text style={s.sourceName}>{offer.sourceName}</Text><Text style={s.smallText}>{offer.label}{selected.staleSourceIds?.includes(offer.sourceId) ? (loading?' · 更新中':' · 前回取得') : ''}</Text><Text style={s.smallText}>販売状況：{offerStatus(offer)}</Text>{(offer.salesStartAt || offer.salesEndAt) && <Text style={s.smallText}>受付期間：{offer.salesStartAt ? new Date(offer.salesStartAt).toLocaleString('ja-JP', {timeZone:'Asia/Tokyo'}) : '開始未掲載'} 〜 {offer.salesEndAt ? new Date(offer.salesEndAt).toLocaleString('ja-JP', {timeZone:'Asia/Tokyo'}) : '終了未掲載'}</Text>}{offer.note && <Text style={s.smallText}>{offer.note}</Text>}</View><Text style={s.offerPrice}>{money(offer.price, offer.currency)}</Text>{offer.url ? <ArrowUpRight size={19} color={c.green} /> : <Text style={s.smallText}>サンプル</Text>}</Pressable>)}{isFavorite(selected) && !!deviceState.current.favoriteChanges?.[selected.id]?.fields.length && <View style={s.detailNotice}><Text style={s.sectionTitle}>お気に入り公演の変更</Text>{deviceState.current.favoriteChanges[selected.id].fields.map(field => <Text key={field.key} style={s.bodyText}>{field.label}：{field.before} → {field.after}</Text>)}<Text style={s.smallText}>検出：{new Date(deviceState.current.favoriteChanges[selected.id].detectedAt).toLocaleString('ja-JP', {timeZone:'Asia/Tokyo'})}。取得時点の情報です。最新の内容は購入先で確認してください。</Text><Pressable disabled={loading} onPress={() => { void acknowledgeChanges(selected.id); }} style={s.readButton} accessibilityRole="button" accessibilityLabel="公演の変更を確認済みにする"><Text style={s.readText}>変更を確認しました</Text></Pressable></View>}
       {selected.notes?.map((note, index) => <View key={index} style={s.detailNotice}><Text style={s.warningText}>{note.text}</Text></View>)}{selected.officialDetails && <View><Text style={s.detailHeading}>公式告知の詳細</Text>{selected.officialDetails.stale && <Text style={s.warningText}>前回取得の公式情報です。最新の告知をご確認ください。</Text>}<Text style={s.bodyText}>出演時間：{selected.officialDetails.performance.join(' / ') || '未掲載'}</Text><Text style={s.bodyText}>特典会時間：{selected.officialDetails.meetAndGreet.join(' / ') || '未掲載'}</Text>{selected.officialDetails.supplements.length > 0 && <View><Text style={s.sourceName}>その他補足</Text>{selected.officialDetails.supplements.map((text, index) => <Text key={index} style={s.bodyText}>・{text}</Text>)}</View>}<Text style={s.smallText}>公式情報確認：{new Date(selected.officialDetails.checkedAt).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}</Text></View>}{!!selected.officialDetails?.postUrls?.length && <View><Text style={s.detailHeading}>この公演の公式X投稿</Text>{selected.officialDetails?.postUrls?.map(url => <Pressable key={url} onPress={() => { void openTicket(url); }} accessibilityRole="link" accessibilityLabel="この公演の公式X投稿を開く"><Text style={[s.bodyText, s.mapText]}>この公演の公式X投稿 ↗</Text></Pressable>)}</View>}<Text style={s.footerNote}>掲載料金と別に手数料・ドリンク代等がかかる場合があります。販売中かどうか、最新の価格・日時は購入先をご確認ください。</Text><Text style={s.smallText}>情報確認: {new Date(selected.updatedAt).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}</Text><View style={{ height: 24 }} /></ScrollView>}</SafeAreaView></View>
     </Modal>
   </SafeAreaView>;
@@ -336,7 +380,7 @@ const s = StyleSheet.create({
   officialLinks: { flexDirection: 'row', justifyContent: 'flex-end', gap: 12, marginBottom: 4 }, officialLink: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 }, officialLinkText: { color: c.green, fontSize: 12, fontWeight: '600' },
   safe: { flex: 1, backgroundColor: c.bg }, page: { flex: 1, width: '100%', maxWidth: 760, alignSelf: 'center', backgroundColor: c.bg },
   header: { paddingHorizontal: 14, paddingVertical: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: c.bg },
-  brandRow: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, marginRight: 8 }, appIcon: { width: 36, height: 36, borderRadius: 9 }, unofficialName: { fontSize: 11, fontWeight: '700', color: c.green, letterSpacing: 0 }, brand: { fontSize: 18, fontWeight: '900', color: c.ink, letterSpacing: 0 }, bellButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: c.border, borderRadius: 17, backgroundColor: 'white' }, bellDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: c.pink, position: 'absolute', top: 9, right: 10 },
+  brandRow: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, marginRight: 8 }, unofficialName: { fontSize: 11, fontWeight: '700', color: c.green, letterSpacing: 0 }, brand: { fontSize: 18, fontWeight: '900', color: c.ink, letterSpacing: 0 }, bellButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: c.border, borderRadius: 17, backgroundColor: 'white' }, bellDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: c.pink, position: 'absolute', top: 9, right: 10 },
   scroll: { flex: 1 }, content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 }, demoBanner: { flexDirection: 'row', alignItems: 'center', gap: 7, padding: 10, borderRadius: 10, backgroundColor: '#fff6e5', marginBottom: 14 }, demoText: { color: '#946b18', fontSize: 10, flex: 1, lineHeight: 16 }, notice: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 14, borderRadius: 12, backgroundColor: c.mint, marginBottom: 12 }, error: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 14, borderRadius: 12, backgroundColor: '#ffe9e7', marginBottom: 12 }, noticeText: { flex: 1, fontSize: 12, lineHeight: 19, color: c.ink },
   eventActions:{marginBottom:16}, calendarAction:{minHeight:56,backgroundColor:c.green,borderRadius:14,paddingHorizontal:16,paddingVertical:14,flexDirection:'row',alignItems:'center',gap:12}, calendarActionText:{flex:1,color:'white',fontSize:16,fontWeight:'700'}, actionHint:{fontSize:12,lineHeight:20,color:c.muted,marginTop:6}, registerAction:{minHeight:48,padding:12,borderWidth:1,borderColor:c.border,borderRadius:12,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8,marginTop:6,backgroundColor:'white'}, registerActionText:{fontSize:14,fontWeight:'600',color:c.green,flexShrink:1}, reminderQuickCard:{marginBottom:18},
   favoriteButton: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },

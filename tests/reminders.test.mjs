@@ -4,7 +4,7 @@ import {saleReminders,reconcileReminders,REMINDER_KIND,REMINDER_LIMIT} from '../
 const now='2030-01-01T00:00:00Z';
 const offer=(overrides={})=>({sourceId:'a',sourceName:'A',label:'前売',url:'https://example.com/1',availability:'PreOrder',salesStartAt:'2030-01-02T10:00:00+09:00',...overrides});
 const event=(overrides={})=>({id:'one',title:'公演',date:'2030-02-01',offers:[offer()],sourceUrls:['https://example.com/1'],...overrides});
-const request=item=>({identifier:item.id,content:{data:{kind:REMINDER_KIND,signature:item.signature}}});
+const request=item=>({identifier:item.id,content:{data:{kind:REMINDER_KIND,signature:item.signature,eventId:item.eventId}}});
 const fake=(initial=[])=>{
  const store=new Map(initial.map(item=>[item.identifier,item]));const calls=[];
  return {calls,store,list:async()=>[...store.values()],cancel:async id=>{calls.push(['cancel',id]);store.delete(id);},schedule:async item=>{calls.push(['schedule',item.id]);store.set(item.id,request(item));}};
@@ -35,4 +35,12 @@ test('近い順に50件まで予約し、お気に入りIDの引き継ぎを認�
  const plan=saleReminders(events,events.map(e=>e.id),{},now);assert.ok(plan[0].date<plan[59].date);
  const api=fake();await reconcileReminders(api,plan);assert.equal(api.store.size,REMINDER_LIMIT);
  const alias=saleReminders([event({id:'new'})],['old'],{new:{favoriteId:'old'}},now);assert.equal(alias.length,1);
+});
+
+
+test('途中の表示で発売日時が変わっても、確定前は既存通知を保持して解除時に削除する',async()=>{
+ const plan=saleReminders([event()],['one'],{},now);const api=fake([request(plan[0])]);
+ const pending=saleReminders([event({staleSourceIds:['a'],offers:[offer({salesStartAt:'2030-01-04T01:00:00Z'})]})],['one'],{},now);
+ await reconcileReminders(api,pending,()=>true,['one']);assert.equal(api.calls.length,0);assert.equal(api.store.size,1);
+ await reconcileReminders(api,[],()=>true,[]);assert.equal(api.store.size,0);
 });

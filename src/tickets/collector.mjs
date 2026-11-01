@@ -42,6 +42,7 @@ export async function collectSource(source, config, fetchPage, signal) {
   let successfulListings = 0;
   const queryPages = new Map();
   const ensureActive = () => { if (signal?.aborted) throw new Error('取得を中断しました'); };
+  const listingWorker = async () => {
   while (queue.length && visited.size < 5 * Math.max(1, (source.listingUrls ?? []).length)) {
     ensureActive();
     const listing = queue.shift();
@@ -81,16 +82,25 @@ export async function collectSource(source, config, fetchPage, signal) {
       });
     } catch (error) { errors.push(error.message); }
   }
+  };
+  await Promise.all([listingWorker(), listingWorker()]);
   if (queue.some(url => !visited.has(url))) errors.push('検索一覧の取得ページ上限を超えています');
   if (urls.size > 50) errors.push('公演候補が 50 件を超えています');
-  const events = [];
-  for (const url of [...urls].slice(0, 50)) {
-    ensureActive();
-    try {
-      const page = await fetchPage(url, source);
-      events.push(...extractSiteEvents(page.html, page.url, source, config));
-    } catch (error) { errors.push(error.message); }
-  }
+  const candidates = [...urls].sort().slice(0, 50);
+  const chunks = candidates.map(() => []);
+  let cursor = 0;
+  const eventWorker = async () => {
+    while (cursor < candidates.length) {
+      ensureActive();
+      const index = cursor++;
+      try {
+        const page = await fetchPage(candidates[index], source);
+        chunks[index] = extractSiteEvents(page.html, page.url, source, config);
+      } catch (error) { errors.push(error.message); }
+    }
+  };
+  await Promise.all([eventWorker(), eventWorker()]);
+  const events = chunks.flat();
   ensureActive();
   return {
     sourceId: source.id, events, name: source.name, checkedAt: new Date().toISOString(),
@@ -99,15 +109,48 @@ export async function collectSource(source, config, fetchPage, signal) {
   };
 }
 
-export async function collectTickets(config, { signal, fetchPage, onSource, announcements } = {}) {
-  const officialHints = officialArtistHints(announcements, config);
+export async function collectTickets(config, { signal, fetchPage, onSource, announcements, announcementsPromise } = {}) {
+  const officialHints = announcementsPromise ? [] : officialArtistHints(announcements, config);
   config = { ...config, officialHints };
-  const fetcher = fetchPage ?? ((url, source) => fetchHtml(url, source, { signal }));
-  // Independent sites run in parallel; requests within each site stay sequential.
-  return Promise.all(config.sources.map(async source => {
+  const rawFetcher = fetchPage ?? ((url, source) => fetchHtml(url, source, { signal }));
+  // A bounded per-refresh page cache lets fresh official hints reparse mixed
+  // group/solo pages without another request or keeping every listing in RAM.
+  const pages = new Map();
+  const fetcher = (url, source) => {
+    if (!source.eventPathPattern || !new RegExp(source.eventPathPattern).test(new URL(url).pathname)) return rawFetcher(url, source);
+    const key = `${source.id}:${url}`;
+    if (pages.has(key)) return pages.get(key);
+    const task = rawFetcher(url,source).catch(error=>{pages.delete(key);throw error;});
+    pages.set(key,task);
+    while (pages.size>16) pages.delete(pages.keys().next().value);
+    return task;
+  };
+  // Sites run independently; each host has at most two in-flight requests.
+  const initial = Promise.all(config.sources.map(async source => {
     const eventUrls = [...(source.eventUrls ?? []), ...officialHints.filter(hint => source.allowedHosts.includes(new URL(hint.url).hostname)).map(hint => hint.url)];
     const result = await collectSource({ ...source, eventUrls }, config, fetcher, signal);
-    onSource?.(result);
+    onSource?.(announcementsPromise && result.status === 'ok' ? {...result,status:'pending'} : result);
     return result;
+  }));
+  if (!announcementsPromise) return initial;
+  const [results, freshAnnouncements] = await Promise.all([initial, announcementsPromise]);
+  if (signal?.aborted) throw new Error('取得を中断しました');
+  const freshHints = officialArtistHints(freshAnnouncements, config);
+  return Promise.all(results.map(async (result, index) => {
+    const source = config.sources[index];
+    const missing = [...new Set(freshHints.filter(hint => source.allowedHosts.includes(new URL(hint.url).hostname)).map(hint => hint.url))];
+    const supplement = missing.length ? await collectSource({...source, listingUrls:[], eventUrls:missing}, {...config, officialHints:freshHints}, fetcher, signal) : null;
+    const merged = new Map();
+    const reparsed = new Set((supplement?.events ?? []).flatMap(event=>event.sourceUrls));
+    for (const event of [...result.events.filter(event=>!event.sourceUrls.some(url=>reparsed.has(url))), ...(supplement?.events ?? [])]) {
+      const previous = merged.get(event.id);
+      const hinted = freshHints.filter(hint => hint.date === event.date && event.sourceUrls.includes(hint.url)).flatMap(hint=>hint.artists);
+      const artists = [...new Map([...(previous?.artists ?? []), ...(event.artists ?? []), ...hinted].map(artist=>[artist.id,artist])).values()];
+      merged.set(event.id, {...event, artists, offers:[...(previous?.offers ?? []), ...event.offers], sourceUrls:[...new Set([...(previous?.sourceUrls ?? []), ...event.sourceUrls])]});
+    }
+    const events = [...merged.values()];
+    const combined = {...result, events, found:events.length, ...(supplement ? {checkedAt:supplement.checkedAt,status:result.status==='error'||supplement.status==='error'?'error':'ok',errors:[...new Set([...result.errors,...supplement.errors])]} : {})};
+    onSource?.(combined);
+    return combined;
   }));
 }

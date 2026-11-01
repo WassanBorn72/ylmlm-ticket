@@ -29,14 +29,18 @@ export function saleReminders(events, favoriteIds, favoriteChanges = {}, now = n
   }).sort((a,b)=>a.date.localeCompare(b.date)||a.id.localeCompare(b.id));
 }
 
-export async function reconcileReminders(api, desired, isCurrent = () => true) {
+export async function reconcileReminders(api, desired, isCurrent = () => true, preserveEventIds = []) {
   const managed = request => request.content.data?.kind === REMINDER_KIND;
   const existing = (await api.list()).filter(managed);
   const present = new Map(existing.map(request=>[request.identifier,request]));
-  const targets = new Map(desired.filter(item=>!item.stale||present.has(item.id)).slice(0,REMINDER_LIMIT).map(item=>[item.id,item]));
+  const candidates = desired.filter(item=>!item.stale||present.has(item.id));
+  const candidateIds = new Set(candidates.map(item=>item.id));
+  const preserved = new Set(existing.filter(request=>preserveEventIds.includes(request.content.data?.eventId)&&!candidateIds.has(request.identifier)).map(request=>request.identifier));
+  const targets = new Map(candidates.slice(0,Math.max(0,REMINDER_LIMIT-preserved.size)).map(item=>[item.id,item]));
   for (const request of existing) {
     if (!isCurrent()) return [];
     const target = targets.get(request.identifier);
+    if (!target && preserved.has(request.identifier)) continue;
     if (!target || !target.stale && request.content.data?.signature !== target.signature) {
       await api.cancel(request.identifier);present.delete(request.identifier);
     }
