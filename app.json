@@ -16,14 +16,15 @@
     },
     "android": {
       "package": "jp.ylmlm.unofficial.ticket",
-      "permissions": [],
+      "permissions": [
+        "android.permission.POST_NOTIFICATIONS"
+      ],
       "versionCode": 19,
       "blockedPermissions": [
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.SYSTEM_ALERT_WINDOW",
         "android.permission.VIBRATE",
-        "android.permission.POST_NOTIFICATIONS",
         "android.permission.READ_CALENDAR",
         "android.permission.WRITE_CALENDAR"
       ]
@@ -40,6 +41,12 @@
         {
           "calendarPermission": "選択した公演をカレンダーに追加するために使用します。",
           "remindersPermission": false
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "defaultChannel": "ticket-sales"
         }
       ]
     ]

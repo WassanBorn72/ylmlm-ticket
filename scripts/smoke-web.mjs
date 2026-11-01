@@ -245,6 +245,8 @@ try {
   await expectCards(3);
   await page.getByText('一部は前回取得の情報です · 取得状況を確認').waitFor();
   await page.getByRole('tab', { name: '設定', exact: true }).click();
+  assert.equal(await page.getByRole('switch', {name:'お気に入りの発売開始リマインダー',exact:true}).isDisabled(), true);
+  await page.getByText('通知はAndroid・iPhoneアプリで利用できます。ブラウザー版は対象外です。',{exact:true}).waitFor();
   const appVersion = JSON.parse(readFileSync(new URL('../app.json', import.meta.url), 'utf8')).expo.version;
   await page.getByText(`バージョン ${appVersion}`, { exact: true }).waitFor();
   await page.getByText('取得先の応答: HTTP 403', { exact: true }).waitFor();

@@ -2,7 +2,7 @@
 
 [利用者向けREADME](../README.md) / [リリース・署名手順](RELEASING.md) / [Android試用版](TRYING.md) / [iPhoneへの個人用インストール](IOS.md)
 
-Expo / React NativeによるiPhone・Androidアプリです。チケット情報は端末から直接取得し、APIサーバー・定期取得ワーカー・バックグラウンド通知は使用しません。ユーザー登録やFirebase、EASプロジェクトIDの設定は不要です。
+Expo / React NativeによるiPhone・Androidアプリです。チケット情報は端末から直接取得し、APIサーバー・定期取得ワーカー・未取得情報のバックグラウンド検出は行いません。発売開始リマインダーのみ端末の予約通知を使用します。ユーザー登録やFirebase、EASプロジェクトIDの設定は不要です。
 
 アプリ名は「モ！のチケット帳（非公式）」です。正式版のAndroid Application IDとiOS Bundle IDは `jp.ylmlm.unofficial.ticket`、試用版は `jp.ylmlm.unofficial.ticket.preview` です。Expo slugとURLスキームは `ylmlm-unofficial-ticket` です。識別子とバージョンの詳細は [配布手順](RELEASING.md#アプリの識別子) を参照してください。
 
@@ -170,3 +170,10 @@ XのプロフィールページはJavaScriptで投稿を読み込むため、今
 - 更新を中止してもスナップショットを削除しない。更新後の詳細はID一致、または同一URL・公演名・日付の一対一照合で維持し、掲載終了や曖昧な一致なら閉じる。
 - `assets/launcher-icon.png` は提供された元PNGをそのまま使用。文字の切り抜きを避けるためAndroidはExpoの通常アイコン生成を使い、独自のadaptiveIcon前景指定をしない。アプリ内の `assets/app-icon.png` は別に保持する。
 - クラウドの依存キャッシュは `/workspace/.cache/ylmlm/npm`、Expo CLIの書込先は `/workspace/.cache/ylmlm/expo` を使う。キャッシュはソース管理に含めない。依存更新はnpm ciで固定ロックを検証し、開発サーバーのキャッシュをむやみに毎回消さない。
+
+
+### 発売開始リマインダー（v0.7.0）
+
+`useSaleReminders.ts` が明示的なオプトイン（`yuruticket-sale-reminders-v1`、既定false）とOS通知を扱う。`reminders.mjs` は未来の既知のsalesStartAtからお気に入りだけを選び、公演IDと開始時刻でグループ化する。重複券種をまとめ、近い順に50件までを扱う。既知の完売・受付終了・在庫なしは対象外。独自data.kindの予約だけを照合し、同一の予約は再作成しない。取得失敗のサイトは既存予約を保持するが、新しい通知は予約しない。解除・オフ・正常取得による日時変更時に不要な予約を削除する。お気に入りIDが変更された場合は既存のfavoriteChangesの引き継ぎを参照する。
+
+expo-notificationsのローカル予約のみで、Expo Push/FCMトークン・EAS資格情報・サーバーは使わない。AndroidはPOST_NOTIFICATIONSを許可し、通知チャンネルを作成後、ユーザー操作時だけ権限要求する。SCHEDULE_EXACT_ALARMは要求せず、OSが正確なアラームを許可していない場合はライブラリの非厳密な予約になる。省電力設定等による遅延を保証しない。iOSも権限を利用時に要求する。通知タップは保存済みデータから該当公演だけを開き、リンクを推測して外部へ遷移しない。実機・OSごとの通知配信・再起動後の挙動は別途確認が必要。

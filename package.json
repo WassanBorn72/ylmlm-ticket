@@ -22,6 +22,7 @@
     "cheerio": "1.2.0",
     "expo": "~55.0.31",
     "expo-calendar": "~55.0.19",
+    "expo-notifications": "~55.0.27",
     "lucide-react-native": "^1.55.0",
     "react": "19.2.0",
     "react-dom": "19.2.0",
