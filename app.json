@@ -36,6 +36,7 @@
     },
     "icon": "./assets/launcher-icon.png",
     "plugins": [
+      "./plugins/with-local-notifications-only",
       [
         "expo-calendar",
         {

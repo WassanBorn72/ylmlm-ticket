@@ -36,6 +36,7 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
+      - run: npm run check:native
       - name: Build with private release key
         env:
           YLMLM_TICKET_ANDROID_KEYSTORE_BASE64: ${{ secrets.YLMLM_TICKET_ANDROID_KEYSTORE_BASE64 }}
