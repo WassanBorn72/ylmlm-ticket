@@ -48,7 +48,7 @@ class TicketWidgetTest {
     assertEquals("公演B",upcomingView.findViewById<TextView>(R.id.ticket_title_1).text.toString())
     assertEquals("OPEN 18:00",upcomingView.findViewById<TextView>(R.id.ticket_time_1).text.toString())
     assertEquals("会場B",upcomingView.findViewById<TextView>(R.id.ticket_meta_1).text.toString())
-    assertEquals("1月",upcomingView.findViewById<TextView>(R.id.ticket_month_0).text.toString())
+    assertTrue(upcomingView.findViewById<TextView>(R.id.ticket_month_0).text.toString().startsWith("1月"))
     assertEquals("11/1取得",upcomingView.findViewById<TextView>(R.id.ticket_widget_updated).text.toString())
   }
   @Test fun largeWidgetShowsMoreEventsAndSmallWidgetShowsOne() {
@@ -142,6 +142,25 @@ class TicketWidgetTest {
     }
     UpcomingShowsWidgetProvider().onAppWidgetOptionsChanged(context,manager,id,options)
     assertEquals(View.GONE,shadow.getViewFor(id).findViewById<View>(R.id.ticket_row_2).visibility)
+  }
+  @Test fun largerSystemFontStillFitsTheAvailableHeight() {
+    RuntimeEnvironment.setFontScale(1.5f)
+    try {
+      save()
+      val manager = AppWidgetManager.getInstance(context)
+      val shadow = shadowOf(manager)
+      val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget)
+      val options = Bundle().apply {
+        putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,300)
+        putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,340)
+      }
+      UpcomingShowsWidgetProvider().onAppWidgetOptionsChanged(context,manager,id,options)
+      val view = shadow.getViewFor(id)
+      val density = context.resources.displayMetrics.density
+      view.measure(View.MeasureSpec.makeMeasureSpec((340*density).toInt(),View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(0,View.MeasureSpec.UNSPECIFIED))
+      assertTrue(view.measuredHeight <= (300*density).toInt())
+      assertEquals(View.VISIBLE,view.findViewById<View>(R.id.ticket_row_0).visibility)
+    } finally { RuntimeEnvironment.setFontScale(1f) }
   }
   @Test fun emptySnapshotOffersAppRefreshInsteadOfFakeEvents() {
     val manager=shadowOf(AppWidgetManager.getInstance(context))

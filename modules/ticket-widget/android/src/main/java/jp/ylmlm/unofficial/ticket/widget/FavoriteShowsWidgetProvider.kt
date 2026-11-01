@@ -104,13 +104,13 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
           val day = try { SimpleDateFormat("yyyy-MM-dd",Locale.JAPAN).apply{timeZone=TimeZone.getTimeZone("Asia/Tokyo");isLenient=false}.parse(event.optString("date")) } catch (_:Exception){null}
           if(day!=null){
             fun label(pattern:String)=SimpleDateFormat(pattern,Locale.JAPAN).apply{timeZone=TimeZone.getTimeZone("Asia/Tokyo")}.format(day)
-            views.setTextViewText(months[index],label("M月"))
+            views.setTextViewText(months[index],label("M月 EEE"))
             views.setTextViewText(days[index],label("d"))
             val weekday=label("EEE")
             views.setTextViewText(weekdays[index],weekday)
-            views.setTextColor(weekdays[index],android.graphics.Color.parseColor(if(weekday=="日") "#B34C58" else if(weekday=="土") "#416EA2" else "#287B59"))
+            views.setTextColor(months[index],android.graphics.Color.parseColor(if(weekday=="日") "#B34C58" else if(weekday=="土") "#416EA2" else "#287B59"))
           }else{views.setTextViewText(months[index],"--月");views.setTextViewText(days[index],"--")}
-          views.setViewVisibility(weekdays[index],View.VISIBLE)
+          views.setViewVisibility(weekdays[index],View.GONE)
           views.setContentDescription(row,event.optString("title") + " " + event.optString("summary"))
           open(context,id,index,"event/"+Uri.encode(event.optString("id")))?.let { views.setOnClickPendingIntent(row,it) }
         }
