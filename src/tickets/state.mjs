@@ -1,3 +1,4 @@
+import { updateFavoriteChanges } from './changes.mjs';
 import { enrichWithOfficialDetails } from './official.mjs';
 export const emptyState = () => ({ version: 1, snapshots: {}, seen: {}, unreadIds: [], lastSyncAt: null });
 
@@ -9,6 +10,7 @@ export function parseState(raw) {
     Object.values(state.snapshots).some(snapshot => !snapshot || !Array.isArray(snapshot.events) || !Array.isArray(snapshot.errors) || snapshot.events.some(event => !event || typeof event.id !== 'string' || typeof event.date !== 'string' || typeof event.title !== 'string' || typeof event.venue !== 'string' || !Array.isArray(event.offers) || !Array.isArray(event.sourceUrls))) ||
     Object.values(state.seen).some(item => !item || typeof item.date !== 'string' || typeof item.firstSeenAt !== 'string')) throw new Error('保存した情報の形式が不正です');
   if (state.official && (!Array.isArray(state.official.announcements) || !Array.isArray(state.official.errors) || state.official.announcements.some(item => !item || typeof item.date !== 'string' || typeof item.title !== 'string' || typeof item.venue !== 'string' || typeof item.text !== 'string' || item.postUrls !== undefined && (!Array.isArray(item.postUrls) || !item.postUrls.every(value => typeof value === 'string')) || !['ticketUrls', 'performance', 'meetAndGreet'].every(field => Array.isArray(item[field]) && item[field].every(value => typeof value === 'string'))))) delete state.official;
+  if (state.favoriteChanges && (typeof state.favoriteChanges !== 'object' || Object.values(state.favoriteChanges).some(change => !change || typeof change.favoriteId !== 'string' || !Array.isArray(change.fields) || change.fields.some(field => !field || ![field.key, field.label, field.before, field.after].every(value => typeof value === 'string'))))) delete state.favoriteChanges;
   return state;
 }
 
@@ -32,7 +34,7 @@ export function mergeEvents(events) {
 
 // Successful snapshots replace listings. A failed source keeps its previous
 // snapshot; partial results replace only pages actually read and add new pages.
-export function applyResults(previous, results, config, now = new Date().toISOString()) {
+export function applyResults(previous, results, config, now = new Date().toISOString(), favoriteIds = []) {
   const next = { ...previous, snapshots: { ...previous.snapshots }, seen: { ...previous.seen }, unreadIds: [...previous.unreadIds], lastSyncAt: now };
   const today = todayInJapan(now);
   const unread = new Set(next.unreadIds);
@@ -61,6 +63,7 @@ export function applyResults(previous, results, config, now = new Date().toISOSt
   next.snapshots = Object.fromEntries(Object.entries(next.snapshots).filter(([id]) => activeSources.has(id)));
   next.seen = Object.fromEntries(Object.entries(next.seen).filter(([, item]) => item.date >= today));
   next.unreadIds = [...unread].filter(id => next.seen[id]);
+  updateFavoriteChanges(previous, next, results, favoriteIds, now);
   return next;
 }
 

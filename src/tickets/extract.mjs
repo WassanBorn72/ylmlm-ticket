@@ -1,3 +1,4 @@
+import { salesDates } from './sales.mjs';
 import { matchingArtists } from './artists.mjs';
 import { load } from 'cheerio/slim';
 import { sha256 } from '@noble/hashes/sha2.js';
@@ -83,6 +84,7 @@ export function normalizeEvents(structuredEvents, pageUrl, source, config) {
         label: offer.name || (offer.lowPrice !== undefined ? '最低価格' : 'チケット'),
         price: amount, currency: offer.priceCurrency || (amount === null ? null : 'JPY'),
         url: ticketUrl(offer.url, pageUrl),
+        ...salesDates(offer),
         availability: offer.availability ? String(offer.availability).split('/').pop() : null,
         ...(offer.note ? { note: String(offer.note) } : {}),
       };

@@ -40,6 +40,7 @@ for (const source of config.sources) {
         '/sf/detail/4586830001-P0030001P021001': 'eplus',
       }[url.pathname];
       html = html && fixture(html);
+      if (phase === 'changed' && source.id === 'ticketdive' && html) html = html.replaceAll('3,500', '3,800');
       if (phase === 'unit' && source.id === 'tiget' && html) html = html.replaceAll('絶対少女物語vol.3', 'トークイベント（ユニット出演）').replaceAll('ゆるめるモ！', 'なにぬねるん / へくしょんめくしょん / ねるんポクぽく / なにQ');
     }
     if (!html) { unexpected.push(url.href); return route.abort(); }
@@ -100,6 +101,11 @@ try {
   await detailSheet.getByRole('link', { name: 'この公演の公式X投稿を開く', exact: true }).click();
   assert.ok((await page.evaluate(() => window.openedMapUrls)).includes('https://x.com/ylmlm_official/status/123456789'));
 
+  await page.getByRole('button', { name: '端末のカレンダーに追加', exact: true }).click();
+  const calendarUrl = (await page.evaluate(() => window.openedMapUrls)).find(url=>url.startsWith('https://calendar.google.com/'));
+  assert.ok(calendarUrl);
+  assert.match(new URL(calendarUrl).searchParams.get('text'), /ハロウィン/);
+  assert.match(new URL(calendarUrl).searchParams.get('details'), /終了時間は未掲載/);
   await page.evaluate(() => { window.openedMapUrls = []; });
   await page.getByRole('button', { name: '閉じる', exact: true }).click();
   await page.getByText('公演・チケット詳細', { exact: true }).waitFor({ state: 'hidden' });
@@ -195,6 +201,15 @@ try {
   await chooseDate('2035-10-20');
   await expectCards(1);
   await page.getByRole('button', { name: '日付の絞り込みを解除', exact: true }).click();
+  phase = 'changed';
+  await refresh();
+  await cards().filter({ hasText: 'ハロウィン' }).first().getByText('お気に入りの公演に変更があります', {exact:true}).waitFor();
+  await cards().filter({ hasText: 'ハロウィン' }).first().click({position:{x:10,y:10}});
+  await page.getByText('お気に入り公演の変更', {exact:true}).waitFor();
+  await page.getByText(/Aチケットの料金：3,500円 → 3,800円/).waitFor();
+  await page.getByRole('button', {name:'公演の変更を確認済みにする',exact:true}).click();
+  await page.getByText('お気に入り公演の変更', {exact:true}).waitFor({state:'hidden'});
+  await page.getByRole('button', {name:'閉じる',exact:true}).click();
   phase = 'addition';
   await refresh();
   await expectCards(4);

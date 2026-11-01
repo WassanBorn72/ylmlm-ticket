@@ -8,6 +8,9 @@ import DateFilter from './src/DateFilter';
 import PerformerFilter from './src/PerformerFilter';
 import config from './src/tickets/sources.json';
 import appConfig from './app.json';
+import * as Calendar from 'expo-calendar';
+import { calendarEvent } from './src/calendarEvent.mjs';
+import { offerStatus, eventSalesStatus } from './src/tickets/sales.mjs';
 import { collectOfficialDetails, applyOfficialResult, officialSource } from './src/tickets/official.mjs';
 import { collectTickets } from './src/tickets/collector.mjs';
 import { applyResults, emptyState, feedFromState, markAllRead, parseState } from './src/tickets/state.mjs';
@@ -34,6 +37,13 @@ function AppContent() {
   const savingRead = useRef(false);
   const favoriteRef = useRef<string[]>([]);
   const favoriteWrites = useRef<Promise<void>>(Promise.resolve());
+  const deviceWrites = useRef<Promise<void>>(Promise.resolve());
+  const saveDeviceState = (next: ReturnType<typeof emptyState>) => {
+    const raw = JSON.stringify(next);
+    const task = deviceWrites.current.catch(() => {}).then(() => AsyncStorage.setItem(storageKey, raw));
+    deviceWrites.current = task;
+    return task;
+  };
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [feed, setFeed] = useState<Feed>(() => feedFromState(deviceState.current, config));
   const [tab, setTab] = useState<Tab>('tickets');
@@ -49,6 +59,7 @@ function AppContent() {
   const [notice, setNotice] = useState('');
   const [selected, setSelected] = useState<TicketEvent | null>(null);
   const [descending, setDescending] = useState(false);
+  const [openingCalendar, setOpeningCalendar] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -81,14 +92,14 @@ function AppContent() {
         onSource: result => { if (!controller.signal.aborted) setProgress(`${result.name}を確認しました`); },
       });
       if (controller.signal.aborted) return;
-      const next = applyResults(deviceState.current, results, config);
+      const next = applyResults(deviceState.current, results, config, new Date().toISOString(), favoriteRef.current);
       next.official = applyOfficialResult(deviceState.current.official, official);
       deviceState.current = next;
       setFeed(feedFromState(next, config));
       setSelected(null);
       const failed = results.filter(result => result.status !== 'ok').map(result => result.name);
       setError(failed.length ? `${failed.join('・')}を取得できませんでした。取得状況から詳細を確認できます。` : '');
-      try { await AsyncStorage.setItem(storageKey, JSON.stringify(next)); }
+      try { await saveDeviceState(next); }
       catch { setNotice('取得情報を端末に保存できませんでした。次回の新着判定が保持されない場合があります。'); }
     } catch (failure) {
       if (!controller.signal.aborted) setError(failure instanceof Error ? failure.message : '接続を確認して再試行してください。');
@@ -112,12 +123,13 @@ function AppContent() {
     return () => { activeRequest.current?.abort(); activeRequest.current = null; subscription.remove(); };
   }, [preferencesReady, refresh]);
 
+  const isFavorite = (event: TicketEvent) => favoriteIds.includes(event.id) || favoriteIds.includes(deviceState.current.favoriteChanges?.[event.id]?.favoriteId ?? '');
   const fresh = useCallback((event: TicketEvent) => !event.isBaseline, []);
   const unread = feed.events.filter(fresh).length;
   const matchingEvents = useMemo(() => feed.events.filter(event => {
     if (performerId && !(event.artists?.length ? event.artists : [{ id: 'group' }]).some(artist => artist.id === performerId)) return false;
     if (tab === 'new' && !fresh(event)) return false;
-    if (tab === 'favorites' && !favoriteIds.includes(event.id)) return false;
+    if (tab === 'favorites' && !isFavorite(event)) return false;
     return `${event.title} ${event.venue} ${event.address} ${(event.artists ?? []).map(artist => [artist.name, artistName(artist), ...(config.targets.find(target => target.id === artist.id)?.aliases ?? [])].join(' ')).join(' ')}`.toLowerCase().includes(query.trim().toLowerCase());
   }), [feed, tab, fresh, query, favoriteIds, performerId]);
   const dates = useMemo(() => [...new Set(matchingEvents.map(event => event.date))].sort(), [matchingEvents]);
@@ -129,7 +141,7 @@ function AppContent() {
     savingRead.current = true;
     const next = markAllRead(deviceState.current);
     try {
-      await AsyncStorage.setItem(storageKey, JSON.stringify(next));
+      await saveDeviceState(next);
       deviceState.current = next; setFeed(feedFromState(next, config));
     } catch { setNotice('既読状態を保存できませんでした。'); }
     finally { savingRead.current = false; }
@@ -158,28 +170,67 @@ function AppContent() {
     if (!preferencesReady) return;
     // Serialize independent favorite writes so rapid taps cannot restore an older selection.
     favoriteWrites.current = favoriteWrites.current.then(async () => {
-      const next = favoriteRef.current.includes(id) ? favoriteRef.current.filter(value => value !== id) : [...favoriteRef.current, id];
+      const previousId = deviceState.current.favoriteChanges?.[id]?.favoriteId;
+      const included = favoriteRef.current.includes(id) || !!previousId && favoriteRef.current.includes(previousId);
+      const next = included ? favoriteRef.current.filter(value => value !== id && value !== previousId) : [...favoriteRef.current, id];
       try {
         await AsyncStorage.setItem(favoritesKey, JSON.stringify(next));
         favoriteRef.current = next; setFavoriteIds(next);
+        const change = deviceState.current.favoriteChanges?.[id];
+        if (included && change) {
+          const updated = {...deviceState.current, favoriteChanges:{...deviceState.current.favoriteChanges, [id]:{...change, fields:[]}}};
+          deviceState.current = updated; setFeed(feedFromState(updated, config));
+          await saveDeviceState(updated);
+        }
       } catch { setNotice('お気に入りを保存できませんでした。もう一度お試しください。'); }
     });
   };
   const favoriteButton = (event: TicketEvent) => <Pressable
     style={s.favoriteButton} disabled={!preferencesReady}
     onPress={press => { press.stopPropagation(); toggleFavorite(event.id); }}
-    accessibilityRole="button" accessibilityLabel={`${event.title}をお気に入り${favoriteIds.includes(event.id) ? 'から解除' : 'に登録'}`}
-    accessibilityState={{ selected: favoriteIds.includes(event.id) }}>
-    <Heart size={21} color={favoriteIds.includes(event.id) ? c.pink : c.muted} fill={favoriteIds.includes(event.id) ? c.pink : 'none'} />
+    accessibilityRole="button" accessibilityLabel={`${event.title}をお気に入り${isFavorite(event) ? 'から解除' : 'に登録'}`}
+    accessibilityState={{ selected: isFavorite(event) }}>
+    <Heart size={21} color={isFavorite(event) ? c.pink : c.muted} fill={isFavorite(event) ? c.pink : 'none'} />
   </Pressable>;
 
+  const addToCalendar = async (event: TicketEvent) => {
+    if (openingCalendar) return;
+    setOpeningCalendar(true);
+    try {
+      const data = calendarEvent(event);
+      if (Platform.OS === 'web') {
+        const stamp = (value: string) => value.replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+        const dates = data.allDay ? `${event.date.replace(/-/g, '')}/${new Date(Date.parse(`${event.date}T00:00:00Z`) + 86400000).toISOString().slice(0,10).replace(/-/g,'')}` : `${stamp(new Date(data.startDate).toISOString())}/${stamp(data.endDate)}`;
+        await Linking.openURL(`https://calendar.google.com/calendar/render?${new URLSearchParams({action:'TEMPLATE', text:data.title, dates, ctz:'Asia/Tokyo', location:data.location, details:data.notes})}`);
+      } else {
+        if (Platform.OS === 'ios' && Number.parseInt(String(Platform.Version), 10) < 17) {
+          const permission = await Calendar.requestCalendarPermissionsAsync();
+          if (!permission.granted) throw new Error('カレンダーへのアクセスが許可されていません');
+        }
+        await Calendar.createEventInCalendarAsync(data);
+      }
+    } catch { setNotice('カレンダーを開けませんでした。端末にカレンダーアプリがあるか確認してください。'); }
+    finally { setOpeningCalendar(false); }
+  };
+  const acknowledgeChanges = async (id: string) => {
+    if (activeRequest.current || savingRead.current) return;
+    const change = deviceState.current.favoriteChanges?.[id];
+    if (!change) return;
+    savingRead.current = true;
+    const next = {...deviceState.current, favoriteChanges:{...deviceState.current.favoriteChanges, [id]:{...change, fields:[]}}};
+    try {
+      await saveDeviceState(next);
+      deviceState.current = next; setFeed(feedFromState(next, config));
+    } catch { setNotice('変更の確認状態を保存できませんでした。'); }
+    finally { savingRead.current = false; }
+  };
   const renderEvent = (event: TicketEvent) => {
     return <Pressable key={event.id} style={({ pressed }) => [s.card, pressed && s.pressed]} onPress={() => setSelected(event)} accessibilityRole="button" accessibilityLabel={`${shortDate(event.date)} ${event.title} ${event.venue} ${priceLabel(event)}。詳細を表示`}>
       <View style={s.cardTop}>
         <View style={s.dateBox}><Text style={s.month}>{Number(event.date.slice(5, 7))}月</Text><Text style={s.day}>{Number(event.date.slice(8, 10))}</Text><Text style={s.weekday}>{shortDate(event.date).match(/\((.+)\)/)?.[1] || shortDate(event.date).slice(-3)}</Text></View>
         <View style={s.cardMain}>
           <View style={s.row}>{fresh(event) && <View style={s.newBadge}><Text style={s.newText}>NEW</Text></View>}<Text style={s.artist}>{event.artists?.filter(artist => artist.kind !== 'group').map(artistName).join(' / ') || config.artist}</Text></View>
-          <Text style={s.eventTitle}>{event.title}</Text>
+          <Text style={s.eventTitle}>{event.title}</Text><Text style={s.smallText}>販売状況：{eventSalesStatus(event)}{event.staleSourceIds?.length ? '（前回取得を含む）' : ''}</Text>{isFavorite(event) && !!deviceState.current.favoriteChanges?.[event.id]?.fields.length && <Text style={s.warningText}>お気に入りの公演に変更があります</Text>}
           <Pressable style={[s.metadata, s.mapLink]} disabled={!mapQuery(event)} onPress={press => { press.stopPropagation(); void openMap(event); }} accessibilityRole="link" accessibilityLabel={`${event.venue}を地図で開く`} accessibilityState={{ disabled: !mapQuery(event) }}><MapPin size={14} color={mapQuery(event) ? c.green : c.muted} /><Text style={[s.metaText, !!mapQuery(event) && s.mapText]}>{event.venue}</Text></Pressable>
         </View>
         {favoriteButton(event)}
@@ -205,7 +256,7 @@ function AppContent() {
         {error !== '' && <View style={s.error}><Text style={s.noticeText}>更新できませんでした。{feed.events.length ? '一部に前回取得の情報が含まれます。' : ''} {error}</Text><Pressable onPress={refresh} accessibilityRole="button" accessibilityLabel="再試行"><RefreshCw size={18} color={c.ink} /></Pressable></View>}
         {tab === 'settings' ? <>
           <Text style={s.pageTitle}>取得状況</Text><Text style={s.subtitle}>開いたときに、最新の掲載情報を確認。</Text>
-          <View style={s.settingsCard}><Text style={s.sectionTitle}>このアプリの更新方法</Text><Text style={s.bodyText}>起動時・バックグラウンドから戻ったとき・手動更新時に、端末からチケットサイトへ接続します。アプリを閉じている間は取得しません。新着は次に開いたときに表示し、プッシュ通知は送りません。</Text><Pressable style={[s.primaryButton, loading && s.disabled]} disabled={loading || !preferencesReady} onPress={() => { void refresh(); }} accessibilityRole="button" accessibilityLabel="今すぐ更新"><Text style={s.primaryText}>{loading ? '確認中…' : '今すぐ更新'}</Text><RefreshCw size={17} color="white" /></Pressable><Text style={s.smallText}>前回取得の公演ID・既読状態・お気に入りは、この端末だけに保存します。端末間の同期はありません。</Text></View>
+          <View style={s.settingsCard}><Text style={s.sectionTitle}>このアプリの更新方法</Text><Text style={s.bodyText}>起動時・バックグラウンドから戻ったとき・手動更新時に、端末からチケットサイトへ接続します。アプリを閉じている間は取得しません。新着は次に開いたときに表示し、プッシュ通知は送りません。</Text><Pressable style={[s.primaryButton, loading && s.disabled]} disabled={loading || !preferencesReady} onPress={() => { void refresh(); }} accessibilityRole="button" accessibilityLabel="今すぐ更新"><Text style={s.primaryText}>{loading ? '確認中…' : '今すぐ更新'}</Text><RefreshCw size={17} color="white" /></Pressable><Text style={s.smallText}>お気に入りの料金・開場／開演時間・販売状況・受付期間が変わると、次回取得時に「変更」を表示します。取得できない情報や、別公演と区別できない変更は判定しません。アプリを閉じている間の通知はありません。前回取得の公演ID・既読状態・お気に入りは、この端末だけに保存します。端末間の同期はありません。</Text></View>
           <View style={s.settingsCard}><Text style={s.sectionTitle}>情報の取得状況</Text><Text style={s.bodyText}>取得エラーがある場合、最新のチケットが反映されていないことがあります。</Text>{Platform.OS === 'web' && <Text style={s.smallText}>ブラウザー版では一部のサイトに直接接続できません。スマホアプリでの接続をご確認ください。</Text>}{[...sites, officialSource.name].map(name => {
             const status = name === officialSource.name ? { ...deviceState.current.official, found: deviceState.current.official?.announcements.length } : feed.sources.find(source => source.name === name);
             return <View key={name} style={s.sourceStatus}><View style={s.between}><Text style={s.sourceName}>{name}</Text><Text style={[s.statusText, status?.status === 'ok' && { color: c.green }]}>{status?.status === 'ok' ? `確認済み・${status.found ?? 0} 件` : status?.status === 'error' ? '取得エラー' : status?.status === 'pending' ? '確認中' : '未設定'}</Text></View>{status?.errors?.map((message, index) => <Text key={index} style={s.smallText}>{message}</Text>)}{status?.lastSuccessAt && <Text style={s.smallText}>前回成功: {new Date(status.lastSuccessAt).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}</Text>}</View>;
@@ -233,7 +284,9 @@ function AppContent() {
     <PerformerFilter visible={performerOpen} selectedId={performerId} onSelect={setPerformerId} onClose={() => setPerformerOpen(false)} />
     <DateFilter visible={calendarOpen} dates={dates} selectedDate={selectedDate} onSelect={setSelectedDate} onClose={() => setCalendarOpen(false)} />
     <Modal visible={selected !== null} transparent animationType="slide" onRequestClose={() => setSelected(null)}>
-      <View style={s.modalBackdrop}><Pressable style={StyleSheet.absoluteFillObject} onPress={() => setSelected(null)} accessibilityLabel="詳細を閉じる" accessibilityRole="button" /><SafeAreaView edges={['bottom']} style={s.modalSheet}><View style={s.sheetHandle} /><View style={s.between}><Text style={s.sectionTitle}>公演・チケット詳細</Text><Pressable onPress={() => setSelected(null)} style={s.closeButton} accessibilityRole="button" accessibilityLabel="閉じる"><X size={22} color={c.ink} /></Pressable></View>{selected && <ScrollView><View style={s.between}><Text style={s.detailDate}>{shortDate(selected.date)}</Text>{favoriteButton(selected)}</View><Text style={s.detailTitle}>{selected.title}</Text>{selected.artists?.some(artist => artist.kind !== 'group') && <Text style={s.smallText}>対象の出演者：{selected.artists.filter(artist => artist.kind !== 'group').map(artistName).join(' / ')}</Text>}<Pressable style={[s.detailFact, s.mapLink]} disabled={!mapQuery(selected)} onPress={() => { void openMap(selected); }} accessibilityRole="link" accessibilityLabel={`${selected.venue}を地図で開く`} accessibilityState={{ disabled: !mapQuery(selected) }}><MapPin size={18} color={c.green} /><View style={{ flex: 1 }}><Text style={[s.sourceName, !!mapQuery(selected) && s.mapText]}>{selected.venue}</Text><Text style={s.smallText}>{selected.address || '住所未掲載'}{mapQuery(selected) ? ' · 地図で開く' : ''}</Text></View><ArrowUpRight size={18} color={c.green} /></Pressable><View style={s.detailFact}><Clock3 size={18} color={c.green} /><Text style={s.bodyText}>開場 {time(selected.doorsAt)}　開演 {time(selected.startAt)}</Text></View><Text style={s.detailHeading}>購入先を選ぶ</Text>{selected.offers.map((offer, index) => <Pressable key={`${offer.sourceId}-${index}`} disabled={!offer.url} onPress={() => { void openTicket(offer.url); }} style={[s.offer, !offer.url && s.sampleOffer]} accessibilityRole="link" accessibilityState={{ disabled: !offer.url }}><View style={{ flex: 1 }}><Text style={s.sourceName}>{offer.sourceName}</Text><Text style={s.smallText}>{offer.label}{selected.staleSourceIds?.includes(offer.sourceId) ? ' · 前回取得' : ''}{offer.availability === 'SoldOut' ? ' · 完売' : offer.availability === 'PreOrder' ? ' · 予約販売' : ''}</Text>{offer.note && <Text style={s.smallText}>{offer.note}</Text>}</View><Text style={s.offerPrice}>{money(offer.price, offer.currency)}</Text>{offer.url ? <ArrowUpRight size={19} color={c.green} /> : <Text style={s.smallText}>サンプル</Text>}</Pressable>)}{selected.notes?.map((note, index) => <View key={index} style={s.detailNotice}><Text style={s.warningText}>{note.text}</Text></View>)}{selected.officialDetails && <View><Text style={s.detailHeading}>公式告知の詳細</Text>{selected.officialDetails.stale && <Text style={s.warningText}>前回取得の公式情報です。最新の告知をご確認ください。</Text>}<Text style={s.bodyText}>出演時間：{selected.officialDetails.performance.join(' / ') || '未掲載'}</Text><Text style={s.bodyText}>特典会時間：{selected.officialDetails.meetAndGreet.join(' / ') || '未掲載'}</Text>{selected.officialDetails.supplements.length > 0 && <View><Text style={s.sourceName}>その他補足</Text>{selected.officialDetails.supplements.map((text, index) => <Text key={index} style={s.bodyText}>・{text}</Text>)}</View>}<Text style={s.smallText}>公式情報確認：{new Date(selected.officialDetails.checkedAt).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}</Text></View>}{!!selected.officialDetails?.postUrls?.length && <View><Text style={s.detailHeading}>この公演の公式X投稿</Text>{selected.officialDetails?.postUrls?.map(url => <Pressable key={url} onPress={() => { void openTicket(url); }} accessibilityRole="link" accessibilityLabel="この公演の公式X投稿を開く"><Text style={[s.bodyText, s.mapText]}>この公演の公式X投稿 ↗</Text></Pressable>)}</View>}<Text style={s.footerNote}>掲載料金と別に手数料・ドリンク代等がかかる場合があります。販売中かどうか、最新の価格・日時は購入先をご確認ください。</Text><Text style={s.smallText}>情報確認: {new Date(selected.updatedAt).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}</Text><View style={{ height: 24 }} /></ScrollView>}</SafeAreaView></View>
+      <View style={s.modalBackdrop}><Pressable style={StyleSheet.absoluteFillObject} onPress={() => setSelected(null)} accessibilityLabel="詳細を閉じる" accessibilityRole="button" /><SafeAreaView edges={['bottom']} style={s.modalSheet}><View style={s.sheetHandle} /><View style={s.between}><Text style={s.sectionTitle}>公演・チケット詳細</Text><Pressable onPress={() => setSelected(null)} style={s.closeButton} accessibilityRole="button" accessibilityLabel="閉じる"><X size={22} color={c.ink} /></Pressable></View>{selected && <ScrollView><View style={s.between}><Text style={s.detailDate}>{shortDate(selected.date)}</Text>{favoriteButton(selected)}</View><Text style={s.detailTitle}>{selected.title}</Text>{selected.artists?.some(artist => artist.kind !== 'group') && <Text style={s.smallText}>対象の出演者：{selected.artists.filter(artist => artist.kind !== 'group').map(artistName).join(' / ')}</Text>}<Pressable style={[s.detailFact, s.mapLink]} disabled={!mapQuery(selected)} onPress={() => { void openMap(selected); }} accessibilityRole="link" accessibilityLabel={`${selected.venue}を地図で開く`} accessibilityState={{ disabled: !mapQuery(selected) }}><MapPin size={18} color={c.green} /><View style={{ flex: 1 }}><Text style={[s.sourceName, !!mapQuery(selected) && s.mapText]}>{selected.venue}</Text><Text style={s.smallText}>{selected.address || '住所未掲載'}{mapQuery(selected) ? ' · 地図で開く' : ''}</Text></View><ArrowUpRight size={18} color={c.green} /></Pressable><View style={s.detailFact}><Clock3 size={18} color={c.green} /><Text style={s.bodyText}>開場 {time(selected.doorsAt)}　開演 {time(selected.startAt)}</Text></View><Text style={s.detailHeading}>購入先を選ぶ</Text>{selected.offers.map((offer, index) => <Pressable key={`${offer.sourceId}-${index}`} disabled={!offer.url} onPress={() => { void openTicket(offer.url); }} style={[s.offer, !offer.url && s.sampleOffer]} accessibilityRole="link" accessibilityState={{ disabled: !offer.url }}><View style={{ flex: 1 }}><Text style={s.sourceName}>{offer.sourceName}</Text><Text style={s.smallText}>{offer.label}{selected.staleSourceIds?.includes(offer.sourceId) ? ' · 前回取得' : ''}</Text><Text style={s.smallText}>販売状況：{offerStatus(offer)}</Text>{(offer.salesStartAt || offer.salesEndAt) && <Text style={s.smallText}>受付期間：{offer.salesStartAt ? new Date(offer.salesStartAt).toLocaleString('ja-JP', {timeZone:'Asia/Tokyo'}) : '開始未掲載'} 〜 {offer.salesEndAt ? new Date(offer.salesEndAt).toLocaleString('ja-JP', {timeZone:'Asia/Tokyo'}) : '終了未掲載'}</Text>}{offer.note && <Text style={s.smallText}>{offer.note}</Text>}</View><Text style={s.offerPrice}>{money(offer.price, offer.currency)}</Text>{offer.url ? <ArrowUpRight size={19} color={c.green} /> : <Text style={s.smallText}>サンプル</Text>}</Pressable>)}<Pressable style={s.readButton} disabled={openingCalendar} onPress={() => { void addToCalendar(selected); }} accessibilityRole="button" accessibilityLabel="端末のカレンダーに追加"><CalendarDays size={18} color={c.green} /><Text style={s.readText}>カレンダーに追加</Text></Pressable><Text style={s.smallText}>{selected.startAt ? '終了時刻は仮に開演から1時間で設定します。保存前に編集してください。' : '開演時刻が未掲載のため終日の予定として開きます。'} 保存はカレンダーの編集画面で行います。</Text>
+      {isFavorite(selected) && !!deviceState.current.favoriteChanges?.[selected.id]?.fields.length && <View style={s.detailNotice}><Text style={s.sectionTitle}>お気に入り公演の変更</Text>{deviceState.current.favoriteChanges[selected.id].fields.map(field => <Text key={field.key} style={s.bodyText}>{field.label}：{field.before} → {field.after}</Text>)}<Text style={s.smallText}>検出：{new Date(deviceState.current.favoriteChanges[selected.id].detectedAt).toLocaleString('ja-JP', {timeZone:'Asia/Tokyo'})}。取得時点の情報です。最新の内容は購入先で確認してください。</Text><Pressable disabled={loading} onPress={() => { void acknowledgeChanges(selected.id); }} style={s.readButton} accessibilityRole="button" accessibilityLabel="公演の変更を確認済みにする"><Text style={s.readText}>変更を確認しました</Text></Pressable></View>}
+      {selected.notes?.map((note, index) => <View key={index} style={s.detailNotice}><Text style={s.warningText}>{note.text}</Text></View>)}{selected.officialDetails && <View><Text style={s.detailHeading}>公式告知の詳細</Text>{selected.officialDetails.stale && <Text style={s.warningText}>前回取得の公式情報です。最新の告知をご確認ください。</Text>}<Text style={s.bodyText}>出演時間：{selected.officialDetails.performance.join(' / ') || '未掲載'}</Text><Text style={s.bodyText}>特典会時間：{selected.officialDetails.meetAndGreet.join(' / ') || '未掲載'}</Text>{selected.officialDetails.supplements.length > 0 && <View><Text style={s.sourceName}>その他補足</Text>{selected.officialDetails.supplements.map((text, index) => <Text key={index} style={s.bodyText}>・{text}</Text>)}</View>}<Text style={s.smallText}>公式情報確認：{new Date(selected.officialDetails.checkedAt).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}</Text></View>}{!!selected.officialDetails?.postUrls?.length && <View><Text style={s.detailHeading}>この公演の公式X投稿</Text>{selected.officialDetails?.postUrls?.map(url => <Pressable key={url} onPress={() => { void openTicket(url); }} accessibilityRole="link" accessibilityLabel="この公演の公式X投稿を開く"><Text style={[s.bodyText, s.mapText]}>この公演の公式X投稿 ↗</Text></Pressable>)}</View>}<Text style={s.footerNote}>掲載料金と別に手数料・ドリンク代等がかかる場合があります。販売中かどうか、最新の価格・日時は購入先をご確認ください。</Text><Text style={s.smallText}>情報確認: {new Date(selected.updatedAt).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}</Text><View style={{ height: 24 }} /></ScrollView>}</SafeAreaView></View>
     </Modal>
   </SafeAreaView>;
 }

@@ -1,3 +1,4 @@
+import { parseAvailability, parseSalesPeriod } from './sales.mjs';
 import { matchingArtists } from './artists.mjs';
 import { load } from 'cheerio/slim';
 import { extractEvents, normalizeEvents, normalize } from './extract.mjs';
@@ -47,7 +48,7 @@ function tiget($, pageUrl, source, config) {
       const line = text($(p).text());
       const kind = line.match(/^(前売券|当日券)\s*[:：]/)?.[1];
       if (!kind) return;
-      groups.get(key).offers.push({ name: `${label} / ${kind}`, price: price(line), priceCurrency: 'JPY', url: pageUrl, note: text($(p).find('span').text()) || undefined });
+      groups.get(key).offers.push({ name: `${label} / ${kind}`, ...parseSalesPeriod(node.text()), availability: parseAvailability(node.find('button, [class*=status]').text()), price: price(line), priceCurrency: 'JPY', url: pageUrl, note: text($(p).find('span').text()) || undefined });
     });
   });
   if (!groups.size) throw new Error('TIGET の券種・開場／開演欄を読み取れません');
@@ -83,7 +84,7 @@ function ticketdive($, pageUrl, source, config) {
     const label = text(row.children('span').first().text());
     const amount = price(row.children('span').last().text());
     if (!label || amount === null) throw new Error('TicketDive の券種または料金を読み取れません');
-    offers.push({ name: label, price: amount, priceCurrency: 'JPY', url: pageUrl, note: text(card.children('span').text()) || undefined });
+    offers.push({ name: label, ...parseSalesPeriod(card.text()), availability: parseAvailability(card.find('button, [class*=status], [class*=Status]').text()), price: amount, priceCurrency: 'JPY', url: pageUrl, note: text(card.children('span').text()) || undefined });
   });
   if (!offers.length) notes.push('券種の料金が HTML に見つかりません。購入先で確認してください。');
   return normalizeEvents([{ name: title, startDate: instant(day, start), doorTime: doors, location: { name: detailedVenue || fields.get('会場') }, performer: { name: fields.get('出演') }, offers, notes }], pageUrl, source, config);
@@ -107,7 +108,7 @@ function livepocket($, pageUrl, source, config) {
     const amount = price(card.find('.event-detail-ticket-card__price').text());
     const status = text(card.find('.event-detail-ticket-card__status').text());
     if (!label || amount === null) throw new Error('LivePocket の券種または料金を読み取れません');
-    offers.push({ name: label, price: amount, priceCurrency: 'JPY', url: pageUrl, availability: /売切|完売|販売終了/.test(status) ? 'SoldOut' : /販売前/.test(status) ? 'PreOrder' : /販売中/.test(status) ? 'InStock' : null });
+    offers.push({ name: label, price: amount, priceCurrency: 'JPY', url: pageUrl, ...parseSalesPeriod(card.closest('.event-detail-ticket__item').text()), availability: parseAvailability(status) });
   });
   return normalizeEvents([{ name: title, startDate: instant(day, clock(timing, '開演')), doorTime: clock(timing, '開場'), location: { name: venue, address }, performer: { name: performers }, offers }], pageUrl, source, config);
 }

@@ -1,7 +1,7 @@
 export type Offer = {
   sourceId: string; sourceName: string; label: string;
   price: number | null; currency: string | null; url: string | null; availability: string | null;
-  note?: string;
+  note?: string; salesStartAt?: string | null; salesEndAt?: string | null;
 };
 export type OfficialDetails = {
   performance: string[]; meetAndGreet: string[]; supplements: string[];

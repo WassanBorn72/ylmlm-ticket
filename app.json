@@ -9,7 +9,10 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "jp.ylmlm.unofficial.ticket",
-      "buildNumber": "18"
+      "buildNumber": "18",
+      "infoPlist": {
+        "NSCalendarsUsageDescription": "選択した公演をカレンダーに追加するために使用します。"
+      }
     },
     "android": {
       "package": "jp.ylmlm.unofficial.ticket",
@@ -20,7 +23,9 @@
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.SYSTEM_ALERT_WINDOW",
         "android.permission.VIBRATE",
-        "android.permission.POST_NOTIFICATIONS"
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.READ_CALENDAR",
+        "android.permission.WRITE_CALENDAR"
       ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/launcher-icon.png",
@@ -32,6 +37,15 @@
       "bundler": "metro",
       "favicon": "./assets/launcher-icon.png"
     },
-    "icon": "./assets/launcher-icon.png"
+    "icon": "./assets/launcher-icon.png",
+    "plugins": [
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "選択した公演をカレンダーに追加するために使用します。",
+          "remindersPermission": false
+        }
+      ]
+    ]
   }
 }
