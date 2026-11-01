@@ -54,3 +54,18 @@ test('カレンダーにはJST・会場・購入先を渡し、終了未定と�
  const timed=calendarEvent(event());assert.equal(timed.allDay,false);assert.equal(timed.endDate,'2030-02-01T10:00:00.000Z');assert.ok(timed.notes.includes('仮に'));assert.ok(timed.notes.includes('https://example.com/1'));
  const allDay=calendarEvent(event({startAt:null}));assert.equal(allDay.allDay,true);assert.equal(allDay.startDate,'2030-02-01T00:00:00+09:00');assert.equal(allDay.timeZone,'Asia/Tokyo');
 });
+
+test('カレンダーのメモに取得済みの出演・特典会時間と補足を載せ、未掲載項目は省く',()=>{
+ const e=event({officialDetails:{performance:['19:00〜19:30'],meetAndGreet:['19:40〜20:40'],supplements:['再入場不可','再入場不可'],checkedAt:'2030-01-01T00:00:00Z',stale:true},notes:[{sourceId:'a',text:'A：別途ドリンク代'}]});
+ const data=calendarEvent(e);
+ assert.match(data.notes,/【出演時間】\n19:00〜19:30/);
+ assert.match(data.notes,/【特典会時間】\n19:40〜20:40/);
+ assert.equal(data.notes.match(/再入場不可/g).length,1);
+ assert.match(data.notes,/A：別途ドリンク代/);
+ assert.match(data.notes,/前回取得/);
+ assert.match(data.notes,/公式情報の確認日時/);
+ assert.match(data.notes,/【購入先】\nhttps:\/\/example.com\/1/);
+ assert.equal(data.startDate,e.startAt);
+ const empty=calendarEvent(event({officialDetails:{performance:[],meetAndGreet:[],supplements:[],stale:false}}));
+ assert.doesNotMatch(empty.notes,/【出演時間】|【特典会時間】|【補足】|undefined|Invalid Date/);
+});
