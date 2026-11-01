@@ -13,4 +13,4 @@ dependencies {
   testImplementation 'junit:junit:4.13.2'
   testImplementation 'org.robolectric:robolectric:4.14.1'
 }
-tasks.withType(Test).configureEach { maxHeapSize = '1g'; maxParallelForks = 1 }
+tasks.withType(Test).configureEach { maxHeapSize = '1g'; maxParallelForks = 1; systemProperty 'widget.preview.output', layout.buildDirectory.dir('widget-previews').get().asFile.absolutePath }
