@@ -1,0 +1,4 @@
+<resources>
+  <string name="ticket_widget_favorites_description">掲載中のお気に入り公演を最大3件表示。取得情報はアプリを開いて更新します。</string>
+  <string name="ticket_widget_upcoming_description">直近の公演を最大3件表示。取得情報はアプリを開いて更新します。</string>
+</resources>

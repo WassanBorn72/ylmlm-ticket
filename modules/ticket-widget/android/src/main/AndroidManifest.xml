@@ -1,0 +1,12 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <application>
+    <receiver android:name="jp.ylmlm.unofficial.ticket.widget.FavoriteShowsWidgetProvider" android:label="モ！のチケット帳：お気に入り" android:exported="false">
+      <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE"/><action android:name="android.intent.action.DATE_CHANGED"/><action android:name="android.intent.action.TIMEZONE_CHANGED"/></intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/ticket_favorites_widget"/>
+    </receiver>
+    <receiver android:name="jp.ylmlm.unofficial.ticket.widget.UpcomingShowsWidgetProvider" android:label="モ！のチケット帳：直近の公演" android:exported="false">
+      <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE"/><action android:name="android.intent.action.DATE_CHANGED"/><action android:name="android.intent.action.TIMEZONE_CHANGED"/></intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/ticket_upcoming_widget"/>
+    </receiver>
+  </application>
+</manifest>
