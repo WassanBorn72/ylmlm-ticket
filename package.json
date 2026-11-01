@@ -1,6 +1,6 @@
 {
   "name": "ylmlm-ticket",
-  "version": "0.6.3",
+  "version": "0.7.0",
   "private": true,
   "main": "index.ts",
   "scripts": {
@@ -35,5 +35,8 @@
     "@types/react": "~19.2.0",
     "playwright": "^1.64.0",
     "typescript": "~5.9.2"
+  },
+  "engines": {
+    "node": ">=24"
   }
 }

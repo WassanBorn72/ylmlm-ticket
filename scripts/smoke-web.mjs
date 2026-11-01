@@ -50,6 +50,7 @@ for (const source of config.sources) {
 await page.route('https://ylmlm.jp/**', async route => {
   requests++;
   if (phase === 'offline') return route.abort('internetdisconnected');
+  if (phase === 'paused') await new Promise(resolve=>setTimeout(resolve,4000));
   await route.fulfill({ status: 200, headers, body: fixture('official-calendar').replace('t-dv.com/youllhalloween', 't-dv.com/youllhalloween<a href="https://x.com/ylmlm_official/status/123456789">公式投稿（テスト用）</a>') });
 });
 const cards = () => page.getByRole('button', { name: /詳細を表示$/ });
@@ -258,6 +259,7 @@ try {
   assert.equal(await page.getByText('一部は前回取得の情報です · 取得状況を確認').count(), 3);
   phase = 'unit';
   await refresh();
+  const beforePerformerFilter = await cards().count();
   await page.getByLabel('公演名・会場で検索').fill('なにぬねるん');
   await expectCards(1);
   await cards().first().click({ position: { x: 10, y: 10 } });
@@ -266,7 +268,6 @@ try {
   await page.getByRole('button', { name: '閉じる', exact: true }).click();
   await page.getByText('公演・チケット詳細', { exact: true }).waitFor({ state: 'hidden' });
   await page.getByLabel('公演名・会場で検索').fill('');
-  const beforePerformerFilter = await cards().count();
   await page.getByRole('button', { name: '出演者で絞り込む', exact: true }).click();
   await page.getByRole('button', { name: 'なにぬねるん？で絞り込む', exact: true }).click();
   await expectCards(1);
@@ -275,6 +276,14 @@ try {
   await expectCards(0);
   await page.getByRole('button', { name: '出演者の絞り込みを解除', exact: true }).click();
   await expectCards(beforePerformerFilter);
+  phase = 'paused';
+  const beforeCancel = await cards().count();
+  await page.getByRole('button', {name:'チケット情報を更新',exact:true}).click();
+  await page.getByRole('button', {name:'チケット情報の更新を中止',exact:true}).click();
+  await waitIdle();
+  await expectCards(beforeCancel);
+  // Wait for the intercepted delayed response to settle before the clock check.
+  await page.waitForTimeout(4100);
   // No timed polling while the screen stays open.
   await page.clock.install();
   const before = requests;

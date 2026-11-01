@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, AppState, Image, Linking, Modal, Platform, Pressable, RefreshControl, ScrollView, StatusBar, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -16,6 +16,7 @@ import { collectTickets } from './src/tickets/collector.mjs';
 import { applyResults, emptyState, feedFromState, markAllRead, parseState } from './src/tickets/state.mjs';
 
 const artistName = (artist: { id: string; name: string }) => config.targets.find(target => target.id === artist.id)?.name || artist.name;
+const searchKey = (value: string) => value.normalize('NFKC').toLowerCase().replace(/\s+/g, '');
 const sites = config.sources.map(source => source.name);
 const siteColors: Record<string, string> = { TicketDive: '#eaf8f1', LivePocket: '#fff3da', TIGET: '#eeeafd', 'イープラス': '#ffecec' };
 type Tab = 'tickets' | 'new' | 'favorites' | 'settings';
@@ -48,6 +49,7 @@ function AppContent() {
   const [feed, setFeed] = useState<Feed>(() => feedFromState(deviceState.current, config));
   const [tab, setTab] = useState<Tab>('tickets');
   const [query, setQuery] = useState('');
+  const deferredQuery = useDeferredValue(query);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [performerOpen, setPerformerOpen] = useState(false);
   const [performerId, setPerformerId] = useState<string | null>(null);
@@ -95,8 +97,15 @@ function AppContent() {
       const next = applyResults(deviceState.current, results, config, new Date().toISOString(), favoriteRef.current);
       next.official = applyOfficialResult(deviceState.current.official, official);
       deviceState.current = next;
-      setFeed(feedFromState(next, config));
-      setSelected(null);
+      const nextFeed = feedFromState(next, config);
+      setFeed(nextFeed);
+      setSelected(current => {
+        if (!current) return null;
+        const sameId = nextFeed.events.find(event => event.id === current.id);
+        if (sameId) return sameId;
+        const matches = nextFeed.events.filter(event => event.date === current.date && event.title === current.title && event.sourceUrls.some(url => current.sourceUrls.includes(url)));
+        return matches.length === 1 ? matches[0] : null;
+      });
       const failed = results.filter(result => result.status !== 'ok').map(result => result.name);
       setError(failed.length ? `${failed.join('・')}を取得できませんでした。取得状況から詳細を確認できます。` : '');
       try { await saveDeviceState(next); }
@@ -126,12 +135,16 @@ function AppContent() {
   const isFavorite = (event: TicketEvent) => favoriteIds.includes(event.id) || favoriteIds.includes(deviceState.current.favoriteChanges?.[event.id]?.favoriteId ?? '');
   const fresh = useCallback((event: TicketEvent) => !event.isBaseline, []);
   const unread = feed.events.filter(fresh).length;
-  const matchingEvents = useMemo(() => feed.events.filter(event => {
-    if (performerId && !(event.artists?.length ? event.artists : [{ id: 'group' }]).some(artist => artist.id === performerId)) return false;
-    if (tab === 'new' && !fresh(event)) return false;
-    if (tab === 'favorites' && !isFavorite(event)) return false;
-    return `${event.title} ${event.venue} ${event.address} ${(event.artists ?? []).map(artist => [artist.name, artistName(artist), ...(config.targets.find(target => target.id === artist.id)?.aliases ?? [])].join(' ')).join(' ')}`.toLowerCase().includes(query.trim().toLowerCase());
-  }), [feed, tab, fresh, query, favoriteIds, performerId]);
+  const searchIndex = useMemo(() => new Map(feed.events.map(event => [event.id, searchKey(`${event.title} ${event.venue} ${event.address} ${(event.artists ?? []).map(artist => [artist.name, artistName(artist), ...(config.targets.find(target => target.id === artist.id)?.aliases ?? [])].join(' ')).join(' ')}`)])), [feed.events]);
+  const matchingEvents = useMemo(() => {
+    const needle = searchKey(deferredQuery.trim());
+    return feed.events.filter(event => {
+      if (performerId && !(event.artists?.length ? event.artists : [{ id: 'group' }]).some(artist => artist.id === performerId)) return false;
+      if (tab === 'new' && !fresh(event)) return false;
+      if (tab === 'favorites' && !isFavorite(event)) return false;
+      return searchIndex.get(event.id)?.includes(needle);
+    });
+  }, [feed, tab, fresh, deferredQuery, favoriteIds, performerId, searchIndex]);
   const dates = useMemo(() => [...new Set(matchingEvents.map(event => event.date))].sort(), [matchingEvents]);
   const visible = useMemo(() => matchingEvents.filter(event => selectedDate === null || event.date === selectedDate)
     .sort((a, b) => (a.date.localeCompare(b.date) || (a.startAt ?? '').localeCompare(b.startAt ?? '')) * (descending ? -1 : 1)), [matchingEvents, selectedDate, descending]);
@@ -251,7 +264,7 @@ function AppContent() {
       <View style={s.header}><View style={s.brandRow}><Image source={require('./assets/app-icon.png')} style={s.appIcon} accessibilityIgnoresInvertColors accessible={false} /><View style={{ flex: 1 }}><Text style={s.brand}>モ！のチケット帳</Text><Text style={s.unofficialName}>（非公式）</Text></View></View><View style={s.row}><Pressable disabled={loading || !preferencesReady} onPress={() => { void refresh(); }} style={s.bellButton} accessibilityRole="button" accessibilityLabel="チケット情報を更新"><RefreshCw size={22} color={c.ink} /></Pressable><Pressable onPress={() => { setTab('new'); setSelectedDate(null); setPerformerId(null); setQuery(''); }} style={s.bellButton} accessibilityRole="button" accessibilityLabel={`新着 ${unread} 件`}><Bell size={22} color={c.ink} />{unread > 0 && <View style={s.bellDot} />}</Pressable></View></View>
       <ScrollView style={s.scroll} contentContainerStyle={s.content} refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} tintColor={c.green} />}>
         {tab === 'tickets' && <View style={s.officialLinks}><Pressable style={s.officialLink} onPress={() => { void openTicket('https://ylmlm.jp/'); }} accessibilityRole="link" accessibilityLabel="公式サイトを開く"><Text style={s.officialLinkText}>公式サイト ↗</Text></Pressable><Pressable style={s.officialLink} onPress={() => { void openTicket('https://x.com/ylmlm_official'); }} accessibilityRole="link" accessibilityLabel="公式Xを開く"><Text style={s.officialLinkText}>公式X ↗</Text></Pressable></View>}
-        {loading && <View style={s.notice}><ActivityIndicator color={c.green} /><Text style={s.noticeText}>{progress}{feed.events.length ? ' · 前回の取得内容を表示中' : ''}</Text></View>}
+        {loading && <View style={s.notice}><ActivityIndicator color={c.green} /><Text style={s.noticeText}>{progress}{feed.events.length ? ' · 前回の取得内容を表示中' : ''}</Text><Pressable style={s.clearDateButton} onPress={() => { activeRequest.current?.abort(); }} accessibilityRole="button" accessibilityLabel="チケット情報の更新を中止"><Text style={s.clearDateText}>中止</Text></Pressable></View>}
         {notice !== '' && <View style={s.notice}><Text style={s.noticeText}>{notice}</Text><Pressable onPress={() => setNotice('')} accessibilityRole="button" accessibilityLabel="メッセージを閉じる"><X size={18} color={c.ink} /></Pressable></View>}
         {error !== '' && <View style={s.error}><Text style={s.noticeText}>更新できませんでした。{feed.events.length ? '一部に前回取得の情報が含まれます。' : ''} {error}</Text><Pressable onPress={refresh} accessibilityRole="button" accessibilityLabel="再試行"><RefreshCw size={18} color={c.ink} /></Pressable></View>}
         {tab === 'settings' ? <>
