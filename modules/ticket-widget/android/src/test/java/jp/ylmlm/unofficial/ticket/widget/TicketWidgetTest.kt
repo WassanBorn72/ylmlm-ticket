@@ -27,6 +27,9 @@ class TicketWidgetTest {
       {"id":"a","title":"公演A","date":"2099-01-01","sortTime":"09:00","favorite":true,"summary":"1/1 OPEN 18:00 · 会場A"},
       {"id":"b","title":"公演B","date":"2099-01-02","sortTime":"09:00","favorite":false,"summary":"1/2 OPEN 18:00 · 会場B"},
       {"id":"c","title":"公演C","date":"2099-01-03","sortTime":"09:00","favorite":true,"summary":"1/3 OPEN 18:00 · 会場C"},
+      {"id":"d","title":"公演D","date":"2099-01-04","favorite":false,"summary":"1/4 OPEN 18:00 · 会場D"},
+      {"id":"e","title":"公演E","date":"2099-01-05","favorite":false,"summary":"1/5 OPEN 18:00 · 会場E"},
+      {"id":"f","title":"公演F","date":"2099-01-06","favorite":false,"summary":"1/6 OPEN 18:00 · 会場F"},
       {"id":"past","title":"過去公演","date":"2000-01-01","favorite":true,"summary":"過去"}]}"""
     context.getSharedPreferences("ticket_widget",0).edit().putString("snapshot",snapshot).commit()
   }
@@ -48,7 +51,7 @@ class TicketWidgetTest {
     assertEquals("1月",upcomingView.findViewById<TextView>(R.id.ticket_month_0).text.toString())
     assertEquals("11/1取得",upcomingView.findViewById<TextView>(R.id.ticket_widget_updated).text.toString())
   }
-  @Test fun largeWidgetShowsTwoAndSmallWidgetShowsOne() {
+  @Test fun largeWidgetShowsMoreEventsAndSmallWidgetShowsOne() {
     save()
     val manager=AppWidgetManager.getInstance(context)
     val shadow=shadowOf(manager)
@@ -57,7 +60,7 @@ class TicketWidgetTest {
     manager.updateAppWidgetOptions(id,large)
     UpcomingShowsWidgetProvider().onAppWidgetOptionsChanged(context,manager,id,large)
     assertEquals(View.VISIBLE,shadow.getViewFor(id).findViewById<View>(R.id.ticket_row_1).visibility)
-    assertEquals(View.GONE,shadow.getViewFor(id).findViewById<View>(R.id.ticket_row_2).visibility)
+    assertEquals(View.VISIBLE,shadow.getViewFor(id).findViewById<View>(R.id.ticket_row_2).visibility)
     val small=Bundle().apply{putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,140)}
     manager.updateAppWidgetOptions(id,small)
     UpcomingShowsWidgetProvider().onAppWidgetOptionsChanged(context,manager,id,small)
@@ -70,7 +73,7 @@ class TicketWidgetTest {
     save()
     val manager = AppWidgetManager.getInstance(context)
     val shadow = shadowOf(manager)
-    for (height in listOf(180,300,420)) {
+    for (height in listOf(180,220,300,420,560)) {
       val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget)
       val options = Bundle().apply {
         putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,height)
@@ -89,6 +92,10 @@ class TicketWidgetTest {
       view.findViewById<TextView>(R.id.ticket_title_1).text = "表示例：なにぬねるん？スペシャルライブ"
       view.findViewById<TextView>(R.id.ticket_meta_0).text = "渋谷ライブホール（表示例）"
       view.findViewById<TextView>(R.id.ticket_widget_updated).text = "表示サンプル · 11/1 18:00取得"
+      val rowIds = intArrayOf(R.id.ticket_row_0,R.id.ticket_row_1,R.id.ticket_row_2,R.id.ticket_row_3,R.id.ticket_row_4,R.id.ticket_row_5)
+      val titleIds = intArrayOf(R.id.ticket_title_0,R.id.ticket_title_1,R.id.ticket_title_2,R.id.ticket_title_3,R.id.ticket_title_4,R.id.ticket_title_5)
+      // Run production fitting with the same Japanese font used for these previews.
+      val (count,lines) = FavoriteShowsWidgetProvider.fitLayout(view,rowIds,titleIds,340,height-2,6)
       view.measure(View.MeasureSpec.makeMeasureSpec(340,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(height,View.MeasureSpec.EXACTLY))
       view.layout(0,0,340,height)
       val bitmap = android.graphics.Bitmap.createBitmap(340,height,android.graphics.Bitmap.Config.ARGB_8888)
@@ -98,11 +105,43 @@ class TicketWidgetTest {
       java.io.FileOutputStream(output).use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it) }
       val footer = view.findViewById<View>(R.id.ticket_widget_footer)
       assertTrue("footer ${footer.bottom} must fit at height $height with padding ${view.paddingBottom}",footer.bottom <= height - view.paddingBottom)
-      val rows = listOf(R.id.ticket_row_0,R.id.ticket_row_1,R.id.ticket_row_2).map { view.findViewById<View>(it) }.filter { it.visibility == View.VISIBLE }
-      assertTrue(rows.size <= 2)
+      val rows = rowIds.map { view.findViewById<View>(it) }.filter { it.visibility == View.VISIBLE }
+      assertTrue(rows.size <= 6)
+      if(height >= 300) assertTrue("larger widgets must show at least three events",count >= 3)
+      if(height >= 560) assertEquals(6,count)
       for (row in rows) assertTrue("cards must not overlap footer at height $height",row.bottom <= footer.top)
 
     }
+  }
+  @Test @Config(sdk = [34], qualifiers = "port")
+  fun portraitUsesMaxHeightInsteadOfLandscapeMinHeight() {
+    save()
+    val manager = AppWidgetManager.getInstance(context)
+    val shadow = shadowOf(manager)
+    val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget)
+    val options = Bundle().apply {
+      putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,340)
+      putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH,600)
+      putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,140)
+      putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT,420)
+    }
+    UpcomingShowsWidgetProvider().onAppWidgetOptionsChanged(context,manager,id,options)
+    assertEquals(View.VISIBLE,shadow.getViewFor(id).findViewById<View>(R.id.ticket_row_2).visibility)
+  }
+  @Test @Config(sdk = [34], qualifiers = "land")
+  fun landscapeUsesMinHeightAndDoesNotOverflowPortraitRows() {
+    save()
+    val manager = AppWidgetManager.getInstance(context)
+    val shadow = shadowOf(manager)
+    val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget)
+    val options = Bundle().apply {
+      putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,340)
+      putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH,600)
+      putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,140)
+      putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT,420)
+    }
+    UpcomingShowsWidgetProvider().onAppWidgetOptionsChanged(context,manager,id,options)
+    assertEquals(View.GONE,shadow.getViewFor(id).findViewById<View>(R.id.ticket_row_2).visibility)
   }
   @Test fun emptySnapshotOffersAppRefreshInsteadOfFakeEvents() {
     val manager=shadowOf(AppWidgetManager.getInstance(context))
