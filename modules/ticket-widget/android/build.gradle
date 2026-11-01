@@ -4,7 +4,10 @@ plugins {
 }
 group = 'jp.ylmlm.unofficial.ticket.widget'
 version = '1.0.0'
-android { namespace 'jp.ylmlm.unofficial.ticket.widget' }
+android {
+  namespace 'jp.ylmlm.unofficial.ticket.widget'
+  defaultConfig { versionCode 1; versionName '1.0.0' }
+}
 android { testOptions { unitTests.includeAndroidResources = true } }
 dependencies {
   testImplementation 'junit:junit:4.13.2'
