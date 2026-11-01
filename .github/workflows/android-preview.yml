@@ -41,14 +41,26 @@ jobs:
           config.expo.android.package = 'jp.ylmlm.unofficial.ticket.preview';
           fs.writeFileSync(file, JSON.stringify(config, null, 2) + '\n');
           JS
-      - name: Build an installable trial APK with the Expo debug key
+      - name: Check native widgets and render previews
         env:
           EXPO_NO_TELEMETRY: '1'
         run: |
           set -euo pipefail
           npx expo prebuild --platform android --no-install
           cd android
-          ./gradlew :ticket-widget:testReleaseUnitTest assembleRelease --no-daemon --max-workers 2 -PreactNativeArchitectures=arm64-v8a,armeabi-v7a '-Dorg.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=1g'
+          ./gradlew :ticket-widget:testReleaseUnitTest --no-daemon --max-workers 2 -PreactNativeArchitectures=arm64-v8a,armeabi-v7a '-Dorg.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=1g'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: widget-layout-checks
+          path: |
+            modules/ticket-widget/android/build/widget-previews/
+            modules/ticket-widget/android/build/test-results/testReleaseUnitTest/
+          retention-days: 7
+      - name: Build an installable trial APK with the Expo debug key
+        run: |
+          cd android
+          ./gradlew assembleRelease --no-daemon --max-workers 2 -PreactNativeArchitectures=arm64-v8a,armeabi-v7a '-Dorg.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=1g'
       - name: Verify and package the trial APK
         run: |
           set -euo pipefail
@@ -73,12 +85,4 @@ jobs:
           name: yuru-ticket-android-preview
           path: preview-artifacts/
           if-no-files-found: error
-          retention-days: 7
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: widget-layout-checks
-          path: |
-            modules/ticket-widget/android/build/widget-previews/
-            modules/ticket-widget/android/build/test-results/testReleaseUnitTest/
           retention-days: 7
