@@ -54,9 +54,9 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
       val scale = maxOf(1f, context.resources.configuration.fontScale)
       val compact = height < (330 * scale).toInt()
       val reserve = if(compact) 72 else 96
-      val rowHeight = if(compact) 100 else 120
+      val titleLines = if(height < (260 * scale).toInt()) 1 else 2
+      val rowHeight = if(titleLines == 1) 100 else if(compact) 114 else 120
       val limit = ((height - (reserve * scale).toInt()) / (rowHeight * scale).toInt()).coerceIn(1,2)
-      val titleLines = if(compact) 1 else 2
       val padding = (if(compact) 8 else 12) * context.resources.displayMetrics.density
       views.setViewPadding(R.id.ticket_widget_root,padding.toInt(),padding.toInt(),padding.toInt(),padding.toInt())
       views.setViewVisibility(R.id.ticket_widget_heading,if(compact) View.GONE else View.VISIBLE)
