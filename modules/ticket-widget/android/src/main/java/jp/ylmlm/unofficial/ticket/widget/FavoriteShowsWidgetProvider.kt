@@ -52,9 +52,9 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
       val height = size.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,180)
       val width = size.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,300)
       val scale = maxOf(1f, context.resources.configuration.fontScale)
-      val compact = height < (174 * scale).toInt()
-      val reserve = if(compact) 62 else 82
-      val rowHeight = if(compact) 80 else 96
+      val compact = height < (330 * scale).toInt()
+      val reserve = if(compact) 72 else 96
+      val rowHeight = if(compact) 100 else 120
       val limit = ((height - (reserve * scale).toInt()) / (rowHeight * scale).toInt()).coerceIn(1,2)
       val titleLines = if(compact) 1 else 2
       val padding = (if(compact) 8 else 12) * context.resources.displayMetrics.density

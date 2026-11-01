@@ -90,16 +90,17 @@ class TicketWidgetTest {
       view.findViewById<TextView>(R.id.ticket_widget_updated).text = "表示サンプル · 11/1 18:00取得"
       view.measure(View.MeasureSpec.makeMeasureSpec(340,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(height,View.MeasureSpec.EXACTLY))
       view.layout(0,0,340,height)
-      val footer = view.findViewById<View>(R.id.ticket_widget_footer)
-      assertTrue("footer must fit at height $height",footer.bottom <= height - view.paddingBottom)
-      val rows = listOf(R.id.ticket_row_0,R.id.ticket_row_1,R.id.ticket_row_2).map { view.findViewById<View>(it) }.filter { it.visibility == View.VISIBLE }
-      assertTrue(rows.size <= 2)
-      for (row in rows) assertTrue("cards must not overlap footer at height $height",row.bottom <= footer.top)
       val bitmap = android.graphics.Bitmap.createBitmap(340,height,android.graphics.Bitmap.Config.ARGB_8888)
       view.draw(android.graphics.Canvas(bitmap))
       val output = java.io.File(System.getProperty("widget.preview.output","build/widget-previews"),"widget-$height.png")
-      output.parentFile.mkdirs()
+      output.parentFile?.mkdirs()
       java.io.FileOutputStream(output).use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it) }
+      val footer = view.findViewById<View>(R.id.ticket_widget_footer)
+      assertTrue("footer ${footer.bottom} must fit at height $height with padding ${view.paddingBottom}",footer.bottom <= height - view.paddingBottom)
+      val rows = listOf(R.id.ticket_row_0,R.id.ticket_row_1,R.id.ticket_row_2).map { view.findViewById<View>(it) }.filter { it.visibility == View.VISIBLE }
+      assertTrue(rows.size <= 2)
+      for (row in rows) assertTrue("cards must not overlap footer at height $height",row.bottom <= footer.top)
+
     }
   }
   @Test fun emptySnapshotOffersAppRefreshInsteadOfFakeEvents() {
