@@ -156,7 +156,7 @@ class TicketWidgetTest {
         assertEquals(View.VISIBLE,view.findViewById<View>(R.id.ticket_performance_0).visibility)
         assertEquals("特典会 19:35〜20:25",view.findViewById<TextView>(R.id.ticket_meet_0).text.toString())
         assertEquals(View.GONE,view.findViewById<View>(R.id.ticket_performance_2).visibility)
-        assertTrue(view.findViewById<View>(R.id.ticket_row_0).contentDescription.contains("19:35"))
+        assertTrue(view.findViewById<View>(R.id.ticket_row_0).contentDescription.toString().contains("19:35"))
         previewFont(view)
         view.findViewById<TextView>(R.id.ticket_title_0).text = "表示例：ゆるめるモ！ワンマンライブ"
         view.findViewById<TextView>(R.id.ticket_widget_updated).text = "表示サンプル · 11/2 18:00取得"
