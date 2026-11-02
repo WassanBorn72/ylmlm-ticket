@@ -30,7 +30,7 @@ test('新しい公式告知から消えたキャッシュ済みURLを取得候�
 });
 test('ウィジェットに表示用データとお気に入りの引き継ぎ・更新時刻を渡す',()=>{
  const result=widgetSnapshot({events:[{id:'new',title:'公演',date:'2030-02-01',doorsAt:'2030-02-01T08:30:00Z',startAt:'2030-02-01T09:00:00Z',venue:'会場',staleSourceIds:['a']}],lastSyncAt:'2030-01-01T00:00:00Z'},['old'],{new:{favoriteId:'old'}});
- assert.equal(result.events[0].favorite,true);assert.match(result.events[0].summary,/OPEN 17:30/);assert.match(result.updatedLabel,/一部前回情報/);assert.equal(result.events[0].id,'new');
+ assert.equal(result.events[0].timeLabel,'OPEN 17:30 / START 18:00');assert.equal(result.events[0].mapQuery,'会場');assert.equal(result.events[0].favorite,true);assert.match(result.events[0].summary,/OPEN 17:30/);assert.match(result.updatedLabel,/一部前回情報/);assert.equal(result.events[0].id,'new');
  assert.equal(widgetSnapshot({events:[],lastSyncAt:null},[]).events.length,0);
 });
 
@@ -75,4 +75,11 @@ test('ウィジェットに購入先と在庫の取得値・販売期間・前�
  const [e]=widgetSnapshot({events:[{id:'a',title:'公演',date:'2030-02-01',venue:'会場',offers:[{sourceId:'livepocket',sourceName:'LivePocket',availability:'InStock',salesStartAt:'2030-01-01T10:00:00+09:00',salesEndAt:'2030-01-02T10:00:00+09:00'}],staleSourceIds:['livepocket']}],lastSyncAt:null},[]).events;
  assert.deepEqual(e.ticketOffers,[{sourceId:'livepocket',sourceName:'LivePocket',availability:'InStock',salesStartMs:Date.parse('2030-01-01T01:00:00Z'),salesEndMs:Date.parse('2030-01-02T01:00:00Z'),stale:true}]);
  assert.deepEqual(widgetSnapshot({events:[{id:'a',title:'公演',date:'2030-02-01',venue:'会場'}],lastSyncAt:null},[]).events[0].ticketOffers,[]);
+});
+
+test('ウィジェットの地図検索は会場名と住所を使い、未掲載の会場名を検索しない',()=>{
+ const events=widgetSnapshot({events:[{id:'a',title:'公演',date:'2030-02-01',venue:'渋谷ホール',address:'東京都渋谷区1-2-3'},{id:'b',title:'未定',date:'2030-02-01',venue:'会場は購入先で確認'}]},[]).events;
+ assert.equal(events[0].mapQuery,'渋谷ホール 東京都渋谷区1-2-3');
+ assert.equal(events[1].mapQuery,'');
+ assert.equal(events[1].timeLabel,'時間未掲載');
 });

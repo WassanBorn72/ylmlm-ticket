@@ -74,7 +74,7 @@ class TicketWidgetTest {
     assertEquals("公演C",favoritesView.findViewById<TextView>(R.id.ticket_title_1).text.toString())
     assertEquals("公演B",upcomingView.findViewById<TextView>(R.id.ticket_title_1).text.toString())
     assertEquals("OPEN 18:00",upcomingView.findViewById<TextView>(R.id.ticket_open_1).text.toString())
-    assertEquals("会場 会場B",upcomingView.findViewById<TextView>(R.id.ticket_meta_1).text.toString())
+    assertEquals("会場B",upcomingView.findViewById<TextView>(R.id.ticket_meta_1).text.toString())
     assertTrue(upcomingView.findViewById<TextView>(R.id.ticket_month_0).text.toString().startsWith("1月"))
     assertEquals("11/1取得",upcomingView.findViewById<TextView>(R.id.ticket_widget_updated).text.toString())
   }
@@ -132,8 +132,8 @@ class TicketWidgetTest {
       assertEquals("no outside top padding",0,view.paddingTop)
       assertEquals("no outside bottom padding",0,view.paddingBottom)
       val header = view.findViewById<View>(R.id.ticket_widget_header)
-      assertTrue("compact header/footer at $height",header.height+footer.height <= 52)
-      rows.forEach { assertEquals("full-width event rows",view.width,it.width) }
+      assertTrue("branded header and clear footer",header.height >= 32 && footer.height >= 28)
+      rows.forEach { assertEquals("small consistent side margins",view.width-8,it.width) }
       counts[height] = count
       println("height=$height count=$count lines=$lines type=${view.javaClass.name} root=${view.measuredHeight} density=${context.resources.displayMetrics.density} rows=${rowIds.map{view.findViewById<View>(it).measuredHeight}}")
       for (row in rows) assertTrue("cards must not overlap footer at height $height",row.bottom <= footer.top)
@@ -148,7 +148,7 @@ class TicketWidgetTest {
 
     }
     assertTrue("220dp should fit two events: $counts",counts.getValue(220) >= 2)
-    assertTrue("270dp should fit three events: $counts",counts.getValue(270) >= 3)
+    assertTrue("270dp keeps multiple readable events: $counts",counts.getValue(270) >= 2)
     assertTrue("300dp should fit three events: $counts",counts.getValue(300) >= 3)
     assertEquals("560dp should fit all six: $counts",6,counts.getValue(560))
   }
@@ -200,7 +200,7 @@ class TicketWidgetTest {
         output.parentFile?.mkdirs()
         java.io.FileOutputStream(output).use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it) }
         val rows = rowIds.map{view.findViewById<View>(it)}.filter{it.visibility == View.VISIBLE}
-        if(height == 270 && scale == 1f) assertTrue("standard widget should keep two full timetable cards",count >= 2)
+        if(height == 270 && scale == 1f) assertTrue("standard widget keeps a full timetable card",count >= 1)
         assertEquals("equal heights with time labels at $height / $scale",1,rows.map{it.height}.distinct().size)
         val top = view.findViewById<View>(R.id.ticket_widget_top_space).height
         val bottom = view.findViewById<View>(R.id.ticket_widget_bottom_space).height
@@ -294,6 +294,54 @@ class TicketWidgetTest {
       assertTrue(view.measuredHeight <= (300*density).toInt())
       assertEquals(View.VISIBLE,view.findViewById<View>(R.id.ticket_row_0).visibility)
     } finally { RuntimeEnvironment.setFontScale(1f) }
+  }
+  // Exercise the actual RemoteViews payload without running fitting a second time.
+  // Launchers may allocate more pixels than their last reported dp size.
+  @Test @Config(sdk = [34], qualifiers = "mdpi")
+  fun hostExtraHeightGoesIntoEqualCardsAndNeverOutsideSpacers() {
+    save()
+    val manager = AppWidgetManager.getInstance(context)
+    val shadow = shadowOf(manager)
+    val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget)
+    val options = Bundle().apply {
+      putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,340)
+      putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,300)
+    }
+    UpcomingShowsWidgetProvider().onAppWidgetOptionsChanged(context,manager,id,options)
+    val view = shadow.getViewFor(id)
+    val rowIds = intArrayOf(R.id.ticket_row_0,R.id.ticket_row_1,R.id.ticket_row_2,R.id.ticket_row_3,R.id.ticket_row_4,R.id.ticket_row_5)
+    for(height in listOf(300,340,420,560)) {
+      view.measure(View.MeasureSpec.makeMeasureSpec(340,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(height,View.MeasureSpec.EXACTLY))
+      view.layout(0,0,340,height)
+      val rows = rowIds.map{view.findViewById<View>(it)}.filter{it.visibility == View.VISIBLE}
+      val header = view.findViewById<View>(R.id.ticket_widget_header)
+      val footer = view.findViewById<View>(R.id.ticket_widget_footer)
+      assertEquals("first card always hugs header",2,rows.first().top-header.bottom)
+      assertEquals("last card always hugs footer",2,footer.top-rows.last().bottom)
+      assertTrue("equal card heights to rounding",rows.maxOf{it.height}-rows.minOf{it.height} <= 1)
+      assertEquals(height,footer.bottom)
+      assertContentEdges(view,rows.size)
+    }
+    assertEquals(View.VISIBLE,view.findViewById<View>(R.id.ticket_widget_heading).visibility)
+    assertEquals("モ！のチケット帳",view.findViewById<TextView>(R.id.ticket_widget_heading).text.toString())
+  }
+  @Test fun venuePinOpensGoogleMapsForItsOwnEvent() {
+    save()
+    val prefs = context.getSharedPreferences("ticket_widget",0)
+    val snapshot = org.json.JSONObject(prefs.getString("snapshot","{}")!!)
+    snapshot.getJSONArray("events").getJSONObject(0).put("mapQuery","渋谷ホール 東京都渋谷区1-2-3").put("timeLabel","OPEN 18:00 / START 18:30")
+    prefs.edit().putString("snapshot",snapshot.toString()).commit()
+    val manager = AppWidgetManager.getInstance(context)
+    val shadow = shadowOf(manager)
+    val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget)
+    val view = shadow.getViewFor(id)
+    assertEquals("OPEN 18:00 / START 18:30",view.findViewById<TextView>(R.id.ticket_open_0).text.toString())
+    assertTrue(view.findViewById<TextView>(R.id.ticket_meta_0).compoundDrawables[0] != null)
+    view.findViewById<View>(R.id.ticket_meta_0).performClick()
+    val intent = shadowOf(RuntimeEnvironment.getApplication()).nextStartedActivity
+    assertEquals("https",intent.data?.scheme)
+    assertEquals("www.google.com",intent.data?.host)
+    assertEquals("渋谷ホール 東京都渋谷区1-2-3",intent.data?.getQueryParameter("query"))
   }
   @Test fun salesStatusesRespectWindowsMixedOffersAndUnknownStock() {
     val now = 1_900_000_000_000L

@@ -147,21 +147,9 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
       val count = maxOf(fullCount,denseCount).coerceAtLeast(if(candidates > 0) 1 else 0)
       val lines = if(denseCount > fullCount || fullCount == 0) 1 else 2
       titles.forEach { view.findViewById<android.widget.TextView>(it).maxLines = lines }
-      val naturalHeight = measureUniformRows(view,rows,width,count)
-      // Use the available height for the cards, not oversized outside spacers.
-      // Rounding leaves fewer than count pixels, shared by the top/bottom spacers.
-      if(count > 0) {
-        val extraPerCard = ((height-naturalHeight).coerceAtLeast(0))/count
-        if(extraPerCard > 0) {
-          rows.take(count).forEach { row ->
-            val card = view.findViewById<View>(row)
-            val params = card.layoutParams
-            params.height += extraPerCard
-            card.layoutParams = params
-          }
-          measure(view,width)
-        }
-      }
+      measureUniformRows(view,rows,width,count)
+      // The host allocates its actual remaining height to equally weighted cards.
+      // Never place launcher-size differences in outside weighted spacers.
       return count to lines
     }
     private fun render(context: Context, manager: AppWidgetManager, id: Int, favorites: Boolean, options: Bundle? = null) {
@@ -179,7 +167,7 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
       val density = context.resources.displayMetrics.density
       val padding = 0
       views.setViewPadding(R.id.ticket_widget_root,padding,padding,padding,padding)
-      views.setViewVisibility(R.id.ticket_widget_heading,View.GONE)
+      views.setViewVisibility(R.id.ticket_widget_heading,View.VISIBLE)
       views.setTextViewText(R.id.ticket_widget_mode, if(favorites) {if(width<260) "お気に入り" else "お気に入りの公演"} else "直近の公演")
       val overview = open(context,id,9,if(favorites) "favorites" else "tickets")
       overview?.let { views.setOnClickPendingIntent(R.id.ticket_widget_root,it);views.setOnClickPendingIntent(R.id.ticket_widget_header,it);views.setOnClickPendingIntent(R.id.ticket_widget_footer,it) }
@@ -193,8 +181,6 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
       val meets = intArrayOf(R.id.ticket_meet_0,R.id.ticket_meet_1,R.id.ticket_meet_2,R.id.ticket_meet_3,R.id.ticket_meet_4,R.id.ticket_meet_5)
       val opens = intArrayOf(R.id.ticket_open_0,R.id.ticket_open_1,R.id.ticket_open_2,R.id.ticket_open_3,R.id.ticket_open_4,R.id.ticket_open_5)
       val timingGroups = intArrayOf(R.id.ticket_timing_group_0,R.id.ticket_timing_group_1,R.id.ticket_timing_group_2,R.id.ticket_timing_group_3,R.id.ticket_timing_group_4,R.id.ticket_timing_group_5)
-      val timingSpaces = intArrayOf(R.id.ticket_timing_space_0,R.id.ticket_timing_space_1,R.id.ticket_timing_space_2,R.id.ticket_timing_space_3,R.id.ticket_timing_space_4,R.id.ticket_timing_space_5)
-      val locationSpaces = intArrayOf(R.id.ticket_location_space_0,R.id.ticket_location_space_1,R.id.ticket_location_space_2,R.id.ticket_location_space_3,R.id.ticket_location_space_4,R.id.ticket_location_space_5)
       val metas = intArrayOf(R.id.ticket_meta_0,R.id.ticket_meta_1,R.id.ticket_meta_2,R.id.ticket_meta_3,R.id.ticket_meta_4,R.id.ticket_meta_5)
       val months = intArrayOf(R.id.ticket_month_0,R.id.ticket_month_1,R.id.ticket_month_2,R.id.ticket_month_3,R.id.ticket_month_4,R.id.ticket_month_5)
       val days = intArrayOf(R.id.ticket_day_0,R.id.ticket_day_1,R.id.ticket_day_2,R.id.ticket_day_3,R.id.ticket_day_4,R.id.ticket_day_5)
@@ -209,7 +195,16 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
           val summary = event.optString("summary")
           val time = event.optString("timeLabel",summary.substringBefore(" · ").substringAfter(" ","時間未掲載"))
           val venue = event.optString("venueLabel",summary.substringAfter(" · ","会場はアプリで確認"))
-          views.setTextViewText(metas[index],"会場 $venue")
+          views.setTextViewText(metas[index],venue)
+          val query = event.optString("mapQuery").ifBlank { if(venue == "会場は購入先で確認" || venue == "会場はアプリで確認") "" else venue }
+          views.setOnClickPendingIntent(metas[index],null)
+          views.setBoolean(metas[index],"setEnabled",query.isNotBlank())
+          if(query.isNotBlank()) {
+            val mapIntent = Intent(Intent.ACTION_VIEW,Uri.parse("https://www.google.com/maps/search/?api=1&query="+Uri.encode(query))).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            val map = PendingIntent.getActivity(context,id*10+index,mapIntent,PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+            views.setOnClickPendingIntent(metas[index],map)
+            views.setContentDescription(metas[index],"$venue をGoogleマップで開く")
+          }
           views.setTextViewText(opens[index],time)
           val grouped = saleGroups(event.optJSONArray("ticketOffers"))
           val sale = salesText(grouped)
@@ -232,8 +227,6 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
           val meet = event.optString("meetAndGreetLabel")
           val hasTiming = performance.isNotBlank() || meet.isNotBlank()
           views.setViewVisibility(timingGroups[index],if(hasTiming) View.VISIBLE else View.GONE)
-          views.setViewVisibility(timingSpaces[index],if(hasTiming) View.VISIBLE else View.GONE)
-          views.setViewVisibility(locationSpaces[index],if(hasTiming) View.GONE else View.VISIBLE)
           views.setTextViewText(performances[index],performance)
           views.setViewVisibility(performances[index],if(performance.isBlank()) View.GONE else View.VISIBLE)
           views.setTextViewText(meets[index],meet)
@@ -257,7 +250,7 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
       views.setTextViewText(R.id.ticket_widget_updated,snapshot.optString("updatedShort",snapshot.optString("updatedLabel","アプリを開いて更新").substringBefore(" · ")))
       val measured = views.apply(context,null)
       // Keep both colored tags inside the text column, including at large font sizes.
-      val columnWidth = ((width-66).coerceAtLeast(1f)*density).toInt()
+      val columnWidth = ((width-78).coerceAtLeast(1f)*density).toInt()
       sites.forEachIndexed { index,id ->
         val source = measured.findViewById<android.widget.TextView>(id)
         val state = measured.findViewById<android.widget.TextView>(sales[index])
@@ -275,10 +268,9 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
       val heightPx = (height * density).toInt()
       val (limit,titleLines) = fitLayout(measured,rows,titles,widthPx,heightPx,events.size)
       titles.forEach { views.setInt(it,"setMaxLines",titleLines) }
-      val cardHeight = if(limit > 0) measured.findViewById<View>(rows[0]).measuredHeight else 0
       rows.forEachIndexed { index,row ->
         views.setViewVisibility(row,if(index < limit) View.VISIBLE else View.GONE)
-        views.setInt(row,"setMinimumHeight",cardHeight)
+        views.setInt(row,"setMinimumHeight",0)
       }
       return views
       }
