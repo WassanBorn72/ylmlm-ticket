@@ -116,12 +116,12 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
       fun layout(height: Float,width: Float): RemoteViews {
       val views = RemoteViews(context.packageName, R.layout.ticket_widget)
       val density = context.resources.displayMetrics.density
-      val padding = (4 * density).toInt()
+      val padding = 0
       views.setViewPadding(R.id.ticket_widget_root,padding,padding,padding,padding)
       views.setViewVisibility(R.id.ticket_widget_heading,View.GONE)
       views.setTextViewText(R.id.ticket_widget_mode, if(favorites) {if(width<260) "お気に入り" else "お気に入りの公演"} else "直近の公演")
       val overview = open(context,id,9,if(favorites) "favorites" else "tickets")
-      overview?.let { views.setOnClickPendingIntent(R.id.ticket_widget_root,it);views.setOnClickPendingIntent(R.id.ticket_widget_footer,it) }
+      overview?.let { views.setOnClickPendingIntent(R.id.ticket_widget_root,it);views.setOnClickPendingIntent(R.id.ticket_widget_header,it);views.setOnClickPendingIntent(R.id.ticket_widget_footer,it) }
       val rows = intArrayOf(R.id.ticket_row_0,R.id.ticket_row_1,R.id.ticket_row_2,R.id.ticket_row_3,R.id.ticket_row_4,R.id.ticket_row_5)
       val titles = intArrayOf(R.id.ticket_title_0,R.id.ticket_title_1,R.id.ticket_title_2,R.id.ticket_title_3,R.id.ticket_title_4,R.id.ticket_title_5)
       val times = intArrayOf(R.id.ticket_time_0,R.id.ticket_time_1,R.id.ticket_time_2,R.id.ticket_time_3,R.id.ticket_time_4,R.id.ticket_time_5)

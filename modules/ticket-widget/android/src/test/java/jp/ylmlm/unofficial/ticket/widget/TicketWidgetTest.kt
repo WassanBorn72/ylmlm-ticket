@@ -112,6 +112,11 @@ class TicketWidgetTest {
       assertTrue("footer ${footer.bottom} must fit at height $height with padding ${view.paddingBottom}",footer.bottom <= height - view.paddingBottom)
       val rows = rowIds.map { view.findViewById<View>(it) }.filter { it.visibility == View.VISIBLE }
       assertTrue(rows.size <= 6)
+      assertEquals("no outside top padding",0,view.paddingTop)
+      assertEquals("no outside bottom padding",0,view.paddingBottom)
+      val header = view.findViewById<View>(R.id.ticket_widget_header)
+      assertTrue("compact header/footer at $height",header.height+footer.height <= 44)
+      rows.forEach { assertEquals("full-width event rows",view.width,it.width) }
       counts[height] = count
       println("height=$height count=$count lines=$lines type=${view.javaClass.name} root=${view.measuredHeight} density=${context.resources.displayMetrics.density} rows=${rowIds.map{view.findViewById<View>(it).measuredHeight}}")
       for (row in rows) assertTrue("cards must not overlap footer at height $height",row.bottom <= footer.top)
