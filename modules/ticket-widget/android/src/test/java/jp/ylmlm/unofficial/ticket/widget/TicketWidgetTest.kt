@@ -132,7 +132,7 @@ class TicketWidgetTest {
       assertEquals("no outside top padding",0,view.paddingTop)
       assertEquals("no outside bottom padding",0,view.paddingBottom)
       val header = view.findViewById<View>(R.id.ticket_widget_header)
-      assertTrue("branded header and clear footer",header.height >= (if(height <= 220) 24 else 32) && footer.height >= (if(height <= 220) 24 else 28))
+      assertTrue("branded header and clear footer",header.height >= (if(height <= 300) 24 else 32) && footer.height >= (if(height <= 300) 24 else 28))
       rows.forEach { assertEquals("small consistent side margins",view.width-8,it.width) }
       counts[height] = count
       println("height=$height count=$count lines=$lines type=${view.javaClass.name} root=${view.measuredHeight} density=${context.resources.displayMetrics.density} rows=${rowIds.map{view.findViewById<View>(it).measuredHeight}}")
@@ -148,7 +148,7 @@ class TicketWidgetTest {
 
     }
     assertTrue("220dp should fit two events: $counts",counts.getValue(220) >= 2)
-    assertTrue("270dp keeps multiple readable events: $counts",counts.getValue(270) >= 2)
+    assertTrue("270dp keeps three readable events: $counts",counts.getValue(270) >= 3)
     assertTrue("300dp should fit three events: $counts",counts.getValue(300) >= 3)
     assertEquals("560dp should fit all six: $counts",6,counts.getValue(560))
   }
@@ -200,7 +200,7 @@ class TicketWidgetTest {
         output.parentFile?.mkdirs()
         java.io.FileOutputStream(output).use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it) }
         val rows = rowIds.map{view.findViewById<View>(it)}.filter{it.visibility == View.VISIBLE}
-        if(height == 270 && scale == 1f) assertTrue("standard widget keeps a full timetable card",count >= 1)
+        if(height == 270 && scale == 1f) assertTrue("standard widget keeps two full timetable cards",count >= 2)
         assertTrue("equal heights to pixel rounding at $height / $scale",rows.maxOf{it.height}-rows.minOf{it.height} <= 1)
         val top = view.findViewById<View>(R.id.ticket_widget_top_space).height
         val bottom = view.findViewById<View>(R.id.ticket_widget_bottom_space).height
