@@ -149,7 +149,7 @@ class TicketWidgetTest {
     UpcomingShowsWidgetProvider().onAppWidgetOptionsChanged(context,manager,id,options)
     assertEquals(View.GONE,shadow.getViewFor(id).findViewById<View>(R.id.ticket_row_2).visibility)
   }
-  @Test @Config(sdk = [34], qualifiers = "w340dp-h300dp-mdpi-port")
+  @Test @Config(sdk = [34], qualifiers = "w340dp-h300dp-port-mdpi")
   fun actualLauncherSizeCanFitThreeEvenWhenLegacyBoundsOnlyFitTwo() {
     save()
     val manager = AppWidgetManager.getInstance(context)
@@ -167,7 +167,7 @@ class TicketWidgetTest {
     UpcomingShowsWidgetProvider().onAppWidgetOptionsChanged(context,manager,id,options)
     assertEquals("actual 300dp bounds should display the third event",View.VISIBLE,shadow.getViewFor(id).findViewById<View>(R.id.ticket_row_2).visibility)
   }
-  @Test @Config(sdk = [34], qualifiers = "w340dp-h220dp-mdpi-port")
+  @Test @Config(sdk = [34], qualifiers = "w340dp-h220dp-port-mdpi")
   fun invalidResponsiveSizesFallBackToLegacyBounds() {
     save()
     val manager = AppWidgetManager.getInstance(context)
