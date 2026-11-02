@@ -93,7 +93,10 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
         val extraPerCard = ((height-naturalHeight).coerceAtLeast(0))/count
         if(extraPerCard > 0) {
           rows.take(count).forEach { row ->
-            view.findViewById<View>(row).apply { layoutParams = layoutParams.apply { height += extraPerCard } }
+            val card = view.findViewById<View>(row)
+            val params = card.layoutParams
+            params.height += extraPerCard
+            card.layoutParams = params
           }
           measure(view,width)
         }
