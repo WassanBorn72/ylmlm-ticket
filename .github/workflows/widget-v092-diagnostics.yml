@@ -17,22 +17,30 @@ jobs:
           run-id: 41443142533
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/widget-tests
+      - uses: actions/download-artifact@v4
+        with:
+          name: widget-layout-checks
+          run-id: 41443142630
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/widget-previews
       - name: Save test failures on a separate diagnostic branch
         run: |
           set -euo pipefail
           python3 - <<'PY'
           from pathlib import Path
-          import json,os,xml.etree.ElementTree as E
+          import json,os,shutil,xml.etree.ElementTree as E
           results=[]
           for p in (Path(os.environ['RUNNER_TEMP'])/'widget-tests').rglob('TEST-*.xml'):
               root=E.parse(p).getroot()
               results.append({'suite':root.attrib,'failures':[{'case':t.attrib,'failure':t.find('failure').attrib,'stack':t.findtext('failure','')[:3500]} for t in root.findall('testcase') if t.find('failure') is not None],'output':root.findtext('system-out','')})
+          images=Path('docs/widget-v092-previews');images.mkdir(exist_ok=True)
+          for image in (Path(os.environ['RUNNER_TEMP'])/'widget-previews').rglob('*.png'):shutil.copy(image,images/image.name)
           assert results
           Path('docs/widget-v092-diagnostics.json').write_text(json.dumps(results,ensure_ascii=False,indent=2))
           PY
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git switch -c widget-v092-diagnostics
-          git add docs/widget-v092-diagnostics.json
+          git switch -c widget-v092-previews
+          git add docs/widget-v092-diagnostics.json docs/widget-v092-previews
           git commit -m 'Record native widget test failures for v0.9.2 review'
-          git push origin HEAD:refs/heads/widget-v092-diagnostics
+          git push origin HEAD:refs/heads/widget-v092-previews
