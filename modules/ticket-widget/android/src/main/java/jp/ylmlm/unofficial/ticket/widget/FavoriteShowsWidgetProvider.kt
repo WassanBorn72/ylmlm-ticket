@@ -107,8 +107,24 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
           layoutParams = layoutParams.apply { height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT }
         }
       }
+      // A MATCH_PARENT column is excluded from a horizontal LinearLayout's
+      // wrap-content height. Measure its real content first, then restore filling.
+      val fillChildren = rows.flatMap { row ->
+        val parent = view.findViewById<android.view.ViewGroup>(row)
+        (0 until parent.childCount).map { parent.getChildAt(it) }
+      }.filter { it.layoutParams.height == android.view.ViewGroup.LayoutParams.MATCH_PARENT }
+      fillChildren.forEach { child ->
+        val params = child.layoutParams
+        params.height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+        child.layoutParams = params
+      }
       measure(view,width)
       val cardHeight = rows.take(count).maxOfOrNull { view.findViewById<View>(it).measuredHeight } ?: 0
+      fillChildren.forEach { child ->
+        val params = child.layoutParams
+        params.height = android.view.ViewGroup.LayoutParams.MATCH_PARENT
+        child.layoutParams = params
+      }
       rows.take(count).forEach { row ->
         view.findViewById<View>(row).apply { layoutParams = layoutParams.apply { height = cardHeight } }
       }
@@ -232,7 +248,7 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
             views.setTextColor(months[index],android.graphics.Color.parseColor(if(weekday=="日") "#B34C58" else if(weekday=="土") "#416EA2" else "#52616D"))
           }else{views.setTextViewText(months[index],"--月");views.setTextViewText(days[index],"--")}
           views.setViewVisibility(weekdays[index],View.GONE)
-          views.setContentDescription(row,listOf(event.optString("title"),summary,performance,meet,sale).filter{it.isNotBlank()}.joinToString(" "))
+          views.setContentDescription(row,listOf(event.optString("title"),summary,sale,performance,meet).filter{it.isNotBlank()}.joinToString(" "))
           open(context,id,index,"event/"+Uri.encode(event.optString("id")))?.let { views.setOnClickPendingIntent(row,it) }
         }
       }
