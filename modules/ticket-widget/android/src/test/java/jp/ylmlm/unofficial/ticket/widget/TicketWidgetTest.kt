@@ -132,7 +132,7 @@ class TicketWidgetTest {
       assertEquals("no outside top padding",0,view.paddingTop)
       assertEquals("no outside bottom padding",0,view.paddingBottom)
       val header = view.findViewById<View>(R.id.ticket_widget_header)
-      assertTrue("branded header and clear footer",header.height >= (if(height <= 220) 24 else 32) && footer.height >= 28)
+      assertTrue("branded header and clear footer",header.height >= (if(height <= 220) 24 else 32) && footer.height >= (if(height <= 220) 24 else 28))
       rows.forEach { assertEquals("small consistent side margins",view.width-8,it.width) }
       counts[height] = count
       println("height=$height count=$count lines=$lines type=${view.javaClass.name} root=${view.measuredHeight} density=${context.resources.displayMetrics.density} rows=${rowIds.map{view.findViewById<View>(it).measuredHeight}}")

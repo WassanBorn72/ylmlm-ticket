@@ -171,6 +171,13 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
       // A short widget keeps the app name and moves its mode into the footer link.
       val compactHeader = height / context.resources.configuration.fontScale <= 220
       views.setViewVisibility(R.id.ticket_widget_mode,if(compactHeader) View.GONE else View.VISIBLE)
+      if(compactHeader) {
+        val side = (12*density).toInt()
+        val inset = density.toInt()
+        views.setViewPadding(R.id.ticket_widget_header,side,inset,side,inset)
+        views.setViewPadding(R.id.ticket_widget_footer,side,inset,side,inset)
+        views.setInt(R.id.ticket_widget_footer,"setMinimumHeight",(24*density).toInt())
+      }
       views.setTextViewText(R.id.ticket_widget_list,if(compactHeader) {if(favorites) "お気に入り ›" else "直近の公演 ›"} else "公演一覧 ›")
       views.setViewVisibility(R.id.ticket_widget_top_space,View.GONE)
       views.setViewVisibility(R.id.ticket_widget_bottom_space,View.GONE)
@@ -192,6 +199,10 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
       val days = intArrayOf(R.id.ticket_day_0,R.id.ticket_day_1,R.id.ticket_day_2,R.id.ticket_day_3,R.id.ticket_day_4,R.id.ticket_day_5)
       val weekdays = intArrayOf(R.id.ticket_weekday_0,R.id.ticket_weekday_1,R.id.ticket_weekday_2,R.id.ticket_weekday_3,R.id.ticket_weekday_4,R.id.ticket_weekday_5)
       rows.forEachIndexed { index,row ->
+        if(compactHeader) {
+          val inset = (3*density).toInt()
+          views.setViewPadding(row,inset,inset,inset,inset)
+        }
         val event = events.getOrNull(index)
         if(event == null) views.setViewVisibility(row,View.GONE)
         else {
