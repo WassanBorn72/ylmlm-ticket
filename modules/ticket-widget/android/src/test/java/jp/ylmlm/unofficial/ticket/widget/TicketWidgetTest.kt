@@ -200,6 +200,7 @@ class TicketWidgetTest {
         output.parentFile?.mkdirs()
         java.io.FileOutputStream(output).use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it) }
         val rows = rowIds.map{view.findViewById<View>(it)}.filter{it.visibility == View.VISIBLE}
+        if(height == 270 && scale == 1f) assertTrue("standard widget should keep two full timetable cards",count >= 2)
         assertEquals("equal heights with time labels at $height / $scale",1,rows.map{it.height}.distinct().size)
         val top = view.findViewById<View>(R.id.ticket_widget_top_space).height
         val bottom = view.findViewById<View>(R.id.ticket_widget_bottom_space).height
