@@ -175,6 +175,7 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
       val headInset = ((if(compactHeader) 1 else 3)*density).toInt()
       val footInset = ((if(compactHeader) 1 else 2)*density).toInt()
       views.setViewPadding(R.id.ticket_widget_header,side,headInset,side,headInset)
+      views.setInt(R.id.ticket_widget_header,"setMinimumHeight",((if(compactHeader) 28 else 44)*density).toInt())
       views.setViewPadding(R.id.ticket_widget_footer,side,footInset,side,footInset)
       views.setInt(R.id.ticket_widget_footer,"setMinimumHeight",((if(compactHeader) 24 else 28)*density).toInt())
       views.setTextViewText(R.id.ticket_widget_list,if(compactHeader) {if(favorites) "お気に入り ›" else "直近の公演 ›"} else "公演一覧 ›")
