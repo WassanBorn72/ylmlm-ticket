@@ -280,6 +280,7 @@ class TicketWidgetTest {
     val mixed = org.json.JSONArray("""[{"sourceId":"a","sourceName":"LivePocket","availability":"SoldOut"},{"sourceId":"a","sourceName":"LivePocket","availability":"InStock"}]""")
     assertEquals("一部発売中 LivePocket",FavoriteShowsWidgetProvider.widgetSales(mixed,now))
     assertEquals("完売 TIGET",FavoriteShowsWidgetProvider.widgetSales(org.json.JSONArray("""[{"sourceId":"b","sourceName":"TIGET","availability":"SoldOut"}]"""),now))
+    assertEquals("在庫なし TIGET",FavoriteShowsWidgetProvider.widgetSales(org.json.JSONArray("""[{"sourceId":"b","sourceName":"TIGET","availability":"OutOfStock"}]"""),now))
     assertEquals("",FavoriteShowsWidgetProvider.widgetSales(null,now))
   }
   @Test fun emptySnapshotOffersAppRefreshInsteadOfFakeEvents() {

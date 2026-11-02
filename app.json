@@ -2,14 +2,14 @@
   "expo": {
     "name": "モ！のチケット帳（非公式）",
     "slug": "ylmlm-unofficial-ticket",
-    "version": "0.8.0",
+    "version": "0.9.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "scheme": "ylmlm-unofficial-ticket",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "jp.ylmlm.unofficial.ticket",
-      "buildNumber": "26",
+      "buildNumber": "27",
       "infoPlist": {
         "NSCalendarsUsageDescription": "選択した公演をカレンダーに追加するために使用します。"
       }
@@ -19,7 +19,7 @@
       "permissions": [
         "android.permission.POST_NOTIFICATIONS"
       ],
-      "versionCode": 26,
+      "versionCode": 27,
       "blockedPermissions": [
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",

@@ -54,7 +54,7 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
           "InStock", "LimitedAvailability", "OnlineOnly" -> "発売中"
           "SoldOut" -> "完売"
           "Discontinued" -> "発売終了"
-          "OutOfStock" -> "販売停止"
+          "OutOfStock" -> "在庫なし"
           // A cached pre-order flag cannot prove stock after its start time.
           "PreOrder", "PreSale" -> if(start != null && now >= start) "要確認" else "発売前"
           else -> "要確認"
@@ -66,7 +66,7 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
         val state = if(states.size == 1) states[0] else if(states.contains("発売中")) "一部発売中" else "券種別"
         Triple(group.first().optString("sourceName",group.first().optString("sourceId")),state,group.any { it.optBoolean("stale") })
       }.filter { it.first.isNotBlank() }
-      fun priority(state: String) = when(state) { "発売中", "一部発売中" -> 0; "発売前" -> 1; "要確認", "券種別" -> 2; "販売停止" -> 3; "完売" -> 4; else -> 5 }
+      fun priority(state: String) = when(state) { "発売中", "一部発売中" -> 0; "発売前" -> 1; "要確認", "券種別" -> 2; "在庫なし" -> 3; "完売" -> 4; else -> 5 }
       return groups.sortedWith(compareBy({priority(it.second)},{if(it.third) 1 else 0},{it.first})).joinToString(" / ") {
         it.second + (if(it.third) "（前回）" else "") + " " + it.first
       }
