@@ -125,7 +125,7 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
       views.setTextViewText(R.id.ticket_widget_updated,snapshot.optString("updatedShort",snapshot.optString("updatedLabel","アプリを開いて更新").substringBefore(" · ")))
       val measured = views.apply(context,null)
       val widthPx = (width * density).toInt()
-      val heightPx = ((height - 2) * density).toInt()
+      val heightPx = (height * density).toInt()
       val (limit,titleLines) = fitLayout(measured,rows,titles,widthPx,heightPx,events.size)
       titles.forEach { views.setInt(it,"setMaxLines",titleLines) }
       rows.forEachIndexed { index,row -> views.setViewVisibility(row,if(index < limit) View.VISIBLE else View.GONE) }

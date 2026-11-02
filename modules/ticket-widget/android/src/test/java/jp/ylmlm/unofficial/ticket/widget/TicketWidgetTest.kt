@@ -97,7 +97,7 @@ class TicketWidgetTest {
       val rowIds = intArrayOf(R.id.ticket_row_0,R.id.ticket_row_1,R.id.ticket_row_2,R.id.ticket_row_3,R.id.ticket_row_4,R.id.ticket_row_5)
       val titleIds = intArrayOf(R.id.ticket_title_0,R.id.ticket_title_1,R.id.ticket_title_2,R.id.ticket_title_3,R.id.ticket_title_4,R.id.ticket_title_5)
       // Run production fitting with the same Japanese font used for these previews.
-      val (count,lines) = FavoriteShowsWidgetProvider.fitLayout(view,rowIds,titleIds,340,height-2,6)
+      val (count,lines) = FavoriteShowsWidgetProvider.fitLayout(view,rowIds,titleIds,340,height,6)
       view.measure(View.MeasureSpec.makeMeasureSpec(340,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(height,View.MeasureSpec.EXACTLY))
       view.layout(0,0,340,height)
       val bitmap = android.graphics.Bitmap.createBitmap(340,height,android.graphics.Bitmap.Config.ARGB_8888)
@@ -114,6 +114,7 @@ class TicketWidgetTest {
       for (row in rows) assertTrue("cards must not overlap footer at height $height",row.bottom <= footer.top)
 
     }
+    assertTrue("220dp should fit two events: $counts",counts.getValue(220) >= 2)
     assertTrue("300dp should fit three events: $counts",counts.getValue(300) >= 3)
     assertEquals("560dp should fit all six: $counts",6,counts.getValue(560))
   }
