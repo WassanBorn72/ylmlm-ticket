@@ -143,8 +143,8 @@ class TicketWidgetTest {
       assertTrue("equal card heights to pixel rounding at $height",rows.maxOf{it.height}-rows.minOf{it.height} <= 1)
       val topSpace = view.findViewById<View>(R.id.ticket_widget_top_space).height
       val bottomSpace = view.findViewById<View>(R.id.ticket_widget_bottom_space).height
-      assertTrue("unused space must be split above/below cards at $height: $topSpace / $bottomSpace",kotlin.math.abs(topSpace-bottomSpace) <= 1)
-      assertTrue("remaining height should enlarge cards, not outside gaps at $height",topSpace+bottomSpace < rows.size)
+      assertTrue("no artificial spacers inside the compact panel at $height: $topSpace / $bottomSpace",kotlin.math.abs(topSpace-bottomSpace) <= 1)
+      assertTrue("panel must not add gaps around the cards at $height",topSpace+bottomSpace < rows.size)
       assertContentEdges(view,count)
       assertTrue(view.findViewById<TextView>(R.id.ticket_widget_heading).textSize >= 16*context.resources.displayMetrics.scaledDensity)
       assertTrue(view.findViewById<TextView>(R.id.ticket_widget_updated).textSize >= 13*context.resources.displayMetrics.scaledDensity)
@@ -207,7 +207,7 @@ class TicketWidgetTest {
         assertTrue("equal heights to pixel rounding at $height / $scale",rows.maxOf{it.height}-rows.minOf{it.height} <= 1)
         val top = view.findViewById<View>(R.id.ticket_widget_top_space).height
         val bottom = view.findViewById<View>(R.id.ticket_widget_bottom_space).height
-        assertTrue("no large outside gaps at $height / $scale: $top+$bottom",top+bottom < count)
+        assertTrue("no inserted spacers inside the panel at $height / $scale: $top+$bottom",top+bottom < count)
         val footer = view.findViewById<View>(R.id.ticket_widget_footer)
         assertTrue("footer fits at $height / $scale",footer.bottom <= height-view.paddingBottom)
         rows.forEach{assertTrue("cards fit before footer at $height / $scale",it.bottom <= footer.top)}
