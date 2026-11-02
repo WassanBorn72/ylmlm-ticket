@@ -107,7 +107,7 @@ class TicketWidgetTest {
       assertTrue("footer ${footer.bottom} must fit at height $height with padding ${view.paddingBottom}",footer.bottom <= height - view.paddingBottom)
       val rows = rowIds.map { view.findViewById<View>(it) }.filter { it.visibility == View.VISIBLE }
       assertTrue(rows.size <= 6)
-      if(height >= 300) assertTrue("larger widgets must show at least three events",count >= 3)
+      if(height >= 300) assertTrue("height $height should fit three events; got $count with $lines title lines",count >= 3)
       if(height >= 560) assertEquals(6,count)
       for (row in rows) assertTrue("cards must not overlap footer at height $height",row.bottom <= footer.top)
 

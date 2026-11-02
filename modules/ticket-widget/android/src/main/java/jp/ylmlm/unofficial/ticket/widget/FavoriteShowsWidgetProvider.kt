@@ -49,6 +49,11 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
       if(count == 0) return 0
       for(limit in count downTo 1) {
         rowIds.forEachIndexed { index,row -> view.findViewById<View>(row).visibility = if(index < limit) View.VISIBLE else View.GONE }
+        fun invalidateMeasurements(node: View) {
+          node.forceLayout()
+          if(node is android.view.ViewGroup) for(i in 0 until node.childCount) invalidateMeasurements(node.getChildAt(i))
+        }
+        invalidateMeasurements(view)
         view.measure(View.MeasureSpec.makeMeasureSpec(width,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(0,View.MeasureSpec.UNSPECIFIED))
         if(view.measuredHeight <= height || limit == 1) return limit
       }
