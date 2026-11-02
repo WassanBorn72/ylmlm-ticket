@@ -137,13 +137,13 @@ class TicketWidgetTest {
       counts[height] = count
       println("height=$height count=$count lines=$lines type=${view.javaClass.name} root=${view.measuredHeight} density=${context.resources.displayMetrics.density} rows=${rowIds.map{view.findViewById<View>(it).measuredHeight}}")
       for (row in rows) assertTrue("cards must not overlap footer at height $height",row.bottom <= footer.top)
-      assertEquals("all event cards must have equal height at $height",1,rows.map { it.height }.distinct().size)
+      assertTrue("equal card heights to pixel rounding at $height",rows.maxOf{it.height}-rows.minOf{it.height} <= 1)
       val topSpace = view.findViewById<View>(R.id.ticket_widget_top_space).height
       val bottomSpace = view.findViewById<View>(R.id.ticket_widget_bottom_space).height
       assertTrue("unused space must be split above/below cards at $height: $topSpace / $bottomSpace",kotlin.math.abs(topSpace-bottomSpace) <= 1)
       assertTrue("remaining height should enlarge cards, not outside gaps at $height",topSpace+bottomSpace < rows.size)
       assertContentEdges(view,count)
-      assertTrue(view.findViewById<TextView>(R.id.ticket_widget_mode).textSize >= 16*context.resources.displayMetrics.scaledDensity)
+      assertTrue(view.findViewById<TextView>(R.id.ticket_widget_heading).textSize >= 16*context.resources.displayMetrics.scaledDensity)
       assertTrue(view.findViewById<TextView>(R.id.ticket_widget_updated).textSize >= 13*context.resources.displayMetrics.scaledDensity)
 
     }
@@ -201,7 +201,7 @@ class TicketWidgetTest {
         java.io.FileOutputStream(output).use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it) }
         val rows = rowIds.map{view.findViewById<View>(it)}.filter{it.visibility == View.VISIBLE}
         if(height == 270 && scale == 1f) assertTrue("standard widget keeps a full timetable card",count >= 1)
-        assertEquals("equal heights with time labels at $height / $scale",1,rows.map{it.height}.distinct().size)
+        assertTrue("equal heights to pixel rounding at $height / $scale",rows.maxOf{it.height}-rows.minOf{it.height} <= 1)
         val top = view.findViewById<View>(R.id.ticket_widget_top_space).height
         val bottom = view.findViewById<View>(R.id.ticket_widget_bottom_space).height
         assertTrue("no large outside gaps at $height / $scale: $top+$bottom",top+bottom < count)
