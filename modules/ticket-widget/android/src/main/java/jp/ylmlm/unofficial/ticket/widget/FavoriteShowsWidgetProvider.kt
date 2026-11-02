@@ -83,7 +83,7 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
       fun layout(height: Int,width: Int): RemoteViews {
       val views = RemoteViews(context.packageName, R.layout.ticket_widget)
       val density = context.resources.displayMetrics.density
-      val padding = (8 * density).toInt()
+      val padding = (6 * density).toInt()
       views.setViewPadding(R.id.ticket_widget_root,padding,padding,padding,padding)
       views.setViewVisibility(R.id.ticket_widget_heading,View.GONE)
       views.setTextViewText(R.id.ticket_widget_mode, if(favorites) {if(width<260) "お気に入り" else "お気に入りの公演"} else "直近の公演")

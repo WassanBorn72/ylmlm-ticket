@@ -60,7 +60,7 @@ class TicketWidgetTest {
     manager.updateAppWidgetOptions(id,large)
     UpcomingShowsWidgetProvider().onAppWidgetOptionsChanged(context,manager,id,large)
     assertEquals(View.VISIBLE,shadow.getViewFor(id).findViewById<View>(R.id.ticket_row_1).visibility)
-    assertEquals(View.VISIBLE,shadow.getViewFor(id).findViewById<View>(R.id.ticket_row_2).visibility)
+    assertEquals("widget view=${shadow.getViewFor(id).javaClass.name} row heights="+listOf(R.id.ticket_row_0,R.id.ticket_row_1,R.id.ticket_row_2).map{shadow.getViewFor(id).findViewById<View>(it).measuredHeight},View.VISIBLE,shadow.getViewFor(id).findViewById<View>(R.id.ticket_row_2).visibility)
     val small=Bundle().apply{putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,140)}
     manager.updateAppWidgetOptions(id,small)
     UpcomingShowsWidgetProvider().onAppWidgetOptionsChanged(context,manager,id,small)
@@ -73,6 +73,7 @@ class TicketWidgetTest {
     save()
     val manager = AppWidgetManager.getInstance(context)
     val shadow = shadowOf(manager)
+    val counts = mutableMapOf<Int,Int>()
     for (height in listOf(180,220,300,420,560)) {
       val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget)
       val options = Bundle().apply {
@@ -107,11 +108,13 @@ class TicketWidgetTest {
       assertTrue("footer ${footer.bottom} must fit at height $height with padding ${view.paddingBottom}",footer.bottom <= height - view.paddingBottom)
       val rows = rowIds.map { view.findViewById<View>(it) }.filter { it.visibility == View.VISIBLE }
       assertTrue(rows.size <= 6)
-      if(height >= 300) assertTrue("height $height should fit three events; got $count with $lines title lines",count >= 3)
-      if(height >= 560) assertEquals(6,count)
+      counts[height] = count
+      println("height=$height count=$count lines=$lines type=${view.javaClass.name} root=${view.measuredHeight} density=${context.resources.displayMetrics.density} rows=${rowIds.map{view.findViewById<View>(it).measuredHeight}}")
       for (row in rows) assertTrue("cards must not overlap footer at height $height",row.bottom <= footer.top)
 
     }
+    assertTrue("300dp should fit three events: $counts",counts.getValue(300) >= 3)
+    assertEquals("560dp should fit all six: $counts",6,counts.getValue(560))
   }
   @Test @Config(sdk = [34], qualifiers = "port")
   fun portraitUsesMaxHeightInsteadOfLandscapeMinHeight() {
@@ -126,7 +129,7 @@ class TicketWidgetTest {
       putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT,420)
     }
     UpcomingShowsWidgetProvider().onAppWidgetOptionsChanged(context,manager,id,options)
-    assertEquals(View.VISIBLE,shadow.getViewFor(id).findViewById<View>(R.id.ticket_row_2).visibility)
+    assertEquals("widget view=${shadow.getViewFor(id).javaClass.name} row heights="+listOf(R.id.ticket_row_0,R.id.ticket_row_1,R.id.ticket_row_2).map{shadow.getViewFor(id).findViewById<View>(it).measuredHeight},View.VISIBLE,shadow.getViewFor(id).findViewById<View>(R.id.ticket_row_2).visibility)
   }
   @Test @Config(sdk = [34], qualifiers = "land")
   fun landscapeUsesMinHeightAndDoesNotOverflowPortraitRows() {
