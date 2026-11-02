@@ -8,12 +8,12 @@
 
 ### Android
 
-最新版は **v0.9.4** です。
+最新版は **v0.9.5** です。
 
-**[Androidアプリをダウンロード](https://github.com/WassanBorn72/ylmlm-ticket/releases/download/v0.9.4/ylmlm-unofficial-ticket-v0.9.4.apk)**
+**[Androidアプリをダウンロード](https://github.com/WassanBorn72/ylmlm-ticket/releases/download/v0.9.5/ylmlm-unofficial-ticket-v0.9.5.apk)**
 
 1. Androidスマホで上のリンクからAPKをダウンロードします。
-2. ダウンロードした `ylmlm-unofficial-ticket-v0.9.4.apk` を開きます。
+2. ダウンロードした `ylmlm-unofficial-ticket-v0.9.5.apk` を開きます。
 3. インストール許可を求められたら、ブラウザーや「Files」など今回使う提供元を許可します。
 4. 「モ！のチケット帳（非公式）」を開きます。
 

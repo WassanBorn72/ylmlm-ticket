@@ -1,12 +1,12 @@
 # GitHub での配布
 
-正式リリースの公開先は https://github.com/WassanBorn72/ylmlm-ticket/releases です。ウィジェットの初期サイズ・最小サイズを小さくし、太字の範囲を整理して販売状況表示を外した [v0.9.4](https://github.com/WassanBorn72/ylmlm-ticket/releases/tag/v0.9.4) を2026年11月2日（日本時間）に正式公開しました。ストアには提出していません。iPhone向けIPAは作成していません。
+正式リリースの公開先は https://github.com/WassanBorn72/ylmlm-ticket/releases です。ウィジェットの見える外枠を実際の占有領域全体へ合わせ、文字サイズと情報間隔を調整した [v0.9.5](https://github.com/WassanBorn72/ylmlm-ticket/releases/tag/v0.9.5) を2026年11月3日（日本時間）に正式公開しました。ストアには提出していません。iPhone向けIPAは作成していません。
 
-APK名は `ylmlm-unofficial-ticket-v0.9.4.apk` です。更新でもApplication IDと署名鍵を維持します。
+APK名は `ylmlm-unofficial-ticket-v0.9.5.apk` です。更新でもApplication IDと署名鍵を維持します。
 
-[署名付きビルド](https://github.com/WassanBorn72/ylmlm-ticket/actions/runs/41464228993)と[CI](https://github.com/WassanBorn72/ylmlm-ticket/actions/runs/41464226341)は成功しています。84件のJSテスト、ウィジェットのネイティブテスト16件、画面操作、全OS向けバンドル、公開APKのチェックサムと既存正式版と同じ署名を確認しました。APK内のversionName `0.9.4`・versionCode `31`、2種類のウィジェット、通知権限とカレンダー権限除去も検証済みです。APK内の両ウィジェット定義のminHeight・minResizeHeight `120dp`、targetCellHeight `2` を読み戻して確認しました。120・140・180・300dpの表示と文字サイズ1.5倍、小サイズから通常サイズへの表示復帰、情報が収まらない場合の拡大案内、太字をアプリ名・公演名に限定すること、販売状況を読み上げにも含めないことを検証しました。実ランチャーのグリッドでのサイズ変更・OS通知配信・カレンダー編集は実機未検証です。APKのSHA-256は `0005d5595134b749263446c2d38ebfc79560e0a99e9a62942853aef078681ea0` です。
+[署名付きビルド](https://github.com/WassanBorn72/ylmlm-ticket/actions/runs/41469637426)と[CI](https://github.com/WassanBorn72/ylmlm-ticket/actions/runs/41469632306)は成功しています。84件のJSテスト、ウィジェットのネイティブテスト16件、画面操作、全OS向けバンドル、公開APKのチェックサムと既存正式版と同じ署名を確認しました。APK内のversionName `0.9.5`・versionCode `32`、2種類のウィジェット、通知権限とカレンダー権限除去も検証済みです。両ウィジェットのminHeight・minResizeHeight `120dp`、targetCellHeight `2` は維持しています。ホストの高さ300〜560pxと1件のお気に入り560pxで、背景が実表示領域の全高を覆い、中央の縦1列の全ピクセルの透明度が255であること、フッターが実下端にあること、カード自体は伸びないことを検証。小サイズ・文字サイズ1.5倍・拡大案内・文字の太さ・販売状況の非表示も検証済みです。実ランチャーの操作・OS通知配信・カレンダー編集は実機未検証です。APKのSHA-256は `abcec2b848c06b0e4ff3d3c3e614ca8d5732e4cf8cc011e93346411029c7508b` です。
 
-配置済みの占有マス数はAndroidのホームアプリが管理し、アプリから自動変更できません。更新後は長押ししてリサイズする必要があります。透明化だけで占有マスが解放されるわけではありません。段数の目安はランチャーのグリッド設定によって変わります。
+今回の修正はリサイズ操作の案内ではなく、内容だけをwrap_contentで描いて外側に透明な占有領域を残していたレイアウトの修正です。表示面はホスト全体へ描き、カードは上寄せのまま、フッターを実際の下端へ固定しています。
 
 ## アプリの識別子
 
@@ -25,7 +25,7 @@ APK名は `ylmlm-unofficial-ticket-v0.9.4.apk` です。更新でもApplication 
 表示バージョンは `MAJOR.MINOR.PATCH` 形式です。1.0未満では仕様の変更があり得る開発段階として扱い、新機能の追加はMINOR、不具合修正はPATCHを上げます。公開ごとの変更内容を [CHANGELOG.md](CHANGELOG.md) に記録します。
 
 - `app.json` の `expo.version`、`package.json` とロックファイルのversion、Gitタグ、Releaseタイトル、APK名を一致させます。
-- AndroidのversionCodeとiOSのbuildNumberは、表示バージョンとは別の更新用の番号として増やします。今回の値は両方 `31` です。
+- AndroidのversionCodeとiOSのbuildNumberは、表示バージョンとは別の更新用の番号として増やします。今回の値は両方 `32` です。
 - アプリ内の表示は `app.json` から読み取り、設定画面に表示します。
 - 公開済みタグ・APKを別のビルドで置き換えません。公開後の修正は新しいバージョンで配布します。
 
@@ -70,11 +70,11 @@ GitHub のリポジトリ Settings → Secrets and variables → Actions に、�
 
 Base64 は暗号化ではありません。変換した内容も秘密情報として取り扱ってください。署名鍵とパスワードはクラウド開発環境の通常変数には入れず、GitHub Actions の Secrets を利用します。
 
-準備と実機確認後、バージョンと一致するタグ（例：`v0.9.4`）を作り、GitHub に push します。
+準備と実機確認後、バージョンと一致するタグ（例：`v0.9.5`）を作り、GitHub に push します。
 
 ```sh
-git tag v0.9.4
-git push origin v0.9.4
+git tag v0.9.5
+git push origin v0.9.5
 ```
 
 `Android GitHub Release` ワークフローが、テスト → Expo prebuild → 専用鍵で署名した release APK の生成 → 署名検証 → チェックサム生成 → GitHub Release 下書き作成を行います。秘密情報がない場合は停止し、debug 鍵で代用しません。既存タグは Actions の手動実行でも指定できます。同じ下書きの再作成は自動上書きせず失敗するため、既存の内容を確認して扱ってください。
