@@ -44,7 +44,8 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
       intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
       return PendingIntent.getActivity(context, widgetId * 10 + row, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
     }
-    internal fun widgetSales(input: org.json.JSONArray?, now: Long = System.currentTimeMillis()): String {
+    internal data class WidgetSale(val sourceId: String,val name: String,val state: String,val stale: Boolean)
+    internal fun saleGroups(input: org.json.JSONArray?, now: Long = System.currentTimeMillis()): List<WidgetSale> {
       fun status(offer: JSONObject): String {
         val start = (offer.opt("salesStartMs") as? Number)?.toLong()
         val end = (offer.opt("salesEndMs") as? Number)?.toLong()
@@ -61,15 +62,32 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
         }
       }
       val offers = (0 until (input?.length() ?: 0)).mapNotNull { input?.optJSONObject(it) }
-      val groups = offers.groupBy { it.optString("sourceId").ifBlank { it.optString("sourceName") } }.values.map { group ->
+      val groups = offers.groupBy { it.optString("sourceId").ifBlank { it.optString("sourceName") } }.entries.map { (id,group) ->
         val states = group.map { status(it) }.distinct()
         val state = if(states.size == 1) states[0] else if(states.contains("発売中")) "一部発売中" else "券種別"
-        Triple(group.first().optString("sourceName",group.first().optString("sourceId")),state,group.any { it.optBoolean("stale") })
-      }.filter { it.first.isNotBlank() }
+        WidgetSale(id,group.first().optString("sourceName",group.first().optString("sourceId")),state,group.any { it.optBoolean("stale") })
+      }.filter { it.name.isNotBlank() }
       fun priority(state: String) = when(state) { "発売中", "一部発売中" -> 0; "発売前" -> 1; "要確認", "券種別" -> 2; "在庫なし" -> 3; "完売" -> 4; else -> 5 }
-      return groups.sortedWith(compareBy({priority(it.second)},{if(it.third) 1 else 0},{it.first})).joinToString(" / ") {
-        it.second + (if(it.third) "（前回）" else "") + " " + it.first
-      }
+      return groups.sortedWith(compareBy({priority(it.state)},{if(it.stale) 1 else 0},{it.name}))
+    }
+    private fun salesText(groups: List<WidgetSale>) = groups.joinToString(" / ") {
+      it.state + (if(it.stale) "（前回）" else "") + " " + it.name
+    }
+    internal fun widgetSales(input: org.json.JSONArray?,now: Long = System.currentTimeMillis()) = salesText(saleGroups(input,now))
+    private fun siteStyle(site: WidgetSale): Pair<Int,String> = when {
+      site.sourceId == "ticketdive" || site.name == "TicketDive" -> R.drawable.ticket_tag_site_ticketdive to "#17643B"
+      site.sourceId == "livepocket" || site.name == "LivePocket" -> R.drawable.ticket_tag_site_livepocket to "#855700"
+      site.sourceId == "tiget" || site.name == "TIGET" -> R.drawable.ticket_tag_site_tiget to "#623996"
+      site.sourceId == "eplus" || site.name == "イープラス" -> R.drawable.ticket_tag_site_eplus to "#9F2943"
+      else -> R.drawable.ticket_tag_site_other to "#4B5C6B"
+    }
+    private fun statusStyle(site: WidgetSale): Pair<Int,String> = when {
+      site.stale -> R.drawable.ticket_tag_status_check to "#855700"
+      site.state == "発売中" || site.state == "一部発売中" -> R.drawable.ticket_tag_status_on to "#17643B"
+      site.state == "発売前" -> R.drawable.ticket_tag_status_before to "#24539B"
+      site.state == "完売" || site.state == "在庫なし" -> R.drawable.ticket_tag_status_sold to "#9F2943"
+      site.state == "発売終了" -> R.drawable.ticket_tag_status_ended to "#52616D"
+      else -> R.drawable.ticket_tag_status_check to "#855700"
     }
     private fun measure(view: View,width: Int) {
       fun invalidate(node: View) {
@@ -151,10 +169,16 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
       overview?.let { views.setOnClickPendingIntent(R.id.ticket_widget_root,it);views.setOnClickPendingIntent(R.id.ticket_widget_header,it);views.setOnClickPendingIntent(R.id.ticket_widget_footer,it) }
       val rows = intArrayOf(R.id.ticket_row_0,R.id.ticket_row_1,R.id.ticket_row_2,R.id.ticket_row_3,R.id.ticket_row_4,R.id.ticket_row_5)
       val titles = intArrayOf(R.id.ticket_title_0,R.id.ticket_title_1,R.id.ticket_title_2,R.id.ticket_title_3,R.id.ticket_title_4,R.id.ticket_title_5)
-      val times = intArrayOf(R.id.ticket_time_0,R.id.ticket_time_1,R.id.ticket_time_2,R.id.ticket_time_3,R.id.ticket_time_4,R.id.ticket_time_5)
+      val sites = intArrayOf(R.id.ticket_site_0,R.id.ticket_site_1,R.id.ticket_site_2,R.id.ticket_site_3,R.id.ticket_site_4,R.id.ticket_site_5)
+      val badgeRows = intArrayOf(R.id.ticket_badges_0,R.id.ticket_badges_1,R.id.ticket_badges_2,R.id.ticket_badges_3,R.id.ticket_badges_4,R.id.ticket_badges_5)
+      val moreSites = intArrayOf(R.id.ticket_more_0,R.id.ticket_more_1,R.id.ticket_more_2,R.id.ticket_more_3,R.id.ticket_more_4,R.id.ticket_more_5)
       val sales = intArrayOf(R.id.ticket_sales_0,R.id.ticket_sales_1,R.id.ticket_sales_2,R.id.ticket_sales_3,R.id.ticket_sales_4,R.id.ticket_sales_5)
       val performances = intArrayOf(R.id.ticket_performance_0,R.id.ticket_performance_1,R.id.ticket_performance_2,R.id.ticket_performance_3,R.id.ticket_performance_4,R.id.ticket_performance_5)
       val meets = intArrayOf(R.id.ticket_meet_0,R.id.ticket_meet_1,R.id.ticket_meet_2,R.id.ticket_meet_3,R.id.ticket_meet_4,R.id.ticket_meet_5)
+      val opens = intArrayOf(R.id.ticket_open_0,R.id.ticket_open_1,R.id.ticket_open_2,R.id.ticket_open_3,R.id.ticket_open_4,R.id.ticket_open_5)
+      val timingGroups = intArrayOf(R.id.ticket_timing_group_0,R.id.ticket_timing_group_1,R.id.ticket_timing_group_2,R.id.ticket_timing_group_3,R.id.ticket_timing_group_4,R.id.ticket_timing_group_5)
+      val timingSpaces = intArrayOf(R.id.ticket_timing_space_0,R.id.ticket_timing_space_1,R.id.ticket_timing_space_2,R.id.ticket_timing_space_3,R.id.ticket_timing_space_4,R.id.ticket_timing_space_5)
+      val locationSpaces = intArrayOf(R.id.ticket_location_space_0,R.id.ticket_location_space_1,R.id.ticket_location_space_2,R.id.ticket_location_space_3,R.id.ticket_location_space_4,R.id.ticket_location_space_5)
       val metas = intArrayOf(R.id.ticket_meta_0,R.id.ticket_meta_1,R.id.ticket_meta_2,R.id.ticket_meta_3,R.id.ticket_meta_4,R.id.ticket_meta_5)
       val months = intArrayOf(R.id.ticket_month_0,R.id.ticket_month_1,R.id.ticket_month_2,R.id.ticket_month_3,R.id.ticket_month_4,R.id.ticket_month_5)
       val days = intArrayOf(R.id.ticket_day_0,R.id.ticket_day_1,R.id.ticket_day_2,R.id.ticket_day_3,R.id.ticket_day_4,R.id.ticket_day_5)
@@ -167,14 +191,33 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
           views.setTextViewText(titles[index],event.optString("title"))
           views.setInt(titles[index],"setMaxLines",2)
           val summary = event.optString("summary")
-          views.setTextViewText(times[index],event.optString("timeLabel",summary.substringBefore(" · ").substringAfter(" ","時間未掲載")))
-          views.setTextViewText(metas[index],event.optString("venueLabel",summary.substringAfter(" · ","会場はアプリで確認")))
-          val sale = widgetSales(event.optJSONArray("ticketOffers"))
-          views.setTextViewText(sales[index],sale)
-          views.setViewVisibility(sales[index],if(sale.isBlank()) View.GONE else View.VISIBLE)
-          views.setTextColor(sales[index],android.graphics.Color.parseColor(if(sale.startsWith("発売中") || sale.startsWith("一部発売中")) "#287B59" else if(sale.startsWith("発売前")) "#986721" else "#52695D"))
+          val time = event.optString("timeLabel",summary.substringBefore(" · ").substringAfter(" ","時間未掲載"))
+          val venue = event.optString("venueLabel",summary.substringAfter(" · ","会場はアプリで確認"))
+          views.setTextViewText(metas[index],"会場 $venue")
+          views.setTextViewText(opens[index],time)
+          val grouped = saleGroups(event.optJSONArray("ticketOffers"))
+          val sale = salesText(grouped)
+          val primary = grouped.firstOrNull()
+          views.setViewVisibility(badgeRows[index],if(primary == null) View.GONE else View.VISIBLE)
+          views.setViewVisibility(sales[index],if(primary == null) View.GONE else View.VISIBLE)
+          if(primary != null) {
+            views.setTextViewText(sites[index],primary.name)
+            views.setTextViewText(sales[index],(if(primary.stale) "前回・" else "")+primary.state)
+            views.setTextViewText(moreSites[index],"＋${grouped.size-1}")
+            views.setViewVisibility(moreSites[index],if(grouped.size > 1 && width >= 280) View.VISIBLE else View.GONE)
+            val (siteBg,siteFg) = siteStyle(primary)
+            val (stateBg,stateFg) = statusStyle(primary)
+            views.setInt(sites[index],"setBackgroundResource",siteBg)
+            views.setTextColor(sites[index],android.graphics.Color.parseColor(siteFg))
+            views.setInt(sales[index],"setBackgroundResource",stateBg)
+            views.setTextColor(sales[index],android.graphics.Color.parseColor(stateFg))
+          }
           val performance = event.optString("performanceLabel")
           val meet = event.optString("meetAndGreetLabel")
+          val hasTiming = performance.isNotBlank() || meet.isNotBlank()
+          views.setViewVisibility(timingGroups[index],if(hasTiming) View.VISIBLE else View.GONE)
+          views.setViewVisibility(timingSpaces[index],if(hasTiming) View.VISIBLE else View.GONE)
+          views.setViewVisibility(locationSpaces[index],if(hasTiming) View.GONE else View.VISIBLE)
           views.setTextViewText(performances[index],performance)
           views.setViewVisibility(performances[index],if(performance.isBlank()) View.GONE else View.VISIBLE)
           views.setTextViewText(meets[index],meet)
@@ -186,7 +229,7 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
             views.setTextViewText(days[index],label("d"))
             val weekday=label("EEE")
             views.setTextViewText(weekdays[index],weekday)
-            views.setTextColor(months[index],android.graphics.Color.parseColor(if(weekday=="日") "#B34C58" else if(weekday=="土") "#416EA2" else "#287B59"))
+            views.setTextColor(months[index],android.graphics.Color.parseColor(if(weekday=="日") "#B34C58" else if(weekday=="土") "#416EA2" else "#52616D"))
           }else{views.setTextViewText(months[index],"--月");views.setTextViewText(days[index],"--")}
           views.setViewVisibility(weekdays[index],View.GONE)
           views.setContentDescription(row,listOf(event.optString("title"),summary,performance,meet,sale).filter{it.isNotBlank()}.joinToString(" "))
@@ -197,6 +240,21 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
       views.setTextViewText(R.id.ticket_widget_empty,if(favorites) "掲載中のお気に入りはありません。\nタップしてアプリで登録・更新" else "公演情報がありません。\nタップしてアプリで更新")
       views.setTextViewText(R.id.ticket_widget_updated,snapshot.optString("updatedShort",snapshot.optString("updatedLabel","アプリを開いて更新").substringBefore(" · ")))
       val measured = views.apply(context,null)
+      // Keep both colored tags inside the text column, including at large font sizes.
+      val columnWidth = ((width-66).coerceAtLeast(1f)*density).toInt()
+      sites.forEachIndexed { index,id ->
+        val source = measured.findViewById<android.widget.TextView>(id)
+        val state = measured.findViewById<android.widget.TextView>(sales[index])
+        val more = measured.findViewById<android.widget.TextView>(moreSites[index])
+        val extra = if(more.visibility == View.VISIBLE) more.paint.measureText(more.text.toString()).toInt()+(4*density).toInt() else 0
+        val stateLimit = (columnWidth-(40*density).toInt()-(4*density).toInt()-extra).coerceAtLeast(1)
+        val stateWidth = kotlin.math.min(stateLimit,kotlin.math.ceil(state.paint.measureText(state.text.toString()).toDouble()).toInt()+state.paddingLeft+state.paddingRight)
+        val sourceLimit = (columnWidth-stateWidth-(4*density).toInt()-extra).coerceAtLeast(1)
+        source.maxWidth = sourceLimit
+        state.maxWidth = stateLimit
+        views.setInt(id,"setMaxWidth",sourceLimit)
+        views.setInt(sales[index],"setMaxWidth",stateLimit)
+      }
       val widthPx = (width * density).toInt()
       val heightPx = (height * density).toInt()
       val (limit,titleLines) = fitLayout(measured,rows,titles,widthPx,heightPx,events.size)

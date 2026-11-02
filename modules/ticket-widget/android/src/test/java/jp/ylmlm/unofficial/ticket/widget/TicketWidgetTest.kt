@@ -32,6 +32,23 @@ class TicketWidgetTest {
     }
     update(view)
   }
+  private fun assertContentEdges(view: View,count: Int) {
+    val root = view as android.view.ViewGroup
+    fun bounds(id: Int): android.graphics.Rect {
+      val child = root.findViewById<View>(id)
+      return android.graphics.Rect().apply { child.getDrawingRect(this); root.offsetDescendantRectToMyCoords(child,this) }
+    }
+    val titles = intArrayOf(R.id.ticket_title_0,R.id.ticket_title_1,R.id.ticket_title_2,R.id.ticket_title_3,R.id.ticket_title_4,R.id.ticket_title_5)
+    val groups = intArrayOf(R.id.ticket_timing_group_0,R.id.ticket_timing_group_1,R.id.ticket_timing_group_2,R.id.ticket_timing_group_3,R.id.ticket_timing_group_4,R.id.ticket_timing_group_5)
+    val locations = intArrayOf(R.id.ticket_location_0,R.id.ticket_location_1,R.id.ticket_location_2,R.id.ticket_location_3,R.id.ticket_location_4,R.id.ticket_location_5)
+    val last = count-1
+    val lastId = if(root.findViewById<View>(groups[last]).visibility == View.VISIBLE) groups[last] else locations[last]
+    val topGap = bounds(titles[0]).top-root.findViewById<View>(R.id.ticket_widget_header).bottom
+    val bottomGap = root.findViewById<View>(R.id.ticket_widget_footer).top-bounds(lastId).bottom
+    val limit = (8*view.resources.displayMetrics.density).toInt()
+    assertTrue("first title must be close to header: $topGap",topGap in 0..limit)
+    assertTrue("last information must be close to footer: $bottomGap",bottomGap in 0..limit)
+  }
   private fun save() {
     val snapshot="""{"updatedLabel":"11/1取得","events":[
       {"id":"a","title":"公演A","date":"2099-01-01","sortTime":"09:00","favorite":true,"summary":"1/1 OPEN 18:00 · 会場A"},
@@ -56,8 +73,8 @@ class TicketWidgetTest {
     assertEquals("公演A",favoritesView.findViewById<TextView>(R.id.ticket_title_0).text.toString())
     assertEquals("公演C",favoritesView.findViewById<TextView>(R.id.ticket_title_1).text.toString())
     assertEquals("公演B",upcomingView.findViewById<TextView>(R.id.ticket_title_1).text.toString())
-    assertEquals("OPEN 18:00",upcomingView.findViewById<TextView>(R.id.ticket_time_1).text.toString())
-    assertEquals("会場B",upcomingView.findViewById<TextView>(R.id.ticket_meta_1).text.toString())
+    assertEquals("OPEN 18:00",upcomingView.findViewById<TextView>(R.id.ticket_open_1).text.toString())
+    assertEquals("会場 会場B",upcomingView.findViewById<TextView>(R.id.ticket_meta_1).text.toString())
     assertTrue(upcomingView.findViewById<TextView>(R.id.ticket_month_0).text.toString().startsWith("1月"))
     assertEquals("11/1取得",upcomingView.findViewById<TextView>(R.id.ticket_widget_updated).text.toString())
   }
@@ -115,7 +132,7 @@ class TicketWidgetTest {
       assertEquals("no outside top padding",0,view.paddingTop)
       assertEquals("no outside bottom padding",0,view.paddingBottom)
       val header = view.findViewById<View>(R.id.ticket_widget_header)
-      assertTrue("compact header/footer at $height",header.height+footer.height <= 44)
+      assertTrue("compact header/footer at $height",header.height+footer.height <= 52)
       rows.forEach { assertEquals("full-width event rows",view.width,it.width) }
       counts[height] = count
       println("height=$height count=$count lines=$lines type=${view.javaClass.name} root=${view.measuredHeight} density=${context.resources.displayMetrics.density} rows=${rowIds.map{view.findViewById<View>(it).measuredHeight}}")
@@ -125,6 +142,9 @@ class TicketWidgetTest {
       val bottomSpace = view.findViewById<View>(R.id.ticket_widget_bottom_space).height
       assertTrue("unused space must be split above/below cards at $height: $topSpace / $bottomSpace",kotlin.math.abs(topSpace-bottomSpace) <= 1)
       assertTrue("remaining height should enlarge cards, not outside gaps at $height",topSpace+bottomSpace < rows.size)
+      assertContentEdges(view,count)
+      assertTrue(view.findViewById<TextView>(R.id.ticket_widget_mode).textSize >= 16*context.resources.displayMetrics.scaledDensity)
+      assertTrue(view.findViewById<TextView>(R.id.ticket_widget_updated).textSize >= 13*context.resources.displayMetrics.scaledDensity)
 
     }
     assertTrue("220dp should fit two events: $counts",counts.getValue(220) >= 2)
@@ -162,7 +182,10 @@ class TicketWidgetTest {
         assertEquals(View.VISIBLE,view.findViewById<View>(R.id.ticket_performance_0).visibility)
         assertEquals("特典会 19:35〜20:25",view.findViewById<TextView>(R.id.ticket_meet_0).text.toString())
         assertEquals(View.GONE,view.findViewById<View>(R.id.ticket_performance_2).visibility)
-        assertEquals("発売中 LivePocket / 完売（前回） TIGET",view.findViewById<TextView>(R.id.ticket_sales_0).text.toString())
+        assertEquals("発売中",view.findViewById<TextView>(R.id.ticket_sales_0).text.toString())
+        assertEquals("LivePocket",view.findViewById<TextView>(R.id.ticket_site_0).text.toString())
+        assertEquals("＋1",view.findViewById<TextView>(R.id.ticket_more_0).text.toString())
+        assertTrue(view.findViewById<View>(R.id.ticket_row_0).contentDescription.toString().contains("TIGET"))
         assertEquals(View.GONE,view.findViewById<View>(R.id.ticket_sales_2).visibility)
         assertTrue(view.findViewById<View>(R.id.ticket_row_0).contentDescription.toString().contains("19:35"))
         previewFont(view)
@@ -184,6 +207,7 @@ class TicketWidgetTest {
         val footer = view.findViewById<View>(R.id.ticket_widget_footer)
         assertTrue("footer fits at $height / $scale",footer.bottom <= height-view.paddingBottom)
         rows.forEach{assertTrue("cards fit before footer at $height / $scale",it.bottom <= footer.top)}
+        assertContentEdges(view,count)
         println("with-times height=$height font=$scale count=$count lines=$lines cardHeight=${rows.first().height} gaps=$top/$bottom")
       }
     } finally { RuntimeEnvironment.setFontScale(1f) }
@@ -282,6 +306,35 @@ class TicketWidgetTest {
     assertEquals("完売 TIGET",FavoriteShowsWidgetProvider.widgetSales(org.json.JSONArray("""[{"sourceId":"b","sourceName":"TIGET","availability":"SoldOut"}]"""),now))
     assertEquals("在庫なし TIGET",FavoriteShowsWidgetProvider.widgetSales(org.json.JSONArray("""[{"sourceId":"b","sourceName":"TIGET","availability":"OutOfStock"}]"""),now))
     assertEquals("",FavoriteShowsWidgetProvider.widgetSales(null,now))
+  }
+  @Test fun sourceAndSaleBadgesUseDistinctAppColors() {
+    val cases = listOf(
+      listOf("livepocket","LivePocket","InStock","発売中","#FFF3DA","#DDF4E5"),
+      listOf("ticketdive","TicketDive","SoldOut","完売","#EAF8F1","#FCE2E5"),
+      listOf("tiget","TIGET","Discontinued","発売終了","#EEEAFD","#E9EDF0"),
+      listOf("eplus","イープラス","PreOrder","発売前","#FFECEC","#E2EEFF"),
+      listOf("other","その他","Unknown","要確認","#E9EDF2","#FFF1D8")
+    )
+    val manager = AppWidgetManager.getInstance(context)
+    val shadow = shadowOf(manager)
+    for(c in cases) {
+      save()
+      val prefs = context.getSharedPreferences("ticket_widget",0)
+      val snapshot = org.json.JSONObject(prefs.getString("snapshot","{}")!!)
+      val offer = org.json.JSONObject().put("sourceId",c[0]).put("sourceName",c[1]).put("availability",c[2])
+      snapshot.getJSONArray("events").getJSONObject(0).put("ticketOffers",org.json.JSONArray().put(offer))
+      prefs.edit().putString("snapshot",snapshot.toString()).commit()
+      val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget)
+      val options = Bundle().apply {putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,340);putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,300)}
+      UpcomingShowsWidgetProvider().onAppWidgetOptionsChanged(context,manager,id,options)
+      val view = shadow.getViewFor(id)
+      val source = view.findViewById<TextView>(R.id.ticket_site_0)
+      val state = view.findViewById<TextView>(R.id.ticket_sales_0)
+      assertEquals(c[1],source.text.toString())
+      assertEquals(c[3],state.text.toString())
+      assertEquals(android.graphics.Color.parseColor(c[4]),(source.background as android.graphics.drawable.GradientDrawable).color?.defaultColor ?: 0)
+      assertEquals(android.graphics.Color.parseColor(c[5]),(state.background as android.graphics.drawable.GradientDrawable).color?.defaultColor ?: 0)
+    }
   }
   @Test fun emptySnapshotOffersAppRefreshInsteadOfFakeEvents() {
     val manager=shadowOf(AppWidgetManager.getInstance(context))
