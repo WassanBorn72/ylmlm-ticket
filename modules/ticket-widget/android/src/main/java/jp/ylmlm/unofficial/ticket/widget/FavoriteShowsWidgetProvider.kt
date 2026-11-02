@@ -199,8 +199,13 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
       val days = intArrayOf(R.id.ticket_day_0,R.id.ticket_day_1,R.id.ticket_day_2,R.id.ticket_day_3,R.id.ticket_day_4,R.id.ticket_day_5)
       val weekdays = intArrayOf(R.id.ticket_weekday_0,R.id.ticket_weekday_1,R.id.ticket_weekday_2,R.id.ticket_weekday_3,R.id.ticket_weekday_4,R.id.ticket_weekday_5)
       rows.forEachIndexed { index,row ->
-        val inset = ((if(compactHeader) 3 else 4)*density).toInt()
+        val inset = ((if(compactHeader) 2 else 4)*density).toInt()
         views.setViewPadding(row,inset,inset,inset,inset)
+        val tagSide = (5*density).toInt()
+        val tagInset = ((if(compactHeader) 0 else 1)*density).toInt()
+        views.setViewPadding(sites[index],tagSide,tagInset,tagSide,tagInset)
+        views.setViewPadding(sales[index],tagSide,tagInset,tagSide,tagInset)
+        views.setViewPadding(timingGroups[index],tagSide,tagInset,tagSide,tagInset)
         val event = events.getOrNull(index)
         if(event == null) views.setViewVisibility(row,View.GONE)
         else {

@@ -1,3 +1,4 @@
+# Verify compact timetable cards after the standard-size fit correction.
 name: Publish verified v0.9.2
 on:
   push:
