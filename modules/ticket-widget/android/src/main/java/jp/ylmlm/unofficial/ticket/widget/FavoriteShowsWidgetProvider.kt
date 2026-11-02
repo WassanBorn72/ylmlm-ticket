@@ -82,7 +82,7 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
       val minWidth = size.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,300)
       val maxHeight = size.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT,minHeight)
       val maxWidth = size.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH,minWidth)
-      fun layout(height: Int,width: Int): RemoteViews {
+      fun layout(height: Float,width: Float): RemoteViews {
       val views = RemoteViews(context.packageName, R.layout.ticket_widget)
       val density = context.resources.displayMetrics.density
       val padding = (4 * density).toInt()
@@ -142,13 +142,13 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
           ?.filter { it.width.isFinite() && it.height.isFinite() && it.width > 0 && it.height > 0 }
           ?.distinct().orEmpty()
         if(sizes.isNotEmpty() && sizes.size <= 16) {
-          manager.updateAppWidget(id,RemoteViews(sizes.associateWith { layout(it.height.toInt(),it.width.toInt()) }))
+          manager.updateAppWidget(id,RemoteViews(sizes.associateWith { layout(it.height,it.width) }))
           return
         }
       }
       // Older launchers only supply orientation bounds: portrait is min width / max
       // height. Keep both layouts so rotation does not require a network refresh.
-      manager.updateAppWidget(id,RemoteViews(layout(minHeight,maxWidth),layout(maxHeight,minWidth)))
+      manager.updateAppWidget(id,RemoteViews(layout(minHeight.toFloat(),maxWidth.toFloat()),layout(maxHeight.toFloat(),minWidth.toFloat())))
     }
   }
 }
