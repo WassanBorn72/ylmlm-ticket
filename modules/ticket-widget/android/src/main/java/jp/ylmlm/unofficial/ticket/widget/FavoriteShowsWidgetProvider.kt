@@ -44,20 +44,37 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
       intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
       return PendingIntent.getActivity(context, widgetId * 10 + row, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
     }
-    // Measure the same Android layout that the launcher receives, including font scale,
-    // title wrapping, date badges, margins and footer, instead of guessing dp per row.
+    private fun measure(view: View,width: Int) {
+      fun invalidate(node: View) {
+        node.forceLayout()
+        if(node is android.view.ViewGroup) for(i in 0 until node.childCount) invalidate(node.getChildAt(i))
+      }
+      invalidate(view)
+      view.measure(View.MeasureSpec.makeMeasureSpec(width,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(0,View.MeasureSpec.UNSPECIFIED))
+    }
+    // All visible cards use the tallest card's natural height. Measure the complete
+    // uniform group when choosing a count so equal heights never push out the footer.
+    private fun measureUniformRows(view: View,rows: IntArray,width: Int,count: Int): Int {
+      rows.forEachIndexed { index,row ->
+        view.findViewById<View>(row).apply {
+          visibility = if(index < count) View.VISIBLE else View.GONE
+          minimumHeight = 0
+          layoutParams = layoutParams.apply { height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT }
+        }
+      }
+      measure(view,width)
+      val cardHeight = rows.take(count).maxOfOrNull { view.findViewById<View>(it).measuredHeight } ?: 0
+      rows.take(count).forEach { row ->
+        view.findViewById<View>(row).apply { layoutParams = layoutParams.apply { height = cardHeight } }
+      }
+      measure(view,width)
+      return view.measuredHeight
+    }
     internal fun fitRows(view: View, rowIds: IntArray, width: Int, height: Int, candidates: Int): Int {
       val count = candidates.coerceIn(0,rowIds.size)
       if(count == 0) return 0
       for(limit in count downTo 1) {
-        rowIds.forEachIndexed { index,row -> view.findViewById<View>(row).visibility = if(index < limit) View.VISIBLE else View.GONE }
-        fun invalidateMeasurements(node: View) {
-          node.forceLayout()
-          if(node is android.view.ViewGroup) for(i in 0 until node.childCount) invalidateMeasurements(node.getChildAt(i))
-        }
-        invalidateMeasurements(view)
-        view.measure(View.MeasureSpec.makeMeasureSpec(width,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(0,View.MeasureSpec.UNSPECIFIED))
-        if(view.measuredHeight <= height || limit == 1) return limit
+        if(measureUniformRows(view,rowIds,width,limit) <= height || limit == 1) return limit
       }
       return 1
     }
@@ -69,7 +86,7 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
       val count = maxOf(fullCount,denseCount)
       val lines = if(denseCount > fullCount) 1 else 2
       titles.forEach { view.findViewById<android.widget.TextView>(it).maxLines = lines }
-      rows.forEachIndexed { index,row -> view.findViewById<View>(row).visibility = if(index < count) View.VISIBLE else View.GONE }
+      measureUniformRows(view,rows,width,count)
       return count to lines
     }
     private fun render(context: Context, manager: AppWidgetManager, id: Int, favorites: Boolean, options: Bundle? = null) {
@@ -130,7 +147,11 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
       val heightPx = (height * density).toInt()
       val (limit,titleLines) = fitLayout(measured,rows,titles,widthPx,heightPx,events.size)
       titles.forEach { views.setInt(it,"setMaxLines",titleLines) }
-      rows.forEachIndexed { index,row -> views.setViewVisibility(row,if(index < limit) View.VISIBLE else View.GONE) }
+      val cardHeight = if(limit > 0) measured.findViewById<View>(rows[0]).measuredHeight else 0
+      rows.forEachIndexed { index,row ->
+        views.setViewVisibility(row,if(index < limit) View.VISIBLE else View.GONE)
+        views.setInt(row,"setMinimumHeight",cardHeight)
+      }
       return views
       }
       // Modern launchers report the actual supported sizes. Their content bounds may

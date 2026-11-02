@@ -112,6 +112,10 @@ class TicketWidgetTest {
       counts[height] = count
       println("height=$height count=$count lines=$lines type=${view.javaClass.name} root=${view.measuredHeight} density=${context.resources.displayMetrics.density} rows=${rowIds.map{view.findViewById<View>(it).measuredHeight}}")
       for (row in rows) assertTrue("cards must not overlap footer at height $height",row.bottom <= footer.top)
+      assertEquals("all event cards must have equal height at $height",1,rows.map { it.height }.distinct().size)
+      val topSpace = view.findViewById<View>(R.id.ticket_widget_top_space).height
+      val bottomSpace = view.findViewById<View>(R.id.ticket_widget_bottom_space).height
+      assertTrue("unused space must be split above/below cards at $height: $topSpace / $bottomSpace",kotlin.math.abs(topSpace-bottomSpace) <= 1)
 
     }
     assertTrue("220dp should fit two events: $counts",counts.getValue(220) >= 2)
