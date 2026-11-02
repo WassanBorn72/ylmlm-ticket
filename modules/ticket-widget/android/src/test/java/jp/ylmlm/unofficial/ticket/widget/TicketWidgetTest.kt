@@ -75,7 +75,7 @@ class TicketWidgetTest {
     val manager = AppWidgetManager.getInstance(context)
     val shadow = shadowOf(manager)
     val counts = mutableMapOf<Int,Int>()
-    for (height in listOf(180,220,300,420,560)) {
+    for (height in listOf(180,220,270,300,420,560)) {
       val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget)
       val options = Bundle().apply {
         putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,height)
@@ -115,6 +115,7 @@ class TicketWidgetTest {
 
     }
     assertTrue("220dp should fit two events: $counts",counts.getValue(220) >= 2)
+    assertTrue("270dp should fit three events: $counts",counts.getValue(270) >= 3)
     assertTrue("300dp should fit three events: $counts",counts.getValue(300) >= 3)
     assertEquals("560dp should fit all six: $counts",6,counts.getValue(560))
   }
