@@ -148,6 +148,39 @@ class TicketWidgetTest {
     UpcomingShowsWidgetProvider().onAppWidgetOptionsChanged(context,manager,id,options)
     assertEquals(View.GONE,shadow.getViewFor(id).findViewById<View>(R.id.ticket_row_2).visibility)
   }
+  @Test @Config(sdk = [34], qualifiers = "w340dp-h300dp-mdpi-port")
+  fun actualLauncherSizeCanFitThreeEvenWhenLegacyBoundsOnlyFitTwo() {
+    save()
+    val manager = AppWidgetManager.getInstance(context)
+    val shadow = shadowOf(manager)
+    val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget)
+    val options = Bundle().apply {
+      putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,340)
+      putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH,340)
+      putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,220)
+      putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT,220)
+    }
+    UpcomingShowsWidgetProvider().onAppWidgetOptionsChanged(context,manager,id,options)
+    assertEquals(View.GONE,shadow.getViewFor(id).findViewById<View>(R.id.ticket_row_2).visibility)
+    options.putParcelableArrayList(AppWidgetManager.OPTION_APPWIDGET_SIZES,arrayListOf(android.util.SizeF(340f,300f)))
+    UpcomingShowsWidgetProvider().onAppWidgetOptionsChanged(context,manager,id,options)
+    assertEquals("actual 300dp bounds should display the third event",View.VISIBLE,shadow.getViewFor(id).findViewById<View>(R.id.ticket_row_2).visibility)
+  }
+  @Test @Config(sdk = [34], qualifiers = "w340dp-h220dp-mdpi-port")
+  fun invalidResponsiveSizesFallBackToLegacyBounds() {
+    save()
+    val manager = AppWidgetManager.getInstance(context)
+    val shadow = shadowOf(manager)
+    val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget)
+    val options = Bundle().apply {
+      putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,220)
+      putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,340)
+      putParcelableArrayList(AppWidgetManager.OPTION_APPWIDGET_SIZES,arrayListOf(android.util.SizeF(0f,0f)))
+    }
+    UpcomingShowsWidgetProvider().onAppWidgetOptionsChanged(context,manager,id,options)
+    assertEquals(View.VISIBLE,shadow.getViewFor(id).findViewById<View>(R.id.ticket_row_1).visibility)
+    assertEquals(View.GONE,shadow.getViewFor(id).findViewById<View>(R.id.ticket_row_2).visibility)
+  }
   @Test fun largerSystemFontStillFitsTheAvailableHeight() {
     RuntimeEnvironment.setFontScale(1.5f)
     try {

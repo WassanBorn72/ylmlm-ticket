@@ -8,6 +8,8 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.os.Build
+import android.util.SizeF
 import android.view.View
 import android.widget.RemoteViews
 import org.json.JSONObject
@@ -131,8 +133,21 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
       rows.forEachIndexed { index,row -> views.setViewVisibility(row,if(index < limit) View.VISIBLE else View.GONE) }
       return views
       }
-      // Widget options describe both orientations: portrait is min width / max height.
-      // Let Android choose its matching layout on rotation without waiting for a refresh.
+      // Modern launchers report the actual supported sizes. Their content bounds may
+      // differ from the legacy min/max pair (foldables, grid spacing and resize modes).
+      // Give the host a layout for each actual size instead of inferring its height.
+      if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        @Suppress("DEPRECATION")
+        val sizes = size.getParcelableArrayList<SizeF>(AppWidgetManager.OPTION_APPWIDGET_SIZES)
+          ?.filter { it.width.isFinite() && it.height.isFinite() && it.width > 0 && it.height > 0 }
+          ?.distinct().orEmpty()
+        if(sizes.isNotEmpty() && sizes.size <= 16) {
+          manager.updateAppWidget(id,RemoteViews(sizes.associateWith { layout(it.height.toInt(),it.width.toInt()) }))
+          return
+        }
+      }
+      // Older launchers only supply orientation bounds: portrait is min width / max
+      // height. Keep both layouts so rotation does not require a network refresh.
       manager.updateAppWidget(id,RemoteViews(layout(minHeight,maxWidth),layout(maxHeight,minWidth)))
     }
   }
