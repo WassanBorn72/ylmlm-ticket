@@ -1,12 +1,10 @@
 # GitHub での配布
 
-正式リリースの公開先は https://github.com/WassanBorn72/ylmlm-ticket/releases です。ウィジェットのカード境界・OPEN／START・会場の地図リンク・ヘッダー・表示領域の配分を改善した [v0.9.2](https://github.com/WassanBorn72/ylmlm-ticket/releases/tag/v0.9.2) を2026年11月2日（日本時間）に正式公開しました。ストアには提出していません。iPhone向けIPAは作成していません。
+正式リリースの公開先は https://github.com/WassanBorn72/ylmlm-ticket/releases です。ウィジェットのカードをコンパクトな上寄せにし、TIGETの詳細本文からの出演者判定と料金取得を改善した [v0.9.3](https://github.com/WassanBorn72/ylmlm-ticket/releases/tag/v0.9.3) を2026年11月2日（日本時間）に正式公開しました。ストアには提出していません。iPhone向けIPAは作成していません。
 
-APK名は `ylmlm-unofficial-ticket-v0.9.2.apk` です。更新でもApplication IDと署名鍵を維持します。
+APK名は `ylmlm-unofficial-ticket-v0.9.3.apk` です。更新でもApplication IDと署名鍵を維持します。
 
-[署名付きビルドと公開確認](https://github.com/WassanBorn72/ylmlm-ticket/actions/runs/41444694645)と[CI](https://github.com/WassanBorn72/ylmlm-ticket/actions/runs/41444694623)は成功しています。79件のJSテスト、ウィジェットのネイティブテスト14件、画面操作、全OS向けバンドル、公開APKのチェックサムと既存正式版と同じ署名を確認しました。APK内のversionName `0.9.2`・versionCode `29`、2種類のウィジェット、通知権限とカレンダー権限除去も検証済みです。6サイズの描画、色付きタグ、カード末尾の任意の出演・特典会情報、会場のGoogleマップ遷移とOPEN／START表示、同じ高さのカードと端の隙間、申告サイズより大きな実表示領域、文字サイズ1.5倍を検証しました。実ランチャーでの操作・OS通知配信・カレンダー編集は実機未検証です。APKのSHA-256は `72043719d4ca94498cfb4efb433e77b9fcd5b435cda854cc54f0ac84b988d13a` です。
-
-v0.9.2では、既存鍵でのビルド・署名照合・versionCode照合・ネイティブテスト・CI成功確認・公開ファイルとの一致確認をGitHub Actions側でも実行しました。今回限りの公開用ワークフローは完了後に削除し、通常のリリースは従来の下書き作成フローを使います。
+[署名付きビルド](https://github.com/WassanBorn72/ylmlm-ticket/actions/runs/41457348305)と[CI](https://github.com/WassanBorn72/ylmlm-ticket/actions/runs/41457345696)は成功しています。84件のJSテスト、ウィジェットのネイティブテスト15件、画面操作、全OS向けバンドル、公開APKのチェックサムと既存正式版と同じ署名を確認しました。APK内のversionName `0.9.3`・versionCode `30`、2種類のウィジェット、通知権限とカレンダー権限除去も検証済みです。6サイズの描画・文字サイズ1.5倍・カード内部の情報間隔・同じカード高・ホストが広がってもカードを引き伸ばさないこと・1件のお気に入りを560pxに上寄せするケースを検証しました。TIGETの実ページ521892の検索結果・本文・料金と照合し、単なる言及・出演キャンセル・取り消し線・おすすめ欄・ドリンク代の誤認をテストしています。実ランチャーでの操作・OS通知配信・カレンダー編集は実機未検証です。APKのSHA-256は `fb184b4c21480641d1b6bffe0cc0982eb9c2a728f2fe55e78b0ae38236f1a094` です。
 
 ## アプリの識別子
 
@@ -25,7 +23,7 @@ v0.9.2では、既存鍵でのビルド・署名照合・versionCode照合・ネ
 表示バージョンは `MAJOR.MINOR.PATCH` 形式です。1.0未満では仕様の変更があり得る開発段階として扱い、新機能の追加はMINOR、不具合修正はPATCHを上げます。公開ごとの変更内容を [CHANGELOG.md](CHANGELOG.md) に記録します。
 
 - `app.json` の `expo.version`、`package.json` とロックファイルのversion、Gitタグ、Releaseタイトル、APK名を一致させます。
-- AndroidのversionCodeとiOSのbuildNumberは、表示バージョンとは別の更新用の番号として増やします。今回の値は両方 `29` です。
+- AndroidのversionCodeとiOSのbuildNumberは、表示バージョンとは別の更新用の番号として増やします。今回の値は両方 `30` です。
 - アプリ内の表示は `app.json` から読み取り、設定画面に表示します。
 - 公開済みタグ・APKを別のビルドで置き換えません。公開後の修正は新しいバージョンで配布します。
 
@@ -70,11 +68,11 @@ GitHub のリポジトリ Settings → Secrets and variables → Actions に、�
 
 Base64 は暗号化ではありません。変換した内容も秘密情報として取り扱ってください。署名鍵とパスワードはクラウド開発環境の通常変数には入れず、GitHub Actions の Secrets を利用します。
 
-準備と実機確認後、バージョンと一致するタグ（例：`v0.9.2`）を作り、GitHub に push します。
+準備と実機確認後、バージョンと一致するタグ（例：`v0.9.3`）を作り、GitHub に push します。
 
 ```sh
-git tag v0.9.2
-git push origin v0.9.2
+git tag v0.9.3
+git push origin v0.9.3
 ```
 
 `Android GitHub Release` ワークフローが、テスト → Expo prebuild → 専用鍵で署名した release APK の生成 → 署名検証 → チェックサム生成 → GitHub Release 下書き作成を行います。秘密情報がない場合は停止し、debug 鍵で代用しません。既存タグは Actions の手動実行でも指定できます。同じ下書きの再作成は自動上書きせず失敗するため、既存の内容を確認して扱ってください。
