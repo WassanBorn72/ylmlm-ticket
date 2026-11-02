@@ -1,5 +1,5 @@
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
   android:minWidth="240dp" android:minHeight="180dp" android:minResizeWidth="200dp" android:minResizeHeight="180dp"
   android:targetCellWidth="4" android:targetCellHeight="3" android:resizeMode="horizontal|vertical" android:updatePeriodMillis="1800000"
-  android:initialLayout="@layout/ticket_widget_cards" android:previewLayout="@layout/ticket_widget_cards"
+  android:initialLayout="@layout/ticket_widget_compact" android:previewLayout="@layout/ticket_widget_compact"
   android:description="@string/ticket_widget_upcoming_description" android:widgetCategory="home_screen"/>

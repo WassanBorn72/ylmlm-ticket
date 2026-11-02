@@ -148,8 +148,8 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
       val lines = if(denseCount > fullCount || fullCount == 0) 1 else 2
       titles.forEach { view.findViewById<android.widget.TextView>(it).maxLines = lines }
       measureUniformRows(view,rows,width,count)
-      // The host allocates its actual remaining height to equally weighted cards.
-      // Never place launcher-size differences in outside weighted spacers.
+      // Keep a compact panel at the top. Excess host height must not enlarge
+      // cards or separate a title from its venue and timetable.
       return count to lines
     }
     private fun render(context: Context, manager: AppWidgetManager, id: Int, favorites: Boolean, options: Bundle? = null) {
@@ -163,7 +163,7 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
       val maxHeight = size.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT,minHeight)
       val maxWidth = size.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH,minWidth)
       fun layout(height: Float,width: Float): RemoteViews {
-      val views = RemoteViews(context.packageName, R.layout.ticket_widget_cards)
+      val views = RemoteViews(context.packageName, R.layout.ticket_widget_compact)
       val density = context.resources.displayMetrics.density
       val padding = 0
       views.setViewPadding(R.id.ticket_widget_root,padding,padding,padding,padding)
@@ -288,9 +288,10 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
       val heightPx = (height * density).toInt()
       val (limit,titleLines) = fitLayout(measured,rows,titles,widthPx,heightPx,events.size)
       titles.forEach { views.setInt(it,"setMaxLines",titleLines) }
+      val cardHeight = if(limit > 0) measured.findViewById<View>(rows[0]).measuredHeight else 0
       rows.forEachIndexed { index,row ->
         views.setViewVisibility(row,if(index < limit) View.VISIBLE else View.GONE)
-        views.setInt(row,"setMinimumHeight",0)
+        views.setInt(row,"setMinimumHeight",cardHeight)
       }
       return views
       }
