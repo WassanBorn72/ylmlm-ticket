@@ -66,8 +66,8 @@ class TicketWidgetTest {
   @Test fun favoritesAndUpcomingChooseDifferentEvents() {
     save()
     val manager=shadowOf(AppWidgetManager.getInstance(context))
-    val favorite=manager.createWidget(FavoriteShowsWidgetProvider::class.java,R.layout.ticket_widget_compact)
-    val upcoming=manager.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_compact)
+    val favorite=manager.createWidget(FavoriteShowsWidgetProvider::class.java,R.layout.ticket_widget_sized)
+    val upcoming=manager.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_sized)
     val options=Bundle().apply{putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,300)}
     FavoriteShowsWidgetProvider().onAppWidgetOptionsChanged(context,AppWidgetManager.getInstance(context),favorite,options)
     UpcomingShowsWidgetProvider().onAppWidgetOptionsChanged(context,AppWidgetManager.getInstance(context),upcoming,options)
@@ -85,7 +85,7 @@ class TicketWidgetTest {
     save()
     val manager=AppWidgetManager.getInstance(context)
     val shadow=shadowOf(manager)
-    val id=shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_compact)
+    val id=shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_sized)
     val large=Bundle().apply{putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,420)}
     manager.updateAppWidgetOptions(id,large)
     UpcomingShowsWidgetProvider().onAppWidgetOptionsChanged(context,manager,id,large)
@@ -105,7 +105,7 @@ class TicketWidgetTest {
     val shadow = shadowOf(manager)
     val counts = mutableMapOf<Int,Int>()
     for (height in listOf(180,220,270,300,420,560)) {
-      val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_compact)
+      val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_sized)
       val options = Bundle().apply {
         putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,height)
         putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,340)
@@ -174,7 +174,7 @@ class TicketWidgetTest {
     try {
       for((height,scale) in listOf(180 to 1f,270 to 1f,270 to 1.5f,420 to 1f,560 to 1f)) {
         RuntimeEnvironment.setFontScale(scale)
-        val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_compact)
+        val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_sized)
         val options = Bundle().apply {
           putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,height)
           putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,340)
@@ -185,11 +185,10 @@ class TicketWidgetTest {
         assertEquals(View.VISIBLE,view.findViewById<View>(R.id.ticket_performance_0).visibility)
         assertEquals("特典会 19:35〜20:25",view.findViewById<TextView>(R.id.ticket_meet_0).text.toString())
         assertEquals(View.GONE,view.findViewById<View>(R.id.ticket_performance_2).visibility)
-        assertEquals("発売中",view.findViewById<TextView>(R.id.ticket_sales_0).text.toString())
+        assertFalse(view.findViewById<View>(R.id.ticket_row_0).contentDescription.toString().contains("発売中"))
         assertEquals("LivePocket",view.findViewById<TextView>(R.id.ticket_site_0).text.toString())
         assertEquals("＋1",view.findViewById<TextView>(R.id.ticket_more_0).text.toString())
         assertTrue(view.findViewById<View>(R.id.ticket_row_0).contentDescription.toString().contains("TIGET"))
-        assertEquals(View.GONE,view.findViewById<View>(R.id.ticket_sales_2).visibility)
         assertTrue(view.findViewById<View>(R.id.ticket_row_0).contentDescription.toString().contains("19:35"))
         previewFont(view)
         view.findViewById<TextView>(R.id.ticket_title_0).text = "表示例：ゆるめるモ！ワンマンライブ"
@@ -221,7 +220,7 @@ class TicketWidgetTest {
     save()
     val manager = AppWidgetManager.getInstance(context)
     val shadow = shadowOf(manager)
-    val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_compact)
+    val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_sized)
     val options = Bundle().apply {
       putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,340)
       putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH,600)
@@ -236,7 +235,7 @@ class TicketWidgetTest {
     save()
     val manager = AppWidgetManager.getInstance(context)
     val shadow = shadowOf(manager)
-    val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_compact)
+    val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_sized)
     val options = Bundle().apply {
       putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,340)
       putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH,600)
@@ -251,7 +250,7 @@ class TicketWidgetTest {
     save()
     val manager = AppWidgetManager.getInstance(context)
     val shadow = shadowOf(manager)
-    val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_compact)
+    val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_sized)
     val options = Bundle().apply {
       putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,340)
       putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH,340)
@@ -269,7 +268,7 @@ class TicketWidgetTest {
     save()
     val manager = AppWidgetManager.getInstance(context)
     val shadow = shadowOf(manager)
-    val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_compact)
+    val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_sized)
     val options = Bundle().apply {
       putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,220)
       putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,340)
@@ -285,7 +284,7 @@ class TicketWidgetTest {
       save()
       val manager = AppWidgetManager.getInstance(context)
       val shadow = shadowOf(manager)
-      val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_compact)
+      val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_sized)
       val options = Bundle().apply {
         putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,300)
         putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,340)
@@ -305,7 +304,7 @@ class TicketWidgetTest {
     save()
     val manager = AppWidgetManager.getInstance(context)
     val shadow = shadowOf(manager)
-    val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_compact)
+    val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_sized)
     val options = Bundle().apply {
       putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,340)
       putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,300)
@@ -345,7 +344,7 @@ class TicketWidgetTest {
     prefs.edit().putString("snapshot",snapshot.toString()).commit()
     val manager=AppWidgetManager.getInstance(context)
     val shadow=shadowOf(manager)
-    val id=shadow.createWidget(FavoriteShowsWidgetProvider::class.java,R.layout.ticket_widget_compact)
+    val id=shadow.createWidget(FavoriteShowsWidgetProvider::class.java,R.layout.ticket_widget_sized)
     val options=Bundle().apply {
       putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,340)
       putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,560)
@@ -370,7 +369,7 @@ class TicketWidgetTest {
     prefs.edit().putString("snapshot",snapshot.toString()).commit()
     val manager = AppWidgetManager.getInstance(context)
     val shadow = shadowOf(manager)
-    val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_compact)
+    val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_sized)
     val view = shadow.getViewFor(id)
     assertEquals("OPEN 18:00 / START 18:30",view.findViewById<TextView>(R.id.ticket_open_0).text.toString())
     assertTrue(view.findViewById<TextView>(R.id.ticket_meta_0).compoundDrawables[0] != null)
@@ -380,20 +379,7 @@ class TicketWidgetTest {
     assertEquals("www.google.com",intent.data?.host)
     assertEquals("渋谷ホール 東京都渋谷区1-2-3",intent.data?.getQueryParameter("query"))
   }
-  @Test fun salesStatusesRespectWindowsMixedOffersAndUnknownStock() {
-    val now = 1_900_000_000_000L
-    fun offers(availability: String) = org.json.JSONArray("""[{"sourceId":"a","sourceName":"LivePocket","availability":"$availability","salesStartMs":${now+60000},"salesEndMs":${now+180000}}]""")
-    assertEquals("発売前 LivePocket",FavoriteShowsWidgetProvider.widgetSales(offers("InStock"),now))
-    assertEquals("発売中 LivePocket",FavoriteShowsWidgetProvider.widgetSales(offers("InStock"),now+90000))
-    assertEquals("発売終了 LivePocket",FavoriteShowsWidgetProvider.widgetSales(offers("InStock"),now+240000))
-    assertEquals("要確認 LivePocket",FavoriteShowsWidgetProvider.widgetSales(offers("PreOrder"),now+90000))
-    val mixed = org.json.JSONArray("""[{"sourceId":"a","sourceName":"LivePocket","availability":"SoldOut"},{"sourceId":"a","sourceName":"LivePocket","availability":"InStock"}]""")
-    assertEquals("一部発売中 LivePocket",FavoriteShowsWidgetProvider.widgetSales(mixed,now))
-    assertEquals("完売 TIGET",FavoriteShowsWidgetProvider.widgetSales(org.json.JSONArray("""[{"sourceId":"b","sourceName":"TIGET","availability":"SoldOut"}]"""),now))
-    assertEquals("在庫なし TIGET",FavoriteShowsWidgetProvider.widgetSales(org.json.JSONArray("""[{"sourceId":"b","sourceName":"TIGET","availability":"OutOfStock"}]"""),now))
-    assertEquals("",FavoriteShowsWidgetProvider.widgetSales(null,now))
-  }
-  @Test fun sourceAndSaleBadgesUseDistinctAppColors() {
+  @Test fun sourceBadgesKeepAppColorsAndNeverAnnounceCachedSalesStatus() {
     val cases = listOf(
       listOf("livepocket","LivePocket","InStock","発売中","#FFF3DA","#DDF4E5"),
       listOf("ticketdive","TicketDive","SoldOut","完売","#EAF8F1","#FCE2E5"),
@@ -410,21 +396,74 @@ class TicketWidgetTest {
       val offer = org.json.JSONObject().put("sourceId",c[0]).put("sourceName",c[1]).put("availability",c[2])
       snapshot.getJSONArray("events").getJSONObject(0).put("ticketOffers",org.json.JSONArray().put(offer))
       prefs.edit().putString("snapshot",snapshot.toString()).commit()
-      val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_compact)
+      val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_sized)
       val options = Bundle().apply {putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,340);putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,300)}
       UpcomingShowsWidgetProvider().onAppWidgetOptionsChanged(context,manager,id,options)
       val view = shadow.getViewFor(id)
       val source = view.findViewById<TextView>(R.id.ticket_site_0)
-      val state = view.findViewById<TextView>(R.id.ticket_sales_0)
       assertEquals(c[1],source.text.toString())
-      assertEquals(c[3],state.text.toString())
+      assertFalse(view.findViewById<View>(R.id.ticket_row_0).contentDescription.toString().contains(c[3]))
       assertEquals(android.graphics.Color.parseColor(c[4]),(source.background as android.graphics.drawable.GradientDrawable).color?.defaultColor ?: 0)
-      assertEquals(android.graphics.Color.parseColor(c[5]),(state.background as android.graphics.drawable.GradientDrawable).color?.defaultColor ?: 0)
+    }
+  }
+  @Test @Config(sdk = [34], qualifiers = "mdpi")
+  fun smallWidgetsPrioritizeCoreInformationAndNeverClipAtLargeFonts() {
+    save()
+    val prefs=context.getSharedPreferences("ticket_widget",0)
+    val snapshot=org.json.JSONObject(prefs.getString("snapshot","{}")!!)
+    snapshot.getJSONArray("events").getJSONObject(0).put("performanceLabel","出演 19:00〜19:25").put("ticketOffers",org.json.JSONArray("[{\"sourceId\":\"tiget\",\"sourceName\":\"TIGET\",\"availability\":\"SoldOut\"}]"))
+    prefs.edit().putString("snapshot",snapshot.toString()).commit()
+    val manager=AppWidgetManager.getInstance(context)
+    val shadow=shadowOf(manager)
+    try {
+      for(scale in listOf(1f,1.5f)) {
+        RuntimeEnvironment.setFontScale(scale)
+        val id=shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_sized)
+        for(height in listOf(120,140,180,300)) {
+          val options=Bundle().apply {
+            putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,340)
+            putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,height)
+          }
+          UpcomingShowsWidgetProvider().onAppWidgetOptionsChanged(context,manager,id,options)
+          val view=shadow.getViewFor(id)
+          view.measure(View.MeasureSpec.makeMeasureSpec(340,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(height,View.MeasureSpec.EXACTLY))
+          view.layout(0,0,340,height)
+          val panel=view.findViewById<View>(R.id.ticket_widget_root)
+          assertEquals(0,panel.top)
+          assertTrue("small panel must fit at $height / $scale: ${panel.height}",panel.height <= height)
+          if(height == 120 && scale == 1f) {
+            assertEquals(View.VISIBLE,view.findViewById<View>(R.id.ticket_row_0).visibility)
+            assertEquals("OPEN 18:00",view.findViewById<TextView>(R.id.ticket_open_0).text.toString())
+            assertEquals("会場A",view.findViewById<TextView>(R.id.ticket_meta_0).text.toString())
+            assertEquals(View.GONE,view.findViewById<View>(R.id.ticket_badges_0).visibility)
+          }
+          if(height == 300) {
+            assertEquals(View.VISIBLE,view.findViewById<View>(R.id.ticket_badges_0).visibility)
+            assertEquals(View.VISIBLE,view.findViewById<View>(R.id.ticket_timing_group_0).visibility)
+          }
+          val bitmap=android.graphics.Bitmap.createBitmap(340,height,android.graphics.Bitmap.Config.ARGB_8888)
+          view.draw(android.graphics.Canvas(bitmap))
+          val output=java.io.File(System.getProperty("widget.preview.output","build/widget-previews"),"widget-small-$height-$scale.png")
+          output.parentFile?.mkdirs()
+          java.io.FileOutputStream(output).use{bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it)}
+        }
+      }
+    } finally {RuntimeEnvironment.setFontScale(1f)}
+  }
+  @Test fun boldIsReservedForAppNameAndEventTitles() {
+    save()
+    val manager=shadowOf(AppWidgetManager.getInstance(context))
+    val id=manager.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_sized)
+    val view=manager.getViewFor(id)
+    assertTrue(view.findViewById<TextView>(R.id.ticket_widget_heading).typeface.isBold)
+    assertTrue(view.findViewById<TextView>(R.id.ticket_title_0).typeface.isBold)
+    for(textId in listOf(R.id.ticket_day_0,R.id.ticket_open_0,R.id.ticket_meta_0,R.id.ticket_performance_0,R.id.ticket_meet_0,R.id.ticket_site_0,R.id.ticket_widget_mode,R.id.ticket_widget_updated,R.id.ticket_widget_list)) {
+      assertFalse("secondary information should have regular weight",view.findViewById<TextView>(textId).typeface.isBold)
     }
   }
   @Test fun emptySnapshotOffersAppRefreshInsteadOfFakeEvents() {
     val manager=shadowOf(AppWidgetManager.getInstance(context))
-    val id=manager.createWidget(FavoriteShowsWidgetProvider::class.java,R.layout.ticket_widget_compact)
+    val id=manager.createWidget(FavoriteShowsWidgetProvider::class.java,R.layout.ticket_widget_sized)
     val view=manager.getViewFor(id)
     assertEquals(View.VISIBLE,view.findViewById<View>(R.id.ticket_widget_empty).visibility)
     assertEquals(View.GONE,view.findViewById<View>(R.id.ticket_row_0).visibility)

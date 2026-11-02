@@ -71,9 +71,9 @@ test('出演・特典会の情報がなければ開演時間から推測せず�
  }
 });
 
-test('ウィジェットに購入先と在庫の取得値・販売期間・前回取得フラグを渡す',()=>{
+test('ウィジェットには購入先だけを渡し、在庫や販売期間を渡さない',()=>{
  const [e]=widgetSnapshot({events:[{id:'a',title:'公演',date:'2030-02-01',venue:'会場',offers:[{sourceId:'livepocket',sourceName:'LivePocket',availability:'InStock',salesStartAt:'2030-01-01T10:00:00+09:00',salesEndAt:'2030-01-02T10:00:00+09:00'}],staleSourceIds:['livepocket']}],lastSyncAt:null},[]).events;
- assert.deepEqual(e.ticketOffers,[{sourceId:'livepocket',sourceName:'LivePocket',availability:'InStock',salesStartMs:Date.parse('2030-01-01T01:00:00Z'),salesEndMs:Date.parse('2030-01-02T01:00:00Z'),stale:true}]);
+ assert.deepEqual(e.ticketOffers,[{sourceId:'livepocket',sourceName:'LivePocket'}]);
  assert.deepEqual(widgetSnapshot({events:[{id:'a',title:'公演',date:'2030-02-01',venue:'会場'}],lastSyncAt:null},[]).events[0].ticketOffers,[]);
 });
 

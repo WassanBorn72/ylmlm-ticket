@@ -1,4 +1,3 @@
-import {salesDates} from './tickets/sales.mjs';
 function knownTimes(values) {
   return Array.isArray(values) ? [...new Set(values.filter(value=>typeof value==='string'&&value.trim()).map(value=>value.trim()))].join(' / ') : '';
 }
@@ -13,10 +12,7 @@ export function widgetSnapshot(feed,favoriteIds,favoriteChanges={}) {
     const performance=knownTimes(official?.performance);
     const meet=knownTimes(official?.meetAndGreet);
     const old=official?.stale?'（前回）':'';
-    const ticketOffers=(event.offers??[]).map(offer=>{
-      const dates=salesDates(offer);
-      return {sourceId:offer.sourceId,sourceName:offer.sourceName||offer.sourceId,availability:offer.availability??null,salesStartMs:dates.salesStartAt?Date.parse(dates.salesStartAt):null,salesEndMs:dates.salesEndAt?Date.parse(dates.salesEndAt):null,stale:event.staleSourceIds?.includes(offer.sourceId)??false};
-    });
+    const ticketOffers=[...new Map((event.offers??[]).map(offer=>[offer.sourceId,{sourceId:offer.sourceId,sourceName:offer.sourceName||offer.sourceId}])).values()];
     return {mapQuery,ticketOffers,performanceLabel:performance?`出演${old} ${performance}`:'',meetAndGreetLabel:meet?`特典会${old} ${meet}`:'',id:event.id,title:event.title,date:event.date,sortTime:value??'',favorite:favoriteIds.includes(event.id)||favoriteIds.includes(favoriteChanges?.[event.id]?.favoriteId),timeLabel,venueLabel:event.venue,summary:`${Number(event.date.slice(5,7))}/${Number(event.date.slice(8,10))} ${clock?`${event.doorsAt?'OPEN':'START'} ${clock}`:'時間未掲載'} · ${event.venue}`};
   });
   const updated=feed.lastSyncAt?new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(feed.lastSyncAt)):null;
