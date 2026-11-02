@@ -115,8 +115,8 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
       val lines = if(denseCount > fullCount || fullCount == 0) 1 else 2
       titles.forEach { view.findViewById<android.widget.TextView>(it).maxLines = lines }
       measureUniformRows(view,rows,width,count)
-      // Keep a compact panel at the top. Excess host height must not enlarge
-      // cards or separate a title from its venue and timetable.
+      // Fill the actual host with a visible surface. Only the body viewport grows;
+      // event cards remain compact, and the footer marks the allocated bottom edge.
       return count to lines
     }
     private fun render(context: Context, manager: AppWidgetManager, id: Int, favorites: Boolean, options: Bundle? = null) {
@@ -130,7 +130,7 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
       val maxHeight = size.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT,minHeight)
       val maxWidth = size.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH,minWidth)
       fun layout(height: Float,width: Float): RemoteViews {
-      val views = RemoteViews(context.packageName, R.layout.ticket_widget_sized)
+      val views = RemoteViews(context.packageName, R.layout.ticket_widget_surface)
       val density = context.resources.displayMetrics.density
       val padding = 0
       views.setViewPadding(R.id.ticket_widget_root,padding,padding,padding,padding)
@@ -143,13 +143,13 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
       val headInset = ((if(compactHeader) 1 else 3)*density).toInt()
       val footInset = ((if(compactHeader) 1 else 2)*density).toInt()
       views.setViewPadding(R.id.ticket_widget_header,side,headInset,side,headInset)
-      views.setInt(R.id.ticket_widget_header,"setMinimumHeight",((if(mini) 24 else if(compactHeader) 28 else 44)*density).toInt())
+      views.setInt(R.id.ticket_widget_header,"setMinimumHeight",((if(mini) 22 else if(compactHeader) 26 else 40)*density).toInt())
       views.setViewPadding(R.id.ticket_widget_footer,side,footInset,side,footInset)
-      views.setInt(R.id.ticket_widget_footer,"setMinimumHeight",((if(mini) 20 else if(compactHeader) 24 else 28)*density).toInt())
+      views.setInt(R.id.ticket_widget_footer,"setMinimumHeight",((if(mini) 20 else if(compactHeader) 22 else 26)*density).toInt())
       views.setTextViewText(R.id.ticket_widget_list,if(compactHeader) {if(favorites) "お気に入り ›" else "直近の公演 ›"} else "公演一覧 ›")
-      views.setTextViewTextSize(R.id.ticket_widget_heading,android.util.TypedValue.COMPLEX_UNIT_SP,if(mini) 14f else 16f)
-      views.setTextViewTextSize(R.id.ticket_widget_updated,android.util.TypedValue.COMPLEX_UNIT_SP,if(mini) 11f else 13f)
-      views.setTextViewTextSize(R.id.ticket_widget_list,android.util.TypedValue.COMPLEX_UNIT_SP,if(mini) 12f else 14f)
+      views.setTextViewTextSize(R.id.ticket_widget_heading,android.util.TypedValue.COMPLEX_UNIT_SP,if(mini) 13f else 14f)
+      views.setTextViewTextSize(R.id.ticket_widget_updated,android.util.TypedValue.COMPLEX_UNIT_SP,if(mini) 10.5f else 11f)
+      views.setTextViewTextSize(R.id.ticket_widget_list,android.util.TypedValue.COMPLEX_UNIT_SP,if(mini) 11f else 12f)
       views.setViewVisibility(R.id.ticket_widget_top_space,View.GONE)
       views.setViewVisibility(R.id.ticket_widget_bottom_space,View.GONE)
       views.setTextViewText(R.id.ticket_widget_mode, if(favorites) {if(width<260) "お気に入り" else "お気に入りの公演"} else "直近の公演")
@@ -169,7 +169,7 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
       val days = intArrayOf(R.id.ticket_day_0,R.id.ticket_day_1,R.id.ticket_day_2,R.id.ticket_day_3,R.id.ticket_day_4,R.id.ticket_day_5)
       val weekdays = intArrayOf(R.id.ticket_weekday_0,R.id.ticket_weekday_1,R.id.ticket_weekday_2,R.id.ticket_weekday_3,R.id.ticket_weekday_4,R.id.ticket_weekday_5)
       rows.forEachIndexed { index,row ->
-        val inset = ((if(compactHeader) 2 else 4)*density).toInt()
+        val inset = ((if(compactHeader) 2 else 3)*density).toInt()
         views.setViewPadding(row,inset,inset,inset,inset)
         val tagSide = (5*density).toInt()
         val tagInset = ((if(compactHeader) 0 else 1)*density).toInt()
@@ -232,12 +232,12 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
       views.setViewVisibility(R.id.ticket_widget_empty,if(events.isEmpty()) View.VISIBLE else View.GONE)
       views.setViewPadding(R.id.ticket_widget_empty,((if(mini) 12 else 14)*density).toInt(),((if(mini) 2 else 14)*density).toInt(),((if(mini) 12 else 14)*density).toInt(),((if(mini) 2 else 14)*density).toInt())
       views.setInt(R.id.ticket_widget_empty,"setMinimumHeight",(if(mini) 0 else (56*density).toInt()))
-      views.setTextViewTextSize(R.id.ticket_widget_empty,android.util.TypedValue.COMPLEX_UNIT_SP,if(mini) 12f else 14f)
+      views.setTextViewTextSize(R.id.ticket_widget_empty,android.util.TypedValue.COMPLEX_UNIT_SP,if(mini) 11f else 12f)
       views.setTextViewText(R.id.ticket_widget_empty,if(mini) {if(favorites) "アプリでお気に入りを登録" else "アプリで公演情報を更新"} else if(favorites) "掲載中のお気に入りはありません。\nタップしてアプリで登録・更新" else "公演情報がありません。\nタップしてアプリで更新")
       views.setTextViewText(R.id.ticket_widget_updated,snapshot.optString("updatedShort",snapshot.optString("updatedLabel","アプリを開いて更新").substringBefore(" · ")))
       val measured = views.apply(context,null)
       // Keep the source tag and extra-source count inside the text column.
-      val columnWidth = ((width-78).coerceAtLeast(1f)*density).toInt()
+      val columnWidth = ((width-70).coerceAtLeast(1f)*density).toInt()
       sites.forEachIndexed { index,id ->
         val source = measured.findViewById<android.widget.TextView>(id)
         val more = measured.findViewById<android.widget.TextView>(moreSites[index])

@@ -40,7 +40,10 @@ class TicketWidgetTest {
     }
     val rowIds = intArrayOf(R.id.ticket_row_0,R.id.ticket_row_1,R.id.ticket_row_2,R.id.ticket_row_3,R.id.ticket_row_4,R.id.ticket_row_5)
     assertEquals("first card close to header",2, bounds(rowIds[0]).top-bounds(R.id.ticket_widget_header).bottom)
-    assertEquals("last card close to footer",2, bounds(R.id.ticket_widget_footer).top-bounds(rowIds[count-1]).bottom)
+    assertEquals("footer reaches the actual widget bottom",view.height,bounds(R.id.ticket_widget_footer).bottom)
+    assertTrue("compact cards never overlap footer",bounds(rowIds[count-1]).bottom <= bounds(R.id.ticket_widget_footer).top)
+    val surface=root.findViewById<View>(R.id.ticket_widget_root)
+    assertEquals("no transparent tail outside the surface",view.height,surface.height)
     val titles = intArrayOf(R.id.ticket_title_0,R.id.ticket_title_1,R.id.ticket_title_2,R.id.ticket_title_3,R.id.ticket_title_4,R.id.ticket_title_5)
     val badges = intArrayOf(R.id.ticket_badges_0,R.id.ticket_badges_1,R.id.ticket_badges_2,R.id.ticket_badges_3,R.id.ticket_badges_4,R.id.ticket_badges_5)
     val opens = intArrayOf(R.id.ticket_open_0,R.id.ticket_open_1,R.id.ticket_open_2,R.id.ticket_open_3,R.id.ticket_open_4,R.id.ticket_open_5)
@@ -66,8 +69,8 @@ class TicketWidgetTest {
   @Test fun favoritesAndUpcomingChooseDifferentEvents() {
     save()
     val manager=shadowOf(AppWidgetManager.getInstance(context))
-    val favorite=manager.createWidget(FavoriteShowsWidgetProvider::class.java,R.layout.ticket_widget_sized)
-    val upcoming=manager.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_sized)
+    val favorite=manager.createWidget(FavoriteShowsWidgetProvider::class.java,R.layout.ticket_widget_surface)
+    val upcoming=manager.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_surface)
     val options=Bundle().apply{putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,300)}
     FavoriteShowsWidgetProvider().onAppWidgetOptionsChanged(context,AppWidgetManager.getInstance(context),favorite,options)
     UpcomingShowsWidgetProvider().onAppWidgetOptionsChanged(context,AppWidgetManager.getInstance(context),upcoming,options)
@@ -85,7 +88,7 @@ class TicketWidgetTest {
     save()
     val manager=AppWidgetManager.getInstance(context)
     val shadow=shadowOf(manager)
-    val id=shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_sized)
+    val id=shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_surface)
     val large=Bundle().apply{putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,420)}
     manager.updateAppWidgetOptions(id,large)
     UpcomingShowsWidgetProvider().onAppWidgetOptionsChanged(context,manager,id,large)
@@ -105,7 +108,7 @@ class TicketWidgetTest {
     val shadow = shadowOf(manager)
     val counts = mutableMapOf<Int,Int>()
     for (height in listOf(180,220,270,300,420,560)) {
-      val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_sized)
+      val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_surface)
       val options = Bundle().apply {
         putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,height)
         putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,340)
@@ -135,7 +138,7 @@ class TicketWidgetTest {
       assertEquals("no outside top padding",0,view.paddingTop)
       assertEquals("no outside bottom padding",0,view.paddingBottom)
       val header = view.findViewById<View>(R.id.ticket_widget_header)
-      assertTrue("branded header and clear footer",header.height >= (if(height <= 300) 24 else 32) && footer.height >= (if(height <= 300) 24 else 28))
+      assertTrue("branded header and clear footer",header.height >= (if(height <= 300) 22 else 32) && footer.height >= (if(height <= 300) 20 else 24))
       rows.forEach { assertEquals("small consistent side margins",view.width-8,it.width) }
       counts[height] = count
       println("height=$height count=$count lines=$lines type=${view.javaClass.name} root=${view.measuredHeight} density=${context.resources.displayMetrics.density} rows=${rowIds.map{view.findViewById<View>(it).measuredHeight}}")
@@ -146,8 +149,8 @@ class TicketWidgetTest {
       assertTrue("no artificial spacers inside the compact panel at $height: $topSpace / $bottomSpace",kotlin.math.abs(topSpace-bottomSpace) <= 1)
       assertTrue("panel must not add gaps around the cards at $height",topSpace+bottomSpace < rows.size)
       assertContentEdges(view,count)
-      assertTrue(view.findViewById<TextView>(R.id.ticket_widget_heading).textSize >= 16*context.resources.displayMetrics.scaledDensity)
-      assertTrue(view.findViewById<TextView>(R.id.ticket_widget_updated).textSize >= 13*context.resources.displayMetrics.scaledDensity)
+      assertTrue(view.findViewById<TextView>(R.id.ticket_widget_heading).textSize >= 14*context.resources.displayMetrics.scaledDensity)
+      assertTrue(view.findViewById<TextView>(R.id.ticket_widget_updated).textSize >= 11*context.resources.displayMetrics.scaledDensity)
 
     }
     assertTrue("220dp should fit two events: $counts",counts.getValue(220) >= 2)
@@ -174,7 +177,7 @@ class TicketWidgetTest {
     try {
       for((height,scale) in listOf(180 to 1f,270 to 1f,270 to 1.5f,420 to 1f,560 to 1f)) {
         RuntimeEnvironment.setFontScale(scale)
-        val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_sized)
+        val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_surface)
         val options = Bundle().apply {
           putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,height)
           putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,340)
@@ -220,7 +223,7 @@ class TicketWidgetTest {
     save()
     val manager = AppWidgetManager.getInstance(context)
     val shadow = shadowOf(manager)
-    val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_sized)
+    val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_surface)
     val options = Bundle().apply {
       putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,340)
       putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH,600)
@@ -235,7 +238,7 @@ class TicketWidgetTest {
     save()
     val manager = AppWidgetManager.getInstance(context)
     val shadow = shadowOf(manager)
-    val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_sized)
+    val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_surface)
     val options = Bundle().apply {
       putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,340)
       putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH,600)
@@ -250,7 +253,7 @@ class TicketWidgetTest {
     save()
     val manager = AppWidgetManager.getInstance(context)
     val shadow = shadowOf(manager)
-    val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_sized)
+    val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_surface)
     val options = Bundle().apply {
       putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,340)
       putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH,340)
@@ -268,7 +271,7 @@ class TicketWidgetTest {
     save()
     val manager = AppWidgetManager.getInstance(context)
     val shadow = shadowOf(manager)
-    val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_sized)
+    val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_surface)
     val options = Bundle().apply {
       putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,220)
       putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,340)
@@ -284,7 +287,7 @@ class TicketWidgetTest {
       save()
       val manager = AppWidgetManager.getInstance(context)
       val shadow = shadowOf(manager)
-      val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_sized)
+      val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_surface)
       val options = Bundle().apply {
         putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,300)
         putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,340)
@@ -304,7 +307,7 @@ class TicketWidgetTest {
     save()
     val manager = AppWidgetManager.getInstance(context)
     val shadow = shadowOf(manager)
-    val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_sized)
+    val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_surface)
     val options = Bundle().apply {
       putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,340)
       putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,300)
@@ -313,30 +316,33 @@ class TicketWidgetTest {
     val view = shadow.getViewFor(id)
     val rowIds = intArrayOf(R.id.ticket_row_0,R.id.ticket_row_1,R.id.ticket_row_2,R.id.ticket_row_3,R.id.ticket_row_4,R.id.ticket_row_5)
     var naturalCardHeight = 0
-    var naturalPanelHeight = 0
     for(height in listOf(300,340,420,560)) {
       view.measure(View.MeasureSpec.makeMeasureSpec(340,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(height,View.MeasureSpec.EXACTLY))
       view.layout(0,0,340,height)
       val rows = rowIds.map{view.findViewById<View>(it)}.filter{it.visibility == View.VISIBLE}
       val header = view.findViewById<View>(R.id.ticket_widget_header)
       val footer = view.findViewById<View>(R.id.ticket_widget_footer)
-      assertEquals("first card always hugs header",2,rows.first().top-header.bottom)
-      assertEquals("last card always hugs footer",2,footer.top-rows.last().bottom)
+      val body=view.findViewById<View>(R.id.ticket_widget_body)
+      assertEquals("first card always hugs header",2,body.top+rows.first().top-header.bottom)
+      assertTrue("cards stay inside body",rows.last().bottom <= body.height)
       assertTrue("equal card heights to rounding",rows.maxOf{it.height}-rows.minOf{it.height} <= 1)
       val panel = view.findViewById<View>(R.id.ticket_widget_root)
-      if(naturalCardHeight == 0) {naturalCardHeight=rows.first().height;naturalPanelHeight=panel.height}
+      if(naturalCardHeight == 0) naturalCardHeight=rows.first().height
       assertEquals("card height stays compact when host grows",naturalCardHeight,rows.first().height)
-      assertEquals("panel height stays compact when host grows",naturalPanelHeight,panel.height)
+      assertEquals("visible surface follows actual host size",height,panel.height)
       assertEquals("panel is top aligned",0,panel.top)
       assertEquals("footer immediately ends the panel",panel.bottom,footer.bottom)
-      assertTrue("panel must fit the host",panel.bottom <= height)
+      assertEquals("visible bottom matches allocated bottom",height,panel.bottom)
+      val bitmap=android.graphics.Bitmap.createBitmap(340,height,android.graphics.Bitmap.Config.ARGB_8888)
+      view.draw(android.graphics.Canvas(bitmap))
+      for(y in 0 until height) assertEquals("no invisible occupied pixel in vertical center at y=$y",255,android.graphics.Color.alpha(bitmap.getPixel(170,y)))
       assertContentEdges(view,rows.size)
     }
     assertEquals(View.VISIBLE,view.findViewById<View>(R.id.ticket_widget_heading).visibility)
     assertEquals("モ！のチケット帳",view.findViewById<TextView>(R.id.ticket_widget_heading).text.toString())
   }
   @Test @Config(sdk = [34], qualifiers = "mdpi")
-  fun oneFavoriteStaysCompactAndTopAlignedInATallWidget() {
+  fun oneFavoriteStaysCompactWhileTheSurfaceCoversItsWholeAllocation() {
     save()
     val prefs=context.getSharedPreferences("ticket_widget",0)
     val snapshot=org.json.JSONObject(prefs.getString("snapshot","{}")!!)
@@ -344,7 +350,7 @@ class TicketWidgetTest {
     prefs.edit().putString("snapshot",snapshot.toString()).commit()
     val manager=AppWidgetManager.getInstance(context)
     val shadow=shadowOf(manager)
-    val id=shadow.createWidget(FavoriteShowsWidgetProvider::class.java,R.layout.ticket_widget_sized)
+    val id=shadow.createWidget(FavoriteShowsWidgetProvider::class.java,R.layout.ticket_widget_surface)
     val options=Bundle().apply {
       putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,340)
       putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,560)
@@ -357,7 +363,14 @@ class TicketWidgetTest {
     val row=view.findViewById<View>(R.id.ticket_row_0)
     assertEquals(0,panel.top)
     assertTrue("a single event must not become a huge card",row.height < 120)
-    assertTrue("sparse widget panel wraps its content",panel.height < 220)
+    assertEquals("sparse widgets still show their full occupied extent",560,panel.height)
+    assertEquals("footer identifies real bottom edge",560,view.findViewById<View>(R.id.ticket_widget_footer).bottom)
+    val bitmap=android.graphics.Bitmap.createBitmap(340,560,android.graphics.Bitmap.Config.ARGB_8888)
+    view.draw(android.graphics.Canvas(bitmap))
+    for(y in 0 until 560) assertEquals("sparse surface must not leave transparent reserved area",255,android.graphics.Color.alpha(bitmap.getPixel(170,y)))
+    val output=java.io.File(System.getProperty("widget.preview.output","build/widget-previews"),"widget-one-favorite-560.png")
+    output.parentFile?.mkdirs()
+    java.io.FileOutputStream(output).use{bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it)}
     assertEquals(View.GONE,view.findViewById<View>(R.id.ticket_row_1).visibility)
     assertContentEdges(view,1)
   }
@@ -369,7 +382,7 @@ class TicketWidgetTest {
     prefs.edit().putString("snapshot",snapshot.toString()).commit()
     val manager = AppWidgetManager.getInstance(context)
     val shadow = shadowOf(manager)
-    val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_sized)
+    val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_surface)
     val view = shadow.getViewFor(id)
     assertEquals("OPEN 18:00 / START 18:30",view.findViewById<TextView>(R.id.ticket_open_0).text.toString())
     assertTrue(view.findViewById<TextView>(R.id.ticket_meta_0).compoundDrawables[0] != null)
@@ -396,7 +409,7 @@ class TicketWidgetTest {
       val offer = org.json.JSONObject().put("sourceId",c[0]).put("sourceName",c[1]).put("availability",c[2])
       snapshot.getJSONArray("events").getJSONObject(0).put("ticketOffers",org.json.JSONArray().put(offer))
       prefs.edit().putString("snapshot",snapshot.toString()).commit()
-      val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_sized)
+      val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_surface)
       val options = Bundle().apply {putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,340);putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,300)}
       UpcomingShowsWidgetProvider().onAppWidgetOptionsChanged(context,manager,id,options)
       val view = shadow.getViewFor(id)
@@ -418,7 +431,7 @@ class TicketWidgetTest {
     try {
       for(scale in listOf(1f,1.5f)) {
         RuntimeEnvironment.setFontScale(scale)
-        val id=shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_sized)
+        val id=shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_surface)
         for(height in listOf(120,140,180,300)) {
           val options=Bundle().apply {
             putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,340)
@@ -430,7 +443,11 @@ class TicketWidgetTest {
           view.layout(0,0,340,height)
           val panel=view.findViewById<View>(R.id.ticket_widget_root)
           assertEquals(0,panel.top)
-          assertTrue("small panel must fit at $height / $scale: ${panel.height}",panel.height <= height)
+          assertEquals("surface matches actual allocated height",height,panel.height)
+          val body=view.findViewById<View>(R.id.ticket_widget_body)
+          val first=view.findViewById<View>(R.id.ticket_row_0)
+          if(first.visibility == View.VISIBLE) assertTrue("small cards must fit inside viewport",first.bottom <= body.height)
+          else assertTrue("resize hint must fit inside viewport",view.findViewById<View>(R.id.ticket_widget_empty).bottom <= body.height)
           if(height == 120 && scale == 1f) {
             assertEquals(View.VISIBLE,view.findViewById<View>(R.id.ticket_row_0).visibility)
             assertEquals("OPEN 18:00",view.findViewById<TextView>(R.id.ticket_open_0).text.toString())
@@ -453,7 +470,7 @@ class TicketWidgetTest {
   @Test fun boldIsReservedForAppNameAndEventTitles() {
     save()
     val manager=shadowOf(AppWidgetManager.getInstance(context))
-    val id=manager.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_sized)
+    val id=manager.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_surface)
     val view=manager.getViewFor(id)
     assertTrue(view.findViewById<TextView>(R.id.ticket_widget_heading).typeface.isBold)
     assertTrue(view.findViewById<TextView>(R.id.ticket_title_0).typeface.isBold)
@@ -463,7 +480,7 @@ class TicketWidgetTest {
   }
   @Test fun emptySnapshotOffersAppRefreshInsteadOfFakeEvents() {
     val manager=shadowOf(AppWidgetManager.getInstance(context))
-    val id=manager.createWidget(FavoriteShowsWidgetProvider::class.java,R.layout.ticket_widget_sized)
+    val id=manager.createWidget(FavoriteShowsWidgetProvider::class.java,R.layout.ticket_widget_surface)
     val view=manager.getViewFor(id)
     assertEquals(View.VISIBLE,view.findViewById<View>(R.id.ticket_widget_empty).visibility)
     assertEquals(View.GONE,view.findViewById<View>(R.id.ticket_row_0).visibility)
