@@ -163,11 +163,17 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
       val maxHeight = size.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT,minHeight)
       val maxWidth = size.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH,minWidth)
       fun layout(height: Float,width: Float): RemoteViews {
-      val views = RemoteViews(context.packageName, R.layout.ticket_widget)
+      val views = RemoteViews(context.packageName, R.layout.ticket_widget_cards)
       val density = context.resources.displayMetrics.density
       val padding = 0
       views.setViewPadding(R.id.ticket_widget_root,padding,padding,padding,padding)
       views.setViewVisibility(R.id.ticket_widget_heading,View.VISIBLE)
+      // A short widget keeps the app name and moves its mode into the footer link.
+      val compactHeader = height / context.resources.configuration.fontScale <= 220
+      views.setViewVisibility(R.id.ticket_widget_mode,if(compactHeader) View.GONE else View.VISIBLE)
+      views.setTextViewText(R.id.ticket_widget_list,if(compactHeader) {if(favorites) "お気に入り ›" else "直近の公演 ›"} else "公演一覧 ›")
+      views.setViewVisibility(R.id.ticket_widget_top_space,View.GONE)
+      views.setViewVisibility(R.id.ticket_widget_bottom_space,View.GONE)
       views.setTextViewText(R.id.ticket_widget_mode, if(favorites) {if(width<260) "お気に入り" else "お気に入りの公演"} else "直近の公演")
       val overview = open(context,id,9,if(favorites) "favorites" else "tickets")
       overview?.let { views.setOnClickPendingIntent(R.id.ticket_widget_root,it);views.setOnClickPendingIntent(R.id.ticket_widget_header,it);views.setOnClickPendingIntent(R.id.ticket_widget_footer,it) }

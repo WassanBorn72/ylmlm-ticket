@@ -63,8 +63,8 @@ class TicketWidgetTest {
   @Test fun favoritesAndUpcomingChooseDifferentEvents() {
     save()
     val manager=shadowOf(AppWidgetManager.getInstance(context))
-    val favorite=manager.createWidget(FavoriteShowsWidgetProvider::class.java,R.layout.ticket_widget)
-    val upcoming=manager.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget)
+    val favorite=manager.createWidget(FavoriteShowsWidgetProvider::class.java,R.layout.ticket_widget_cards)
+    val upcoming=manager.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_cards)
     val options=Bundle().apply{putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,300)}
     FavoriteShowsWidgetProvider().onAppWidgetOptionsChanged(context,AppWidgetManager.getInstance(context),favorite,options)
     UpcomingShowsWidgetProvider().onAppWidgetOptionsChanged(context,AppWidgetManager.getInstance(context),upcoming,options)
@@ -82,7 +82,7 @@ class TicketWidgetTest {
     save()
     val manager=AppWidgetManager.getInstance(context)
     val shadow=shadowOf(manager)
-    val id=shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget)
+    val id=shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_cards)
     val large=Bundle().apply{putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,420)}
     manager.updateAppWidgetOptions(id,large)
     UpcomingShowsWidgetProvider().onAppWidgetOptionsChanged(context,manager,id,large)
@@ -102,7 +102,7 @@ class TicketWidgetTest {
     val shadow = shadowOf(manager)
     val counts = mutableMapOf<Int,Int>()
     for (height in listOf(180,220,270,300,420,560)) {
-      val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget)
+      val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_cards)
       val options = Bundle().apply {
         putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,height)
         putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,340)
@@ -132,7 +132,7 @@ class TicketWidgetTest {
       assertEquals("no outside top padding",0,view.paddingTop)
       assertEquals("no outside bottom padding",0,view.paddingBottom)
       val header = view.findViewById<View>(R.id.ticket_widget_header)
-      assertTrue("branded header and clear footer",header.height >= 32 && footer.height >= 28)
+      assertTrue("branded header and clear footer",header.height >= (if(height <= 220) 24 else 32) && footer.height >= 28)
       rows.forEach { assertEquals("small consistent side margins",view.width-8,it.width) }
       counts[height] = count
       println("height=$height count=$count lines=$lines type=${view.javaClass.name} root=${view.measuredHeight} density=${context.resources.displayMetrics.density} rows=${rowIds.map{view.findViewById<View>(it).measuredHeight}}")
@@ -171,7 +171,7 @@ class TicketWidgetTest {
     try {
       for((height,scale) in listOf(180 to 1f,270 to 1f,270 to 1.5f,420 to 1f,560 to 1f)) {
         RuntimeEnvironment.setFontScale(scale)
-        val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget)
+        val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_cards)
         val options = Bundle().apply {
           putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,height)
           putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,340)
@@ -218,7 +218,7 @@ class TicketWidgetTest {
     save()
     val manager = AppWidgetManager.getInstance(context)
     val shadow = shadowOf(manager)
-    val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget)
+    val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_cards)
     val options = Bundle().apply {
       putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,340)
       putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH,600)
@@ -233,7 +233,7 @@ class TicketWidgetTest {
     save()
     val manager = AppWidgetManager.getInstance(context)
     val shadow = shadowOf(manager)
-    val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget)
+    val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_cards)
     val options = Bundle().apply {
       putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,340)
       putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH,600)
@@ -248,7 +248,7 @@ class TicketWidgetTest {
     save()
     val manager = AppWidgetManager.getInstance(context)
     val shadow = shadowOf(manager)
-    val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget)
+    val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_cards)
     val options = Bundle().apply {
       putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,340)
       putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH,340)
@@ -266,7 +266,7 @@ class TicketWidgetTest {
     save()
     val manager = AppWidgetManager.getInstance(context)
     val shadow = shadowOf(manager)
-    val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget)
+    val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_cards)
     val options = Bundle().apply {
       putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,220)
       putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,340)
@@ -282,7 +282,7 @@ class TicketWidgetTest {
       save()
       val manager = AppWidgetManager.getInstance(context)
       val shadow = shadowOf(manager)
-      val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget)
+      val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_cards)
       val options = Bundle().apply {
         putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,300)
         putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,340)
@@ -302,7 +302,7 @@ class TicketWidgetTest {
     save()
     val manager = AppWidgetManager.getInstance(context)
     val shadow = shadowOf(manager)
-    val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget)
+    val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_cards)
     val options = Bundle().apply {
       putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,340)
       putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,300)
@@ -333,7 +333,7 @@ class TicketWidgetTest {
     prefs.edit().putString("snapshot",snapshot.toString()).commit()
     val manager = AppWidgetManager.getInstance(context)
     val shadow = shadowOf(manager)
-    val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget)
+    val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_cards)
     val view = shadow.getViewFor(id)
     assertEquals("OPEN 18:00 / START 18:30",view.findViewById<TextView>(R.id.ticket_open_0).text.toString())
     assertTrue(view.findViewById<TextView>(R.id.ticket_meta_0).compoundDrawables[0] != null)
@@ -373,7 +373,7 @@ class TicketWidgetTest {
       val offer = org.json.JSONObject().put("sourceId",c[0]).put("sourceName",c[1]).put("availability",c[2])
       snapshot.getJSONArray("events").getJSONObject(0).put("ticketOffers",org.json.JSONArray().put(offer))
       prefs.edit().putString("snapshot",snapshot.toString()).commit()
-      val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget)
+      val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_cards)
       val options = Bundle().apply {putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,340);putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,300)}
       UpcomingShowsWidgetProvider().onAppWidgetOptionsChanged(context,manager,id,options)
       val view = shadow.getViewFor(id)
@@ -387,7 +387,7 @@ class TicketWidgetTest {
   }
   @Test fun emptySnapshotOffersAppRefreshInsteadOfFakeEvents() {
     val manager=shadowOf(AppWidgetManager.getInstance(context))
-    val id=manager.createWidget(FavoriteShowsWidgetProvider::class.java,R.layout.ticket_widget)
+    val id=manager.createWidget(FavoriteShowsWidgetProvider::class.java,R.layout.ticket_widget_cards)
     val view=manager.getViewFor(id)
     assertEquals(View.VISIBLE,view.findViewById<View>(R.id.ticket_widget_empty).visibility)
     assertEquals(View.GONE,view.findViewById<View>(R.id.ticket_row_0).visibility)
