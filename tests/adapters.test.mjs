@@ -104,3 +104,55 @@ test('同じ検索条件のページ送りを辿り、別検索には広げな�
   } });
   assert.deepEqual(visits, ['https://tiget.net/events?artist=yuru', 'https://tiget.net/events?artist=yuru&page=2']);
 });
+
+test('TIGET 521892: 出演者欄にないゆるめるモ！を詳細本文から取得し、料金形式も読む', () => {
+  const [event] = parse('tiget', 'tiget-description', 'https://tiget.net/events/521892');
+  assert.ok(event);
+  assert.equal(event.artists.find(artist => artist.id === 'group')?.name, 'ゆるめるモ！');
+  assert.equal(event.date, '2026-11-03');
+  assert.equal(event.doorsAt, '2026-11-03T08:30:00.000Z');
+  assert.equal(event.startAt, '2026-11-03T09:00:00.000Z');
+  assert.equal(event.offers[0].price, 3500);
+  assert.equal(event.offers[0].label, '前売りチケット(一般)');
+  assert.match(event.offers[0].note, /1ドリンク別/);
+});
+
+const withTigetDescription = description => fixture('tiget-description').replace(/<div class="pg-event__detail__description">[\s\S]*?<\/div>/, `<div class="pg-event__detail__description">${description}</div>`);
+test('TIGET: 本文の単なる言及・出演キャンセル・公演外のおすすめを出演と誤認しない', () => {
+  for (const description of [
+    '<p>ゆるめるモ！のファンの方にもおすすめです。</p>',
+    '<p>過去の出演者：ゆるめるモ！</p>',
+    '<p>出演：ゆるめるモ！（出演キャンセル） / 別グループ</p>',
+    '<p>出演者は別グループです。</p>',
+    '<p>出演：<del>ゆるめるモ！</del> / 別グループ</p>',
+  ]) {
+    const html = withTigetDescription(description) + '<aside><p>ゆるめるモ！</p></aside>';
+    assert.deepEqual(extractSiteEvents(html, 'https://tiget.net/events/521892', source('tiget'), config), []);
+  }
+});
+
+test('TIGET: 本文のユニット・所属明記の個人出演も絞り込み対象として保持', () => {
+  for (const [description, name] of [
+    ['<p>出演：なにぬねるん？ / 別グループ</p>', 'なにぬねるん？'],
+    ['<p>出演者</p><p>19:00〜19:25 ねるん（ゆるめるモ！）</p>', 'ねるん'],
+  ]) {
+    const [event] = extractSiteEvents(withTigetDescription(description), 'https://tiget.net/events/521892', source('tiget'), config);
+    assert.ok(event?.artists.some(artist => artist.name === name), name);
+  }
+  assert.deepEqual(extractSiteEvents(withTigetDescription('<p>出演：ねるん</p>'), 'https://tiget.net/events/521892', source('tiget'), config), []);
+});
+
+test('TIGET: 料金未定の場合に注記のドリンク代をチケット代と誤認しない', () => {
+  const html = fixture('tiget-description').replace('料金3,500 円', '料金未定').replace('※1ドリンク別', '※1ドリンク700円別');
+  const [event] = extractSiteEvents(html, 'https://tiget.net/events/521892', source('tiget'), config);
+  assert.equal(event.offers[0].price, null);
+  assert.match(event.offers[0].note, /700円/);
+});
+
+test('TIGET: 検索結果から発見し、本文にだけ出演のある公演を収集できる', async () => {
+  const tiget = { ...source('tiget'), listingUrls: [source('tiget').listingUrls[0]] };
+  const results = await collectTickets({ ...config, sources: [tiget] }, { fetchPage: async url => ({ url, html: new URL(url).pathname === '/events/521892' ? fixture('tiget-description') : '<div class="events-archive-body"><a href="/events/521892">武蔵野音楽祭</a></div>' }) });
+  assert.equal(results[0].status, 'ok');
+  assert.equal(results[0].events.length, 1);
+  assert.equal(results[0].events[0].offers[0].price, 3500);
+});

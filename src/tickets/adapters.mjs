@@ -26,11 +26,29 @@ const price = value => {
   return match ? Number((match[1] ?? match[2]).replace(/,/g, '')) : /^(?:無料|FREE)$/i.test(text(value)) ? 0 : null;
 };
 
+// Only read the event's own description. Standalone artist/list entries and
+// explicit performer headings count; prose mentions and cancelled entries do not.
+function tigetDescriptionPerformers($, config) {
+  const detail = $('.pg-event__detail__description').clone();
+  detail.find('script, style, s, del, strike, .pg-event__detail__morelink').remove();
+  detail.find('br').replaceWith('\n');
+  detail.find('p, div, li').append('\n');
+  const aliases = [config.artist, ...(config.aliases ?? []), ...(config.targets ?? []).filter(target => ['unit', 'collaboration'].includes(target.kind)).flatMap(target => [target.name, ...(target.aliases ?? [])])].filter(Boolean).map(normalize);
+  return detail.text().normalize('NFKC').split(/\n/).flatMap(line => {
+    const listed = line.trim().replace(/^[・●○◎■□◆◇★☆▶▷*→\s-]+/u, '').replace(/^(?:出演(?:者|アーティスト)?|LINE\s*UP|ARTISTS?|ACTS?)\s*[:：]\s*/i, '');
+    return listed.split(/[,、/／|｜;；]/).map(value => value.trim().replace(/^\d{1,2}:\d{2}(?:\s*[〜~～–－-]\s*\d{1,2}:\d{2})?\s*/, '')).filter(value => {
+      if (/出演(?:キャンセル|辞退|中止|なし|無し)|出演し(?:ません|ない)|出演は(?:ありません|ございません)|不出演|休演|欠席/.test(value)) return false;
+      const key = normalize(value);
+      return aliases.some(alias => key === alias || key.startsWith(`${alias}(`) || key.startsWith(`${alias}【`)) || matchingArtists('', value, '', config).some(artist => artist.kind === 'member');
+    });
+  }).join('\n');
+}
+
 function tiget($, pageUrl, source, config) {
   const title = text($('.pg-event__header__title').text());
   if (!title) throw new Error('TIGET の公演情報欄が見つかりません');
   const fields = definitions($);
-  const performers = fields.get('出演者')?.text() ?? '';
+  const performers = [fields.get('出演者')?.text() ?? '', tigetDescriptionPerformers($, config)].filter(Boolean).join('\n');
   if (!performerMatches(`${title} ${performers}`, config, pageUrl)) return [];
   const day = date(fields.get('開催日')?.text());
   const venueNode = fields.get('会場');
@@ -43,12 +61,14 @@ function tiget($, pageUrl, source, config) {
     const doors = clock(timing, '開場');
     const key = `${start ?? 'unknown'}|${doors ?? 'unknown'}`;
     if (!groups.has(key)) groups.set(key, { name: title, startDate: instant(day, start), doorTime: doors, location: { name: venue }, performer: { name: performers }, offers: [] });
-    const label = text(node.find('h6').text()).replace(/^●(?:予約|販売|電子チケット)/, '').replace(/^\(|\)$/g, '');
+    const label = text(node.find('h6').text()).replace(/^●(?:予約|販売|電子チケット)/, '').replace(/^●/, '').replace(/^\((.*)\)$/, '$1');
     node.children('p').each((_, p) => {
       const line = text($(p).text());
       const kind = line.match(/^(前売券|当日券)\s*[:：]/)?.[1];
-      if (!kind) return;
-      groups.get(key).offers.push({ name: `${label} / ${kind}`, ...parseSalesPeriod(node.text()), availability: parseAvailability(node.find('button, [class*=status]').text()), price: price(line), priceCurrency: 'JPY', url: pageUrl, note: text($(p).find('span').text()) || undefined });
+      if (!kind && !/^料金\s*[:：]?/.test(line)) return;
+      const amount = $(p).clone();
+      amount.find('span').remove();
+      groups.get(key).offers.push({ name: kind ? `${label} / ${kind}` : label || 'チケット', ...parseSalesPeriod(node.text()), availability: parseAvailability(node.find('button, [class*=status]').text()), price: price(amount.text()), priceCurrency: 'JPY', url: pageUrl, note: text($(p).find('span').text()) || undefined });
     });
   });
   if (!groups.size) throw new Error('TIGET の券種・開場／開演欄を読み取れません');
