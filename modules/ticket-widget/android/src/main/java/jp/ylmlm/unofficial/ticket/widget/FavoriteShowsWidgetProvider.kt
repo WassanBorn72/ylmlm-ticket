@@ -74,19 +74,30 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
       val count = candidates.coerceIn(0,rowIds.size)
       if(count == 0) return 0
       for(limit in count downTo 1) {
-        if(measureUniformRows(view,rowIds,width,limit) <= height || limit == 1) return limit
+        if(measureUniformRows(view,rowIds,width,limit) <= height) return limit
       }
-      return 1
+      return 0
     }
     internal fun fitLayout(view: View, rows: IntArray, titles: IntArray, width: Int, height: Int, candidates: Int): Pair<Int,Int> {
       titles.forEach { view.findViewById<android.widget.TextView>(it).maxLines = 2 }
       val fullCount = fitRows(view,rows,width,height,candidates)
       titles.forEach { view.findViewById<android.widget.TextView>(it).maxLines = 1 }
       val denseCount = fitRows(view,rows,width,height,candidates)
-      val count = maxOf(fullCount,denseCount)
-      val lines = if(denseCount > fullCount) 1 else 2
+      val count = maxOf(fullCount,denseCount).coerceAtLeast(if(candidates > 0) 1 else 0)
+      val lines = if(denseCount > fullCount || fullCount == 0) 1 else 2
       titles.forEach { view.findViewById<android.widget.TextView>(it).maxLines = lines }
-      measureUniformRows(view,rows,width,count)
+      val naturalHeight = measureUniformRows(view,rows,width,count)
+      // Use the available height for the cards, not oversized outside spacers.
+      // Rounding leaves fewer than count pixels, shared by the top/bottom spacers.
+      if(count > 0) {
+        val extraPerCard = ((height-naturalHeight).coerceAtLeast(0))/count
+        if(extraPerCard > 0) {
+          rows.take(count).forEach { row ->
+            view.findViewById<View>(row).apply { layoutParams = layoutParams.apply { height += extraPerCard } }
+          }
+          measure(view,width)
+        }
+      }
       return count to lines
     }
     private fun render(context: Context, manager: AppWidgetManager, id: Int, favorites: Boolean, options: Bundle? = null) {
@@ -111,6 +122,8 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
       val rows = intArrayOf(R.id.ticket_row_0,R.id.ticket_row_1,R.id.ticket_row_2,R.id.ticket_row_3,R.id.ticket_row_4,R.id.ticket_row_5)
       val titles = intArrayOf(R.id.ticket_title_0,R.id.ticket_title_1,R.id.ticket_title_2,R.id.ticket_title_3,R.id.ticket_title_4,R.id.ticket_title_5)
       val times = intArrayOf(R.id.ticket_time_0,R.id.ticket_time_1,R.id.ticket_time_2,R.id.ticket_time_3,R.id.ticket_time_4,R.id.ticket_time_5)
+      val performances = intArrayOf(R.id.ticket_performance_0,R.id.ticket_performance_1,R.id.ticket_performance_2,R.id.ticket_performance_3,R.id.ticket_performance_4,R.id.ticket_performance_5)
+      val meets = intArrayOf(R.id.ticket_meet_0,R.id.ticket_meet_1,R.id.ticket_meet_2,R.id.ticket_meet_3,R.id.ticket_meet_4,R.id.ticket_meet_5)
       val metas = intArrayOf(R.id.ticket_meta_0,R.id.ticket_meta_1,R.id.ticket_meta_2,R.id.ticket_meta_3,R.id.ticket_meta_4,R.id.ticket_meta_5)
       val months = intArrayOf(R.id.ticket_month_0,R.id.ticket_month_1,R.id.ticket_month_2,R.id.ticket_month_3,R.id.ticket_month_4,R.id.ticket_month_5)
       val days = intArrayOf(R.id.ticket_day_0,R.id.ticket_day_1,R.id.ticket_day_2,R.id.ticket_day_3,R.id.ticket_day_4,R.id.ticket_day_5)
@@ -125,6 +138,12 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
           val summary = event.optString("summary")
           views.setTextViewText(times[index],event.optString("timeLabel",summary.substringBefore(" · ").substringAfter(" ","時間未掲載")))
           views.setTextViewText(metas[index],event.optString("venueLabel",summary.substringAfter(" · ","会場はアプリで確認")))
+          val performance = event.optString("performanceLabel")
+          val meet = event.optString("meetAndGreetLabel")
+          views.setTextViewText(performances[index],performance)
+          views.setViewVisibility(performances[index],if(performance.isBlank()) View.GONE else View.VISIBLE)
+          views.setTextViewText(meets[index],meet)
+          views.setViewVisibility(meets[index],if(meet.isBlank()) View.GONE else View.VISIBLE)
           val day = try { SimpleDateFormat("yyyy-MM-dd",Locale.JAPAN).apply{timeZone=TimeZone.getTimeZone("Asia/Tokyo");isLenient=false}.parse(event.optString("date")) } catch (_:Exception){null}
           if(day!=null){
             fun label(pattern:String)=SimpleDateFormat(pattern,Locale.JAPAN).apply{timeZone=TimeZone.getTimeZone("Asia/Tokyo")}.format(day)
@@ -135,7 +154,7 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
             views.setTextColor(months[index],android.graphics.Color.parseColor(if(weekday=="日") "#B34C58" else if(weekday=="土") "#416EA2" else "#287B59"))
           }else{views.setTextViewText(months[index],"--月");views.setTextViewText(days[index],"--")}
           views.setViewVisibility(weekdays[index],View.GONE)
-          views.setContentDescription(row,event.optString("title") + " " + event.optString("summary"))
+          views.setContentDescription(row,listOf(event.optString("title"),summary,performance,meet).filter{it.isNotBlank()}.joinToString(" "))
           open(context,id,index,"event/"+Uri.encode(event.optString("id")))?.let { views.setOnClickPendingIntent(row,it) }
         }
       }

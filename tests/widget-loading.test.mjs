@@ -57,3 +57,16 @@ test('同じ購入ページにグループと個人の別公演がある場合�
  release([{title:'まことソロイベント',date:'2030-02-02',ticketUrls:['tickets.example/event/mixed']}]);
  const [final]=await task;assert.equal(final.events.length,2);assert.equal(final.events.find(event=>event.title==='グループ公演').offers.length,1);assert.equal(requests,1);
 });
+
+test('ウィジェットには公式の出演・特典会時間を渡し、前回情報と複数の時間帯を保持する',()=>{
+ const [e]=widgetSnapshot({events:[{id:'a',title:'公演',date:'2030-02-01',venue:'会場',doorsAt:'2030-02-01T08:30:00Z',officialDetails:{performance:['19:00〜19:25','19:00〜19:25','20:00〜20:25'],meetAndGreet:['19:35〜20:00'],stale:true}}],lastSyncAt:null},[]).events;
+ assert.equal(e.timeLabel,'OPEN 17:30');
+ assert.equal(e.performanceLabel,'出演（前回） 19:00〜19:25 / 20:00〜20:25');
+ assert.equal(e.meetAndGreetLabel,'特典会（前回） 19:35〜20:00');
+});
+test('出演・特典会の情報がなければ開演時間から推測せず空欄にする',()=>{
+ for(const officialDetails of [undefined,{performance:[],meetAndGreet:[]},{performance:['',' '],meetAndGreet:[]}]){
+  const [e]=widgetSnapshot({events:[{id:'a',title:'公演',date:'2030-02-01',venue:'会場',startAt:'2030-02-01T09:00:00Z',officialDetails}],lastSyncAt:null},[]).events;
+  assert.equal(e.performanceLabel,'');assert.equal(e.meetAndGreetLabel,'');
+ }
+});

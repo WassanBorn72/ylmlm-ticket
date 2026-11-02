@@ -23,6 +23,15 @@ class TicketWidgetTest {
     context = RuntimeEnvironment.getApplication()
     context.getSharedPreferences("ticket_widget",0).edit().clear().commit()
   }
+  private fun previewFont(view: View) {
+    val path = System.getenv("WIDGET_PREVIEW_FONT") ?: return
+    val font = android.graphics.Typeface.createFromFile(path)
+    fun update(node: View) {
+      if(node is TextView) node.typeface = android.graphics.Typeface.create(font,node.typeface?.style ?: 0)
+      if(node is android.view.ViewGroup) for(i in 0 until node.childCount) update(node.getChildAt(i))
+    }
+    update(view)
+  }
   private fun save() {
     val snapshot="""{"updatedLabel":"11/1取得","events":[
       {"id":"a","title":"公演A","date":"2099-01-01","sortTime":"09:00","favorite":true,"summary":"1/1 OPEN 18:00 · 会場A"},
@@ -83,13 +92,7 @@ class TicketWidgetTest {
       }
       UpcomingShowsWidgetProvider().onAppWidgetOptionsChanged(context,manager,id,options)
       val view = shadow.getViewFor(id)
-      val fontPath = System.getenv("WIDGET_PREVIEW_FONT")
-      val font = fontPath?.let { android.graphics.Typeface.createFromFile(it) }
-      fun setFont(node: View) {
-        if (node is TextView && font != null) node.typeface = android.graphics.Typeface.create(font,node.typeface?.style ?: 0)
-        if (node is android.view.ViewGroup) for (i in 0 until node.childCount) setFont(node.getChildAt(i))
-      }
-      setFont(view)
+      previewFont(view)
       view.findViewById<TextView>(R.id.ticket_title_0).text = "表示例：ゆるめるモ！ワンマンライブ"
       view.findViewById<TextView>(R.id.ticket_title_1).text = "表示例：なにぬねるん？スペシャルライブ"
       view.findViewById<TextView>(R.id.ticket_meta_0).text = "渋谷ライブホール（表示例）"
@@ -116,12 +119,66 @@ class TicketWidgetTest {
       val topSpace = view.findViewById<View>(R.id.ticket_widget_top_space).height
       val bottomSpace = view.findViewById<View>(R.id.ticket_widget_bottom_space).height
       assertTrue("unused space must be split above/below cards at $height: $topSpace / $bottomSpace",kotlin.math.abs(topSpace-bottomSpace) <= 1)
+      assertTrue("remaining height should enlarge cards, not outside gaps at $height",topSpace+bottomSpace < rows.size)
 
     }
     assertTrue("220dp should fit two events: $counts",counts.getValue(220) >= 2)
     assertTrue("270dp should fit three events: $counts",counts.getValue(270) >= 3)
     assertTrue("300dp should fit three events: $counts",counts.getValue(300) >= 3)
     assertEquals("560dp should fit all six: $counts",6,counts.getValue(560))
+  }
+  @Test @Config(sdk = [34], qualifiers = "mdpi")
+  fun officialTimesRemainVisibleInUniformCardsThatFillTheWidget() {
+    save()
+    val prefs = context.getSharedPreferences("ticket_widget",0)
+    val snapshot = org.json.JSONObject(prefs.getString("snapshot","{}")!!)
+    for(index in 0..1) {
+      snapshot.getJSONArray("events").getJSONObject(index)
+        .put("performanceLabel","出演 19:00〜19:25")
+        .put("meetAndGreetLabel","特典会 19:35〜20:25")
+    }
+    prefs.edit().putString("snapshot",snapshot.toString()).commit()
+    val rowIds = intArrayOf(R.id.ticket_row_0,R.id.ticket_row_1,R.id.ticket_row_2,R.id.ticket_row_3,R.id.ticket_row_4,R.id.ticket_row_5)
+    val titleIds = intArrayOf(R.id.ticket_title_0,R.id.ticket_title_1,R.id.ticket_title_2,R.id.ticket_title_3,R.id.ticket_title_4,R.id.ticket_title_5)
+    val manager = AppWidgetManager.getInstance(context)
+    val shadow = shadowOf(manager)
+    try {
+      for((height,scale) in listOf(180 to 1f,270 to 1f,270 to 1.5f,420 to 1f,560 to 1f)) {
+        RuntimeEnvironment.setFontScale(scale)
+        val id = shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget)
+        val options = Bundle().apply {
+          putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,height)
+          putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,340)
+        }
+        UpcomingShowsWidgetProvider().onAppWidgetOptionsChanged(context,manager,id,options)
+        val view = shadow.getViewFor(id)
+        assertEquals("出演 19:00〜19:25",view.findViewById<TextView>(R.id.ticket_performance_0).text.toString())
+        assertEquals(View.VISIBLE,view.findViewById<View>(R.id.ticket_performance_0).visibility)
+        assertEquals("特典会 19:35〜20:25",view.findViewById<TextView>(R.id.ticket_meet_0).text.toString())
+        assertEquals(View.GONE,view.findViewById<View>(R.id.ticket_performance_2).visibility)
+        assertTrue(view.findViewById<View>(R.id.ticket_row_0).contentDescription.contains("19:35"))
+        previewFont(view)
+        view.findViewById<TextView>(R.id.ticket_title_0).text = "表示例：ゆるめるモ！ワンマンライブ"
+        view.findViewById<TextView>(R.id.ticket_widget_updated).text = "表示サンプル · 11/2 18:00取得"
+        val (count,lines) = FavoriteShowsWidgetProvider.fitLayout(view,rowIds,titleIds,340,height,6)
+        view.measure(View.MeasureSpec.makeMeasureSpec(340,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(height,View.MeasureSpec.EXACTLY))
+        view.layout(0,0,340,height)
+        val bitmap = android.graphics.Bitmap.createBitmap(340,height,android.graphics.Bitmap.Config.ARGB_8888)
+        view.draw(android.graphics.Canvas(bitmap))
+        val output = java.io.File(System.getProperty("widget.preview.output","build/widget-previews"),"widget-times-$height-$scale.png")
+        output.parentFile?.mkdirs()
+        java.io.FileOutputStream(output).use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,it) }
+        val rows = rowIds.map{view.findViewById<View>(it)}.filter{it.visibility == View.VISIBLE}
+        assertEquals("equal heights with time labels at $height / $scale",1,rows.map{it.height}.distinct().size)
+        val top = view.findViewById<View>(R.id.ticket_widget_top_space).height
+        val bottom = view.findViewById<View>(R.id.ticket_widget_bottom_space).height
+        assertTrue("no large outside gaps at $height / $scale: $top+$bottom",top+bottom < count)
+        val footer = view.findViewById<View>(R.id.ticket_widget_footer)
+        assertTrue("footer fits at $height / $scale",footer.bottom <= height-view.paddingBottom)
+        rows.forEach{assertTrue("cards fit before footer at $height / $scale",it.bottom <= footer.top)}
+        println("with-times height=$height font=$scale count=$count lines=$lines cardHeight=${rows.first().height} gaps=$top/$bottom")
+      }
+    } finally { RuntimeEnvironment.setFontScale(1f) }
   }
   @Test @Config(sdk = [34], qualifiers = "port")
   fun portraitUsesMaxHeightInsteadOfLandscapeMinHeight() {
