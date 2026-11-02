@@ -23,6 +23,9 @@ const headers = { 'content-type': 'text/html; charset=utf-8', 'access-control-al
 for (const source of config.sources) {
   await page.route(`https://${source.allowedHosts[0]}/**`, async route => {
     requests++;
+    // Keep all providers pending during cancellation; otherwise immediate ticket
+    // results can legitimately update the feed before the cancel click arrives.
+    if (phase === 'paused') await new Promise(resolve=>setTimeout(resolve,4000));
     const url = new URL(route.request().url());
     if (phase === 'offline') return route.abort('internetdisconnected');
     if (phase === 'failed' && source.id === 'tiget') return route.fulfill({ status: 403, headers, body: 'Forbidden' });
