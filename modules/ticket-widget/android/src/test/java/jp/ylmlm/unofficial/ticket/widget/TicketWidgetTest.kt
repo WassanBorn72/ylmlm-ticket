@@ -141,6 +141,7 @@ class TicketWidgetTest {
       snapshot.getJSONArray("events").getJSONObject(index)
         .put("performanceLabel","出演 19:00〜19:25")
         .put("meetAndGreetLabel","特典会 19:35〜20:25")
+        .put("ticketOffers",org.json.JSONArray("""[{"sourceId":"livepocket","sourceName":"LivePocket","availability":"InStock"},{"sourceId":"tiget","sourceName":"TIGET","availability":"SoldOut","stale":true}]"""))
     }
     prefs.edit().putString("snapshot",snapshot.toString()).commit()
     val rowIds = intArrayOf(R.id.ticket_row_0,R.id.ticket_row_1,R.id.ticket_row_2,R.id.ticket_row_3,R.id.ticket_row_4,R.id.ticket_row_5)
@@ -161,6 +162,8 @@ class TicketWidgetTest {
         assertEquals(View.VISIBLE,view.findViewById<View>(R.id.ticket_performance_0).visibility)
         assertEquals("特典会 19:35〜20:25",view.findViewById<TextView>(R.id.ticket_meet_0).text.toString())
         assertEquals(View.GONE,view.findViewById<View>(R.id.ticket_performance_2).visibility)
+        assertEquals("発売中 LivePocket / 完売（前回） TIGET",view.findViewById<TextView>(R.id.ticket_sales_0).text.toString())
+        assertEquals(View.GONE,view.findViewById<View>(R.id.ticket_sales_2).visibility)
         assertTrue(view.findViewById<View>(R.id.ticket_row_0).contentDescription.toString().contains("19:35"))
         previewFont(view)
         view.findViewById<TextView>(R.id.ticket_title_0).text = "表示例：ゆるめるモ！ワンマンライブ"
@@ -266,6 +269,18 @@ class TicketWidgetTest {
       assertTrue(view.measuredHeight <= (300*density).toInt())
       assertEquals(View.VISIBLE,view.findViewById<View>(R.id.ticket_row_0).visibility)
     } finally { RuntimeEnvironment.setFontScale(1f) }
+  }
+  @Test fun salesStatusesRespectWindowsMixedOffersAndUnknownStock() {
+    val now = 1_900_000_000_000L
+    fun offers(availability: String) = org.json.JSONArray("""[{"sourceId":"a","sourceName":"LivePocket","availability":"$availability","salesStartMs":${now+60000},"salesEndMs":${now+180000}}]""")
+    assertEquals("発売前 LivePocket",FavoriteShowsWidgetProvider.widgetSales(offers("InStock"),now))
+    assertEquals("発売中 LivePocket",FavoriteShowsWidgetProvider.widgetSales(offers("InStock"),now+90000))
+    assertEquals("発売終了 LivePocket",FavoriteShowsWidgetProvider.widgetSales(offers("InStock"),now+240000))
+    assertEquals("要確認 LivePocket",FavoriteShowsWidgetProvider.widgetSales(offers("PreOrder"),now+90000))
+    val mixed = org.json.JSONArray("""[{"sourceId":"a","sourceName":"LivePocket","availability":"SoldOut"},{"sourceId":"a","sourceName":"LivePocket","availability":"InStock"}]""")
+    assertEquals("一部発売中 LivePocket",FavoriteShowsWidgetProvider.widgetSales(mixed,now))
+    assertEquals("完売 TIGET",FavoriteShowsWidgetProvider.widgetSales(org.json.JSONArray("""[{"sourceId":"b","sourceName":"TIGET","availability":"SoldOut"}]"""),now))
+    assertEquals("",FavoriteShowsWidgetProvider.widgetSales(null,now))
   }
   @Test fun emptySnapshotOffersAppRefreshInsteadOfFakeEvents() {
     val manager=shadowOf(AppWidgetManager.getInstance(context))

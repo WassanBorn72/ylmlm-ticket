@@ -44,6 +44,33 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
       intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
       return PendingIntent.getActivity(context, widgetId * 10 + row, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
     }
+    internal fun widgetSales(input: org.json.JSONArray?, now: Long = System.currentTimeMillis()): String {
+      fun status(offer: JSONObject): String {
+        val start = (offer.opt("salesStartMs") as? Number)?.toLong()
+        val end = (offer.opt("salesEndMs") as? Number)?.toLong()
+        if(end != null && now > end) return "発売終了"
+        if(start != null && now < start) return "発売前"
+        return when(offer.optString("availability")) {
+          "InStock", "LimitedAvailability", "OnlineOnly" -> "発売中"
+          "SoldOut" -> "完売"
+          "Discontinued" -> "発売終了"
+          "OutOfStock" -> "販売停止"
+          // A cached pre-order flag cannot prove stock after its start time.
+          "PreOrder", "PreSale" -> if(start != null && now >= start) "要確認" else "発売前"
+          else -> "要確認"
+        }
+      }
+      val offers = (0 until (input?.length() ?: 0)).mapNotNull { input?.optJSONObject(it) }
+      val groups = offers.groupBy { it.optString("sourceId").ifBlank { it.optString("sourceName") } }.values.map { group ->
+        val states = group.map { status(it) }.distinct()
+        val state = if(states.size == 1) states[0] else if(states.contains("発売中")) "一部発売中" else "券種別"
+        Triple(group.first().optString("sourceName",group.first().optString("sourceId")),state,group.any { it.optBoolean("stale") })
+      }.filter { it.first.isNotBlank() }
+      fun priority(state: String) = when(state) { "発売中", "一部発売中" -> 0; "発売前" -> 1; "要確認", "券種別" -> 2; "販売停止" -> 3; "完売" -> 4; else -> 5 }
+      return groups.sortedWith(compareBy({priority(it.second)},{if(it.third) 1 else 0},{it.first})).joinToString(" / ") {
+        it.second + (if(it.third) "（前回）" else "") + " " + it.first
+      }
+    }
     private fun measure(view: View,width: Int) {
       fun invalidate(node: View) {
         node.forceLayout()
@@ -125,6 +152,7 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
       val rows = intArrayOf(R.id.ticket_row_0,R.id.ticket_row_1,R.id.ticket_row_2,R.id.ticket_row_3,R.id.ticket_row_4,R.id.ticket_row_5)
       val titles = intArrayOf(R.id.ticket_title_0,R.id.ticket_title_1,R.id.ticket_title_2,R.id.ticket_title_3,R.id.ticket_title_4,R.id.ticket_title_5)
       val times = intArrayOf(R.id.ticket_time_0,R.id.ticket_time_1,R.id.ticket_time_2,R.id.ticket_time_3,R.id.ticket_time_4,R.id.ticket_time_5)
+      val sales = intArrayOf(R.id.ticket_sales_0,R.id.ticket_sales_1,R.id.ticket_sales_2,R.id.ticket_sales_3,R.id.ticket_sales_4,R.id.ticket_sales_5)
       val performances = intArrayOf(R.id.ticket_performance_0,R.id.ticket_performance_1,R.id.ticket_performance_2,R.id.ticket_performance_3,R.id.ticket_performance_4,R.id.ticket_performance_5)
       val meets = intArrayOf(R.id.ticket_meet_0,R.id.ticket_meet_1,R.id.ticket_meet_2,R.id.ticket_meet_3,R.id.ticket_meet_4,R.id.ticket_meet_5)
       val metas = intArrayOf(R.id.ticket_meta_0,R.id.ticket_meta_1,R.id.ticket_meta_2,R.id.ticket_meta_3,R.id.ticket_meta_4,R.id.ticket_meta_5)
@@ -141,6 +169,10 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
           val summary = event.optString("summary")
           views.setTextViewText(times[index],event.optString("timeLabel",summary.substringBefore(" · ").substringAfter(" ","時間未掲載")))
           views.setTextViewText(metas[index],event.optString("venueLabel",summary.substringAfter(" · ","会場はアプリで確認")))
+          val sale = widgetSales(event.optJSONArray("ticketOffers"))
+          views.setTextViewText(sales[index],sale)
+          views.setViewVisibility(sales[index],if(sale.isBlank()) View.GONE else View.VISIBLE)
+          views.setTextColor(sales[index],android.graphics.Color.parseColor(if(sale.startsWith("発売中") || sale.startsWith("一部発売中")) "#287B59" else if(sale.startsWith("発売前")) "#986721" else "#52695D"))
           val performance = event.optString("performanceLabel")
           val meet = event.optString("meetAndGreetLabel")
           views.setTextViewText(performances[index],performance)
@@ -157,7 +189,7 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
             views.setTextColor(months[index],android.graphics.Color.parseColor(if(weekday=="日") "#B34C58" else if(weekday=="土") "#416EA2" else "#287B59"))
           }else{views.setTextViewText(months[index],"--月");views.setTextViewText(days[index],"--")}
           views.setViewVisibility(weekdays[index],View.GONE)
-          views.setContentDescription(row,listOf(event.optString("title"),summary,performance,meet).filter{it.isNotBlank()}.joinToString(" "))
+          views.setContentDescription(row,listOf(event.optString("title"),summary,performance,meet,sale).filter{it.isNotBlank()}.joinToString(" "))
           open(context,id,index,"event/"+Uri.encode(event.optString("id")))?.let { views.setOnClickPendingIntent(row,it) }
         }
       }
