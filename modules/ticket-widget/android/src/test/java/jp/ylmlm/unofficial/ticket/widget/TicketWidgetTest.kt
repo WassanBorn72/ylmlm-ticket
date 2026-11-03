@@ -41,6 +41,15 @@ class TicketWidgetTest {
   }
   private fun factory(favorites: Boolean=false)=TicketEventsFactory(context,favorites).apply{onCreate()}
   private fun row(factory: TicketEventsFactory,index: Int=0): View=factory.getViewAt(index)!!.apply(context,null)
+  private fun previewFont(view: View) {
+    val path=System.getenv("WIDGET_PREVIEW_FONT") ?: return
+    val font=android.graphics.Typeface.createFromFile(path)
+    fun apply(node: View) {
+      if(node is TextView) node.typeface=android.graphics.Typeface.create(font,node.typeface?.style ?: 0)
+      if(node is ViewGroup) for(i in 0 until node.childCount) apply(node.getChildAt(i))
+    }
+    apply(view)
+  }
   private fun measure(view: View,width: Int,height: Int) {
     view.measure(View.MeasureSpec.makeMeasureSpec(width,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(height,View.MeasureSpec.EXACTLY));view.layout(0,0,width,height)
   }
@@ -59,7 +68,9 @@ class TicketWidgetTest {
       override fun hasStableIds()=true
       override fun getView(position: Int,convertView: View?,parent: ViewGroup): View {
         val remote=factory.getViewAt(position)!!
-        return if(convertView == null) remote.apply(context,parent) else convertView.apply{remote.reapply(context,this)}
+        // RemoteViewsService sets this flag before sending an item to the host.
+        org.robolectric.util.ReflectionHelpers.callInstanceMethod<Any>(remote,"addFlags",org.robolectric.util.ReflectionHelpers.ClassParameter.from(Int::class.javaPrimitiveType!!,2))
+        return (if(convertView == null) remote.apply(context,parent) else convertView.apply{remote.reapply(context,this)}).also{previewFont(it)}
       }
     }
     val d=context.resources.displayMetrics.density
@@ -181,6 +192,26 @@ class TicketWidgetTest {
       assertEquals("https://tiget.net/events/500000",intent.data?.getQueryParameter("url"))
       assertTrue(intent.flags and Intent.FLAG_ACTIVITY_SINGLE_TOP != 0);assertTrue(intent.flags and Intent.FLAG_ACTIVITY_NEW_TASK != 0)
     }
+  }
+  @Test fun renderedCardsAndVenueSendTheirOwnFillInIntentThroughTheTemplate() {
+    save();val view=host(factory(),340,420)
+    val list=view.findViewById<ListView>(R.id.ticket_widget_events)
+    val template=list.tag as android.app.PendingIntent
+    assertFalse("collection requires mutable fill-in with an explicit receiver",template.isImmutable)
+    assertEquals(FavoriteShowsWidgetProvider::class.java.name,shadowOf(template).savedIntent.component?.className)
+    val item=list.getChildAt(0)
+    assertTrue(item.findViewById<View>(R.id.ticket_row).performClick())
+    val first=shadowOf(RuntimeEnvironment.getApplication()).broadcastIntents.last()
+    assertEquals(FavoriteShowsWidgetProvider.ACTION_OPEN,first.action)
+    assertEquals("event-0",first.getStringExtra("eventId"));assertFalse(first.getBooleanExtra("map",false))
+    assertTrue(item.findViewById<View>(R.id.ticket_meta).performClick())
+    val map=shadowOf(RuntimeEnvironment.getApplication()).broadcastIntents.last()
+    assertEquals("event-0",map.getStringExtra("eventId"));assertTrue(map.getBooleanExtra("map",false))
+    assertEquals("渋谷ライブホール 東京都渋谷区",map.getStringExtra("mapQuery"))
+    list.setSelection(24);measure(view,340,420)
+    val position=list.firstVisiblePosition
+    assertTrue(list.getChildAt(0).findViewById<View>(R.id.ticket_row).performClick())
+    assertEquals("event-$position",shadowOf(RuntimeEnvironment.getApplication()).broadcastIntents.last().getStringExtra("eventId"))
   }
   @Test fun venueActionOpensMapsInsteadOfEventDetail() {
     val click=TicketEventsFactory.click(JSONObject().put("id","event-0"),true).putExtra("mapQuery","渋谷ホール 東京都")
