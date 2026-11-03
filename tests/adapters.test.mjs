@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import {load} from 'cheerio/slim';
 import { extractSiteEvents } from '../src/tickets/adapters.mjs';
 import { discoverEventUrls } from '../src/tickets/extract.mjs';
 import { collectTickets } from '../src/tickets/collector.mjs';
@@ -155,4 +156,71 @@ test('TIGET: 検索結果から発見し、本文にだけ出演のある公演�
   assert.equal(results[0].status, 'ok');
   assert.equal(results[0].events.length, 1);
   assert.equal(results[0].events[0].offers[0].price, 3500);
+});
+
+const detailedSources=[
+ {id:'ticketdive',file:'ticketdive',url:'https://ticketdive.com/event/youllhalloween'},
+ {id:'livepocket',file:'livepocket-event',url:'https://livepocket.jp/e/azi9-'},
+ {id:'eplus',file:'eplus',url:'https://eplus.jp/sf/detail/4586830001-P0030001P021001'},
+ {id:'tiget',file:'tiget-description',url:'https://tiget.net/events/521892'},
+];
+function detailedPage(item,body) {
+ const $=load(fixture(item.file));
+ $('script[type="application/ld+json"]').each((_,node)=>{
+  const event=JSON.parse($(node).text());event.name='対バンイベント';event.performer={name:'別グループ'};delete event.description;$(node).text(JSON.stringify(event));
+ });
+ if(item.id==='ticketdive') {
+  $('[class*="EventInfoUnit_name__"]').first().text('対バンイベント');
+  $('[class*="EventInfoUnit_detailContainer__"] span').each((_,node)=>{if($(node).text()==='出演')$(node).next('span').text('別グループ');});
+  $('[class*="EventDetailUnit_detail__"]').first().html(body);
+ } else if(item.id==='livepocket') {
+  $('.event-detail h1').first().text('対バンイベント');
+  $('.event-detail-info dt').each((_,node)=>{if($(node).text().trim()==='出演者')$(node).next('dd').text('別グループ');});
+  $('.event-detail').append(`<div class="event-detail-toggle__text">${body}</div>`);
+ } else if(item.id==='eplus') {
+  $('.ticket-detail__content dt').each((_,node)=>{if($(node).text().trim()==='出演')$(node).next('dd').text('別グループ');});
+  $('.ticket-detail__content').first().append(body);
+ } else {
+  $('.pg-event__header__title').text('対バンイベント');
+  $('dt').each((_,node)=>{if($(node).text().trim()==='出演者')$(node).next('dd').text('別グループ');});
+  $('.pg-event__detail__description').html(body);
+ }
+ $.root().append('<aside class="recommend"><p>ゆるめるモ！</p></aside>');
+ return $.html();
+}
+test('4サイトとも出演者欄にないグループ・ユニット・所属明記の個人を本文から取得',()=>{
+ for(const item of detailedSources) for(const [body,name] of [
+  ['<p>別グループ<br>ゆるめるモ！</p>','ゆるめるモ！'],
+  ['<h3>出演者</h3><ul><li>別グループ</li><li>ゆるめるモ！</li></ul>','ゆるめるモ！'],
+  ['<p>【出演】なにQ / 別グループ</p>','なにQ'],
+  ['<p>出演：めあり（ゆるめるモ！） / 別グループ</p>','めあり'],
+ ]) {
+  const events=extractSiteEvents(detailedPage(item,body),item.url,source(item.id),config);
+  assert.ok(events.some(event=>event.artists.some(artist=>artist.name===name)),`${item.id}: ${name}`);
+ }
+});
+test('4サイトとも紹介文・過去出演・出演取消・おすすめ・所属なし個人を誤認しない',()=>{
+ for(const item of detailedSources) for(const body of [
+  '<p>ゆるめるモ！のファンの方におすすめ。</p>',
+  '<h3>過去の出演者</h3><p>ゆるめるモ！</p>',
+  '<h3>おすすめイベント</h3><p>ゆるめるモ！</p>',
+  '<p>出演：ゆるめるモ！（出演キャンセル） / 別グループ</p>',
+  '<p>出演：<del>ゆるめるモ！</del> / 別グループ</p>',
+  '<p>出演：別グループ</p><aside class="recommend"><p>ゆるめるモ！</p></aside>',
+  '<p>出演：ねるん</p>',
+ ]) assert.deepEqual(extractSiteEvents(detailedPage(item,body),item.url,source(item.id),config),[],`${item.id}: ${body}`);
+});
+test('イープラスの構造化データ内の説明も出演者一覧に限定して判定',()=>{
+ const item=detailedSources.find(item=>item.id==='eplus');
+ for(const [description,expected] of [['<h3>出演者</h3><p>ゆるめるモ！</p>',1],['ゆるめるモ！のファンの方もどうぞ',0],['<p>過去の出演者</p><p>ゆるめるモ！</p>',0]]) {
+  const $=load(detailedPage(item,'<p>公演の詳細</p>'));const node=$('script[type="application/ld+json"]').first();const event=JSON.parse(node.text());event.description=description;node.text(JSON.stringify(event));
+  assert.equal(extractSiteEvents($.html(),item.url,source(item.id),config).length,expected);
+ }
+});
+test('検索が詳細本文を索引に含めない場合も、公式告知の購入先から本文を確認する',async()=>{
+ for(const item of detailedSources) {
+  const s={...source(item.id),listingUrls:[],eventUrls:[]};const calls=[];
+  const results=await collectTickets({...config,sources:[s]},{announcementsPromise:Promise.resolve([{title:'ゆるめるモ！出演公演',date:'2026-11-03',ticketUrls:[item.url.replace('https://','')]}]),fetchPage:async url=>{calls.push(url);return{url,html:detailedPage(item,'<p>出演：ゆるめるモ！ / 別グループ</p>')};}});
+  assert.equal(results[0].status,'ok');assert.equal(results[0].events.length,1,item.id);assert.deepEqual(calls,[item.url]);
+ }
 });

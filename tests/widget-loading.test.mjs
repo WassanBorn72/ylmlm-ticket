@@ -29,8 +29,8 @@ test('新しい公式告知から消えたキャッシュ済みURLを取得候�
  assert.equal(results[0].status,'ok');assert.equal(results[0].events.length,0);assert.deepEqual(calls,['https://tickets.example/search']);
 });
 test('ウィジェットに表示用データとお気に入りの引き継ぎ・更新時刻を渡す',()=>{
- const result=widgetSnapshot({events:[{id:'new',title:'公演',date:'2030-02-01',doorsAt:'2030-02-01T08:30:00Z',startAt:'2030-02-01T09:00:00Z',venue:'会場',staleSourceIds:['a']}],lastSyncAt:'2030-01-01T00:00:00Z'},['old'],{new:{favoriteId:'old'}});
- assert.equal(result.events[0].timeLabel,'OPEN 17:30 / START 18:00');assert.equal(result.events[0].mapQuery,'会場');assert.equal(result.events[0].favorite,true);assert.match(result.events[0].summary,/OPEN 17:30/);assert.match(result.updatedLabel,/一部前回情報/);assert.equal(result.events[0].id,'new');
+ const result=widgetSnapshot({events:[{id:'new',sourceUrls:['https://tickets.example/event/new'],title:'公演',date:'2030-02-01',doorsAt:'2030-02-01T08:30:00Z',startAt:'2030-02-01T09:00:00Z',venue:'会場',staleSourceIds:['a']}],lastSyncAt:'2030-01-01T00:00:00Z'},['old'],{new:{favoriteId:'old'}});
+ assert.equal(result.events[0].eventUrl,'https://tickets.example/event/new');assert.equal(result.events[0].timeLabel,'OPEN 17:30 / START 18:00');assert.equal(result.events[0].mapQuery,'会場');assert.equal(result.events[0].favorite,true);assert.match(result.events[0].summary,/OPEN 17:30/);assert.match(result.updatedLabel,/一部前回情報/);assert.equal(result.events[0].id,'new');
  assert.equal(widgetSnapshot({events:[],lastSyncAt:null},[]).events.length,0);
 });
 

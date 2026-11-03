@@ -482,7 +482,7 @@ class TicketWidgetTest {
     val events=org.json.JSONArray()
     for(i in 0 until 24) {
       val event=org.json.JSONObject().put("id","many-$i").put("title",if(withTimetable && i%3 == 0) "長い公演名：ゆるめるモ！のライブイベント・スペシャルステージ" else "公演${i+1}")
-        .put("date","2099-02-01").put("sortTime","%02d:00".format(i)).put("favorite",true).put("timeLabel","OPEN 18:00 / START 18:30").put("venueLabel","渋谷ホール")
+        .put("date","2099-02-01").put("sortTime","%02d:00".format(i)).put("favorite",true).put("timeLabel","OPEN 18:00 / START 18:30").put("venueLabel","渋谷ホール").put("eventUrl","https://tiget.net/events/${500000+i}")
       if(withTimetable && i%2 == 0) event.put("performanceLabel","出演 19:00〜19:25").put("meetAndGreetLabel","特典会 19:35〜20:25").put("ticketOffers",org.json.JSONArray("[{\"sourceId\":\"livepocket\",\"sourceName\":\"LivePocket\"}]"))
       events.put(event)
     }
@@ -563,6 +563,49 @@ class TicketWidgetTest {
     view.measure(View.MeasureSpec.makeMeasureSpec(width,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(height,View.MeasureSpec.EXACTLY));view.layout(0,0,width,height)
     assertTrue(slotIds("ticket_row").count{view.findViewById<View>(it).visibility == View.VISIBLE} > 6)
     assertNoUsableSlotLeft(view,24)
+  }
+  private fun registerLauncher() {
+    val intent=android.content.Intent(android.content.Intent.ACTION_MAIN).addCategory(android.content.Intent.CATEGORY_LAUNCHER).setPackage(context.packageName)
+    val info=android.content.pm.ResolveInfo().apply {
+      activityInfo=android.content.pm.ActivityInfo().apply {
+        packageName=context.packageName;name="${context.packageName}.MainActivity";applicationInfo=context.applicationInfo;exported=true
+      }
+    }
+    shadowOf(context.packageManager).addResolveInfoForIntent(intent,info)
+  }
+  @Test @Config(sdk = [34], qualifiers = "mdpi")
+  fun everyWidgetCardOpensItsOwnEventDetailIncludingRowsBeyondSix() {
+    saveMany(false);registerLauncher()
+    val manager=AppWidgetManager.getInstance(context);val shadow=shadowOf(manager)
+    val id=shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_capacity)
+    val options=Bundle().apply{putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH,340);putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT,900)}
+    UpcomingShowsWidgetProvider().onAppWidgetOptionsChanged(context,manager,id,options)
+    val view=shadow.getViewFor(id)
+    for(index in listOf(0,7)) {
+      val row=view.findViewById<View>(slotIds("ticket_row")[index]);assertEquals(View.VISIBLE,row.visibility);assertTrue(row.performClick())
+      val intent=shadowOf(RuntimeEnvironment.getApplication()).nextStartedActivity
+      assertEquals(android.content.Intent.ACTION_VIEW,intent.action)
+      assertEquals("ylmlm-unofficial-ticket",intent.data?.scheme);assertEquals("event",intent.data?.host)
+      assertEquals("/many-$index",intent.data?.path);assertEquals("2099-02-01",intent.data?.getQueryParameter("date"))
+      assertEquals("公演${index+1}",intent.data?.getQueryParameter("title"));assertEquals("https://tiget.net/events/${500000+index}",intent.data?.getQueryParameter("url"))
+      assertTrue(intent.flags and android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP != 0)
+    }
+    assertTrue(view.findViewById<View>(R.id.ticket_widget_footer).performClick())
+    assertEquals("tickets",shadowOf(RuntimeEnvironment.getApplication()).nextStartedActivity.data?.host)
+  }
+  @Test fun reusedRowRebindsItsPendingIntentToTheNewEvent() {
+    save();registerLauncher()
+    val manager=AppWidgetManager.getInstance(context);val shadow=shadowOf(manager)
+    val id=shadow.createWidget(UpcomingShowsWidgetProvider::class.java,R.layout.ticket_widget_capacity)
+    assertTrue(shadow.getViewFor(id).findViewById<View>(R.id.ticket_row_0).performClick())
+    assertEquals("/a",shadowOf(RuntimeEnvironment.getApplication()).nextStartedActivity.data?.path)
+    val prefs=context.getSharedPreferences("ticket_widget",0);val snapshot=org.json.JSONObject(prefs.getString("snapshot","{}")!!)
+    snapshot.getJSONArray("events").getJSONObject(0).put("id","replacement").put("title","更新された公演")
+    prefs.edit().putString("snapshot",snapshot.toString()).commit()
+    UpcomingShowsWidgetProvider().onUpdate(context,manager,intArrayOf(id))
+    assertTrue(shadow.getViewFor(id).findViewById<View>(R.id.ticket_row_0).performClick())
+    val uri=shadowOf(RuntimeEnvironment.getApplication()).nextStartedActivity.data
+    assertEquals("/replacement",uri?.path);assertEquals("更新された公演",uri?.getQueryParameter("title"))
   }
   @Test fun emptySnapshotOffersAppRefreshInsteadOfFakeEvents() {
     val manager=shadowOf(AppWidgetManager.getInstance(context))

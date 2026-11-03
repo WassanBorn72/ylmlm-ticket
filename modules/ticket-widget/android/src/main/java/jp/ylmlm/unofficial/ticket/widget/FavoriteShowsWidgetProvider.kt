@@ -38,11 +38,17 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
         manager.getAppWidgetIds(ComponentName(context, type)).forEach { render(context, manager, it, favorites) }
       }
     }
-    private fun open(context: Context, widgetId: Int, row: Int, target: String): PendingIntent? {
+    private fun open(context: Context, widgetId: Int, row: Int, target: String, event: JSONObject? = null): PendingIntent? {
       val intent = context.packageManager.getLaunchIntentForPackage(context.packageName) ?: return null
       intent.action = Intent.ACTION_VIEW
-      intent.data = Uri.parse("ylmlm-unofficial-ticket://$target")
-      intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+      val uri=Uri.parse("ylmlm-unofficial-ticket://$target").buildUpon()
+      if(event != null) {
+        uri.appendQueryParameter("date",event.optString("date"))
+        uri.appendQueryParameter("title",event.optString("title"))
+        if(event.optString("eventUrl").isNotBlank()) uri.appendQueryParameter("url",event.optString("eventUrl"))
+      }
+      intent.data=uri.build()
+      intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
       return PendingIntent.getActivity(context, widgetId * (MAX_ROWS + 1) + row, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
     }
     private data class WidgetSite(val sourceId: String,val name: String)
@@ -241,7 +247,7 @@ open class FavoriteShowsWidgetProvider : AppWidgetProvider() {
           }else{views.setTextViewText(months[index],"--月");views.setTextViewText(days[index],"--")}
           views.setViewVisibility(weekdays[index],View.GONE)
           views.setContentDescription(row,listOf(event.optString("title"),summary,sourceNames,performance,meet).filter{it.isNotBlank()}.joinToString(" "))
-          open(context,id,index,"event/"+Uri.encode(event.optString("id")))?.let { views.setOnClickPendingIntent(row,it) }
+          open(context,id,index,"event/"+Uri.encode(event.optString("id")),event)?.let { views.setOnClickPendingIntent(row,it) }
         }
       }
       views.setViewVisibility(R.id.ticket_widget_empty,if(events.isEmpty()) View.VISIBLE else View.GONE)

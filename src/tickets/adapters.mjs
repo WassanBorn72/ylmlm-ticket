@@ -28,16 +28,23 @@ const price = value => {
 
 // Only read the event's own description. Standalone artist/list entries and
 // explicit performer headings count; prose mentions and cancelled entries do not.
-function tigetDescriptionPerformers($, config) {
-  const detail = $('.pg-event__detail__description').clone();
-  detail.find('script, style, s, del, strike, .pg-event__detail__morelink').remove();
+function descriptionPerformers($, config, selector, extra = '') {
+  const extraPage=load(`<div>${typeof extra==='string'?extra:''}</div>`);
+  const detail = $(selector).clone().add(extraPage('div').first());
+  detail.find('script, style, s, del, strike, aside, .pg-event__detail__morelink, .event-detail-other, [class*=recommend], [class*=Recommend], [class*=related]').remove();
   detail.find('br').replaceWith('\n');
-  detail.find('p, div, li').append('\n');
+  detail.find('p, div, li, dt, dd, h1, h2, h3, h4, h5, h6, section, article, table, tr, th, td').prepend('\n').append('\n');
   const aliases = [config.artist, ...(config.aliases ?? []), ...(config.targets ?? []).filter(target => ['unit', 'collaboration'].includes(target.kind)).flatMap(target => [target.name, ...(target.aliases ?? [])])].filter(Boolean).map(normalize);
+  let excluded=false;
   return detail.text().normalize('NFKC').split(/\n/).flatMap(line => {
-    const listed = line.trim().replace(/^[・●○◎■□◆◇★☆▶▷*→\s-]+/u, '').replace(/^(?:出演(?:者|アーティスト)?|LINE\s*UP|ARTISTS?|ACTS?)\s*[:：]\s*/i, '');
+    const clean=line.trim().replace(/^[・●○◎■□◆◇★☆▶▷*→\s-]+/u,'');
+    if(/^(?:過去|以前|前回|歴代|これまで)の?出演|^出演(?:履歴|キャンセル|辞退)|^(?:休演|欠席)(?:者|アーティスト)?|^(?:おすすめ|関連(?:公演|イベント))/.test(clean)){excluded=true;return [];}
+    const positive=/^(?:[【\[〈<]\s*(?:出演(?:者|アーティスト)?|LINE\s*UP|ARTISTS?|ACTS?)\s*[】\]〉>]\s*[:：]?|(?:出演(?:者|アーティスト)?|LINE\s*UP|ARTISTS?|ACTS?)\s*(?:[:：]|$))\s*/i;
+    if(positive.test(clean))excluded=false;
+    if(excluded)return [];
+    const listed=clean.replace(positive,'');
     return listed.split(/[,、/／|｜;；]/).map(value => value.trim().replace(/^\d{1,2}:\d{2}(?:\s*[〜~～–－-]\s*\d{1,2}:\d{2})?\s*/, '')).filter(value => {
-      if (/出演(?:キャンセル|辞退|中止|なし|無し)|出演し(?:ません|ない)|出演は(?:ありません|ございません)|不出演|休演|欠席/.test(value)) return false;
+      if (/出演(?:キャンセル|辞退|中止|なし|無し)|出演し(?:ません|ない)|出演は(?:ありません|ございません)|不出演|休演|欠席|過去の?出演|出演履歴/.test(value)) return false;
       const key = normalize(value);
       return aliases.some(alias => key === alias || key.startsWith(`${alias}(`) || key.startsWith(`${alias}【`)) || matchingArtists('', value, '', config).some(artist => artist.kind === 'member');
     });
@@ -48,7 +55,7 @@ function tiget($, pageUrl, source, config) {
   const title = text($('.pg-event__header__title').text());
   if (!title) throw new Error('TIGET の公演情報欄が見つかりません');
   const fields = definitions($);
-  const performers = [fields.get('出演者')?.text() ?? '', tigetDescriptionPerformers($, config)].filter(Boolean).join('\n');
+  const performers = [fields.get('出演者')?.text() ?? '', descriptionPerformers($, config, '.pg-event__detail__description')].filter(Boolean).join('\n');
   if (!performerMatches(`${title} ${performers}`, config, pageUrl)) return [];
   const day = date(fields.get('開催日')?.text());
   const venueNode = fields.get('会場');
@@ -83,7 +90,8 @@ function ticketdive($, pageUrl, source, config) {
     const label = text($(el).text());
     if (['公演日時', '会場', '出演'].includes(label)) fields.set(label, $(el).next('span').text());
   });
-  if (!performerMatches(`${title} ${fields.get('出演') ?? ''}`, config, pageUrl)) return [];
+  const performers=[fields.get('出演') ?? '',descriptionPerformers($,config,'[class*="EventDetailUnit_detail__"]')].filter(Boolean).join('\n');
+  if (!performerMatches(`${title} ${performers}`, config, pageUrl)) return [];
   const day = date(fields.get('公演日時'));
   const timing = fields.get('公演日時');
   const start = clock(timing, '開演');
@@ -107,14 +115,14 @@ function ticketdive($, pageUrl, source, config) {
     offers.push({ name: label, ...parseSalesPeriod(card.text()), availability: parseAvailability(card.find('button, [class*=status], [class*=Status]').text()), price: amount, priceCurrency: 'JPY', url: pageUrl, note: text(card.children('span').text()) || undefined });
   });
   if (!offers.length) notes.push('券種の料金が HTML に見つかりません。購入先で確認してください。');
-  return normalizeEvents([{ name: title, startDate: instant(day, start), doorTime: doors, location: { name: detailedVenue || fields.get('会場') }, performer: { name: fields.get('出演') }, offers, notes }], pageUrl, source, config);
+  return normalizeEvents([{ name: title, startDate: instant(day, start), doorTime: doors, location: { name: detailedVenue || fields.get('会場') }, performer: { name: performers }, offers, notes }], pageUrl, source, config);
 }
 
 function livepocket($, pageUrl, source, config) {
   const fields = definitions($, '.event-detail-info');
   const title = text($('.event-detail h1').first().text());
   if (!title) throw new Error('LivePocket の公演情報欄が見つかりません');
-  const performers = fields.get('出演者')?.text() ?? '';
+  const performers = [fields.get('出演者')?.text() ?? '',descriptionPerformers($,config,'.event-detail .event-detail-toggle__text, .event-detail .event-detail-description, .event-detail .event-detail__description')].filter(Boolean).join('\n');
   if (!performerMatches(`${title} ${performers}`, config, pageUrl)) return [];
   const day = date(fields.get('開催日')?.text());
   const timing = fields.get('時間')?.text();
@@ -141,9 +149,10 @@ function eplus($, pageUrl, source, config) {
   if (!events.length || !$('.section--s4-detail').length) throw new Error('イープラスの公演詳細形式を読み取れません');
   if (events.length > 1) throw new Error('イープラスの複数公演形式は個別日時の検証が必要です');
   const performers = definitions($, '.ticket-detail__content').get('出演')?.text() ?? '';
+  const detailed=descriptionPerformers($,config,'.section--s4-detail .ticket-detail__content',events[0].description);
   const timing = $('.block-ticket-article__time').first().text();
   return normalizeEvents(events.map(event => ({
-    ...event, performer: { name: performers }, doorTime: clock(timing, '開場'),
+    ...event, description: detailed, performer: { name: [performers,detailed].filter(Boolean).join('\n') }, doorTime: clock(timing, '開場'),
     notes: event.offers?.length ? [] : ['公開公演ページに券種の料金がありません。購入先で確認してください。'],
   })), pageUrl, source, config);
 }

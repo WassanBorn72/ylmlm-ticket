@@ -109,6 +109,21 @@ export async function collectSource(source, config, fetchPage, signal) {
   };
 }
 
+// Search may only index a site's performer field. Official calendar purchase
+// links are also discovery candidates; they do not override artist verification.
+function officialEventUrls(announcements,source) {
+  const urls=new Set();
+  for(const notice of announcements??[]) for(const raw of notice.ticketUrls??[]) {
+    try {
+      const target=new URL(checkedUrl(raw.startsWith('https://')?raw:`https://${raw}`,source.allowedHosts));
+      if(!source.eventPathPattern||!new RegExp(source.eventPathPattern).test(target.pathname))continue;
+      if(source.stripQuery)target.search='';
+      urls.add(target.href);
+    }catch{/* Ignore links outside the verified ticket-site event paths. */}
+  }
+  return [...urls];
+}
+
 export async function collectTickets(config, { signal, fetchPage, onSource, announcements, announcementsPromise } = {}) {
   const officialHints = announcementsPromise ? [] : officialArtistHints(announcements, config);
   config = { ...config, officialHints };
@@ -127,7 +142,7 @@ export async function collectTickets(config, { signal, fetchPage, onSource, anno
   };
   // Sites run independently; each host has at most two in-flight requests.
   const initial = Promise.all(config.sources.map(async source => {
-    const eventUrls = [...(source.eventUrls ?? []), ...officialHints.filter(hint => source.allowedHosts.includes(new URL(hint.url).hostname)).map(hint => hint.url)];
+    const eventUrls = [...(source.eventUrls ?? []), ...(announcementsPromise?[]:officialEventUrls(announcements,source)), ...officialHints.filter(hint => source.allowedHosts.includes(new URL(hint.url).hostname)).map(hint => hint.url)];
     const result = await collectSource({ ...source, eventUrls }, config, fetcher, signal);
     onSource?.(announcementsPromise && result.status === 'ok' ? {...result,status:'pending'} : result);
     return result;
@@ -138,7 +153,7 @@ export async function collectTickets(config, { signal, fetchPage, onSource, anno
   const freshHints = officialArtistHints(freshAnnouncements, config);
   return Promise.all(results.map(async (result, index) => {
     const source = config.sources[index];
-    const missing = [...new Set(freshHints.filter(hint => source.allowedHosts.includes(new URL(hint.url).hostname)).map(hint => hint.url))];
+    const missing = [...new Set([...officialEventUrls(freshAnnouncements,source),...freshHints.filter(hint => source.allowedHosts.includes(new URL(hint.url).hostname)).map(hint => hint.url)])];
     const supplement = missing.length ? await collectSource({...source, listingUrls:[], eventUrls:missing}, {...config, officialHints:freshHints}, fetcher, signal) : null;
     const merged = new Map();
     const reparsed = new Set((supplement?.events ?? []).flatMap(event=>event.sourceUrls));

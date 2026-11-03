@@ -16,3 +16,8 @@ const autolinking=fileURLToPath(new URL('../node_modules/expo-modules-autolinkin
 const linked=JSON.parse(execFileSync(process.execPath,[autolinking,'resolve','--platform','android','--json'],{encoding:'utf8'}));
 assert.ok(linked.modules.some(module=>module.packageName==='ticket-widget'&&module.projects.some(project=>project.modules.some(item=>item.classifier==='jp.ylmlm.unofficial.ticket.widget.TicketWidgetModule'))),'Widget module must be linked into Android');
 console.log('PASS: Android home widgets module is autolinked');
+
+const activity=mods.android.manifest.manifest.application[0].activity.find(item=>item.$['android:name']==='.MainActivity');
+assert.equal(activity?.$['android:launchMode'],'singleTask','Widget taps must reuse the existing MainActivity');
+assert.ok(activity?.['intent-filter']?.some(filter=>(filter.data??[]).some(data=>data.$['android:scheme']==='ylmlm-unofficial-ticket')),'Widget detail routes need the app URL scheme');
+console.log('PASS: widget URL scheme and singleTask activity support cold and warm detail links');

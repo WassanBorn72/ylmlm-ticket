@@ -12,6 +12,7 @@ import appConfig from './app.json';
 import * as Calendar from 'expo-calendar';
 import {useSaleReminders} from './src/useSaleReminders';
 import {useTicketWidget} from './src/useTicketWidget';
+import {linkedEvent,subscribeWidgetRoutes} from './src/widgetRoutes.mjs';
 import { calendarEvent } from './src/calendarEvent.mjs';
 import { offerStatus, eventSalesStatus } from './src/tickets/sales.mjs';
 import { collectOfficialDetails, applyOfficialResult, officialSource } from './src/tickets/official.mjs';
@@ -70,34 +71,21 @@ function AppContent() {
   const [notificationRevision,setNotificationRevision] = useState(0);
   const reminders = useSaleReminders(feed.events,favoriteIds,deviceState.current.favoriteChanges,data=>{pendingNotification.current=data;setNotificationRevision(v=>v+1);},preferencesReady);
   const widget = useTicketWidget(feed,favoriteIds,deviceState.current.favoriteChanges,preferencesReady);
-  useEffect(()=>{
-    let mounted=true;
-    const open=(url:string|null)=>{
-      if(!mounted||!url)return;
-      try{
-        const target=new URL(url);
-        if(target.protocol!=='ylmlm-unofficial-ticket:')return;
-        if(target.hostname==='event'){
-          const id=decodeURIComponent(target.pathname.slice(1));
-          if(!/^[a-zA-Z0-9_-]{1,128}$/.test(id))return;
-          pendingNotification.current={eventId:id,origin:'widget'};setNotificationRevision(value=>value+1);
-        }else if(target.hostname==='favorites'||target.hostname==='tickets'){
-          setTab(target.hostname);setSelected(null);setSelectedDate(null);setPerformerId(null);setQuery('');
-        }
-      }catch{/* Other URLs are not widget routes. */}
-    };
-    void Linking.getInitialURL().then(open).catch(()=>{});
-    const subscription=Linking.addEventListener('url',event=>open(event.url));
-    return()=>{mounted=false;subscription.remove();};
-  },[]);
+  useEffect(()=>subscribeWidgetRoutes(Linking,route=>{
+    setCalendarOpen(false);setPerformerOpen(false);setSelected(null);setNotice('');
+    if(route.kind==='event'){
+      pendingNotification.current=route.data;setNotificationRevision(value=>value+1);
+    }else{
+      pendingNotification.current=null;
+      setTab(route.tab);setSelectedDate(null);setPerformerId(null);setQuery('');
+    }
+  }),[]);
 
   useEffect(()=>{
     const data=pendingNotification.current;
     if(!data)return;
-    const event=feed.events.find(event=>event.id===data.eventId);
-    const aliases=event?[]:feed.events.filter(event=>deviceState.current.favoriteChanges?.[event.id]?.favoriteId===data.eventId);
-    const matches=event?[event]:aliases.length?aliases:feed.events.filter(event=>event.date===data.eventDate&&event.title===data.eventTitle&&typeof data.url==='string'&&event.sourceUrls.includes(data.url));
-    if(matches.length===1){setTab('tickets');setSelectedDate(null);setPerformerId(null);setQuery('');setSelected(matches[0]);pendingNotification.current=null;}
+    const event=linkedEvent(feed.events,data,deviceState.current.favoriteChanges);
+    if(event){setCalendarOpen(false);setPerformerOpen(false);setTab('tickets');setSelectedDate(null);setPerformerId(null);setQuery('');setSelected(event);pendingNotification.current=null;}
     else if(preferencesReady&&!loading&&refreshedOnce.current){setNotice('公演を確認できませんでした。掲載状況を確認してください。');pendingNotification.current=null;}
   },[feed,notificationRevision,preferencesReady,loading]);
 
