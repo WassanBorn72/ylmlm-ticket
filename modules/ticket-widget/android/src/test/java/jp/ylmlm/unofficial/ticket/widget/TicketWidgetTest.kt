@@ -95,6 +95,10 @@ class TicketWidgetTest {
       val item=list.getChildAt(i);val card=item.findViewById<ViewGroup>(R.id.ticket_row)
       val column=card.getChildAt(1) as ViewGroup
       assertTrue("text column fits card: ${column.height}/${card.height}",column.height <= card.height-card.paddingTop-card.paddingBottom)
+      for(j in 0 until column.childCount) {
+        val child=column.getChildAt(j)
+        if(child.visibility != View.GONE) assertTrue("card content must not be clipped at its bottom: ${child.bottom}/${column.height}",child.bottom <= column.height-column.paddingBottom)
+      }
       val title=item.findViewById<TextView>(R.id.ticket_title)
       assertEquals(1,title.maxLines)
       val open=item.findViewById<TextView>(R.id.ticket_open);val venue=item.findViewById<TextView>(R.id.ticket_meta)
