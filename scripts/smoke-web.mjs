@@ -43,6 +43,12 @@ for (const source of config.sources) {
         '/sf/detail/4586830001-P0030001P021001': 'eplus',
       }[url.pathname];
       html = html && fixture(html);
+      // Fresh official group links are now discovery candidates too. These two
+      // calendar-only pages are outside this UI fixture's three target events.
+      if(source.id==='ticketdive'&&url.pathname==='/event/20351019_night')html='<span class="EventInfoUnit_name__fixture">対象外の公演</span>';
+      if(source.id==='livepocket'&&url.pathname==='/e/wpw2g')html='<main class="event-detail"><h1>対象外の公演</h1></main>';
+      // A removed event is also withdrawn at its direct purchase URL.
+      if (['removed','failed'].includes(phase) && url.pathname === '/event/youllhalloween') html='<span class="EventInfoUnit_name__fixture">掲載終了</span>';
       if (phase === 'changed' && source.id === 'ticketdive' && html) html = html.replaceAll('3,500', '3,800');
       if (phase === 'unit' && source.id === 'tiget' && html) html = html.replaceAll('絶対少女物語vol.3', 'トークイベント（ユニット出演）').replaceAll('ゆるめるモ！', 'なにぬねるん / へくしょんめくしょん / ねるんポクぽく / なにQ');
     }
