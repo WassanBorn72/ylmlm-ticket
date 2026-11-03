@@ -69,7 +69,11 @@ class TicketWidgetTest {
       override fun getView(position: Int,convertView: View?,parent: ViewGroup): View {
         val remote=factory.getViewAt(position)!!
         // RemoteViewsService sets this flag before sending an item to the host.
-        org.robolectric.util.ReflectionHelpers.callInstanceMethod<Any>(remote,"addFlags",org.robolectric.util.ReflectionHelpers.ClassParameter.from(Int::class.javaPrimitiveType!!,2))
+        if(android.os.Build.VERSION.SDK_INT >= 29) {
+          org.robolectric.util.ReflectionHelpers.callInstanceMethod<Any>(remote,"addFlags",org.robolectric.util.ReflectionHelpers.ClassParameter.from(Int::class.javaPrimitiveType!!,2))
+        } else {
+          org.robolectric.util.ReflectionHelpers.callInstanceMethod<Any>(remote,"setIsWidgetCollectionChild",org.robolectric.util.ReflectionHelpers.ClassParameter.from(Boolean::class.javaPrimitiveType!!,true))
+        }
         return (if(convertView == null) remote.apply(context,parent) else convertView.apply{remote.reapply(context,this)}).also{previewFont(it)}
       }
     }

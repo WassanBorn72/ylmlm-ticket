@@ -46,6 +46,12 @@ internal class TicketEventsFactory(private val context: Context,private val favo
   override fun getViewAt(position: Int): RemoteViews? {
     val event=events.getOrNull(position) ?: return null
     val view=RemoteViews(context.packageName,rowLayout)
+    // Large sp dimensions scale differently from small text on Android 14's
+    // nonlinear font scaling. Use a shared dp minimum scaled by fontScale, while
+    // keeping natural content height as a safety net. The launcher lays out rows.
+    val cardDp=if(rowLayout == R.layout.ticket_widget_event) 88 else 72
+    val minimum=(cardDp*context.resources.displayMetrics.density*maxOf(1f,context.resources.configuration.fontScale)).toInt()
+    view.setInt(R.id.ticket_row,"setMinimumHeight",minimum)
     view.setTextViewText(R.id.ticket_title,event.optString("title"))
     val summary=event.optString("summary")
     val time=event.optString("timeLabel",summary.substringBefore(" · ").substringAfter(" ","時間未掲載"))
