@@ -105,10 +105,13 @@ try {
   assert.equal(await detailSheet.getByRole('link', { name: '公式サイトを開く', exact: true }).count(), 0);
   assert.equal(await detailSheet.getByRole('link', { name: '公式Xを開く', exact: true }).count(), 0);
   assert.equal(await detailSheet.getByRole('link', { name: '公式告知を確認', exact: true }).count(), 0);
+  // Modal slide-in transforms change bounding boxes while the CSS animation is
+  // running; compare final layout coordinates, allowing subpixel float rounding.
+  await page.waitForFunction(() => document.getAnimations().filter(animation=>animation.effect?.getTiming().iterations!==Infinity).every(animation=>animation.playState!=='running'));
   const calendarPosition = await page.getByRole('button', {name:'端末のカレンダーに追加',exact:true}).boundingBox();
   const reminderPosition = await page.getByRole('switch', {name:'この公演の発売開始通知',exact:true}).boundingBox();
-  assert.ok(calendarPosition && calendarPosition.height >= 56);
-  assert.ok(reminderPosition && reminderPosition.height >= 68);
+  assert.ok(calendarPosition && calendarPosition.height >= 55.99,JSON.stringify({calendarPosition,reminderPosition}));
+  assert.ok(reminderPosition && reminderPosition.height >= 67.99);
   if(process.env.DETAIL_SCREENSHOT_PATH)await page.screenshot({path:process.env.DETAIL_SCREENSHOT_PATH});
   const purchasePosition = await page.getByText('購入先を選ぶ', { exact: true }).boundingBox();
   const supplementPosition = await page.getByText('その他補足', { exact: true }).boundingBox();
@@ -261,6 +264,8 @@ try {
   await page.getByRole('tab', { name: 'チケット', exact: true }).click();
   phase = 'failed';
   await refresh();
+  await page.getByText(/^取得できた情報を更新しました。TIGETの情報/).waitFor();
+  assert.equal(await page.getByText(/^情報を更新できませんでした/).count(),0);
   await expectCards(3);
   await page.getByText('一部は前回取得の情報です · 取得状況を確認').waitFor();
   await page.getByRole('tab', { name: '設定', exact: true }).click();
@@ -275,11 +280,20 @@ try {
   for (const source of config.sources) await page.getByText(source.name, { exact: true }).waitFor();
   phase = 'offline';
   await refresh();
+  await page.getByText(/^情報を更新できませんでした/).waitFor();
   await page.getByRole('tab', { name: 'チケット', exact: true }).click();
   await expectCards(3);
   assert.equal(await page.getByText('一部は前回取得の情報です · 取得状況を確認').count(), 3);
+  // A previous failure disappears as soon as the next refresh starts.
+  phase = 'paused';
+  await page.getByRole('button', {name:'チケット情報を更新',exact:true}).click();
+  assert.equal(await page.getByText(/^情報を更新できませんでした/).count(),0);
+  await page.getByRole('button', {name:'チケット情報の更新を中止',exact:true}).click();
+  await waitIdle();
+  await page.waitForTimeout(4100);
   phase = 'unit';
   await refresh();
+  assert.equal(await page.getByText(/^情報を更新できませんでした|^取得できた情報を更新しました/).count(),0);
   const beforePerformerFilter = await cards().count();
   await page.getByLabel('公演名・会場で検索').fill('なにぬねるん');
   await expectCards(1);

@@ -220,7 +220,7 @@ test('イープラスの構造化データ内の説明も出演者一覧に限�
 test('検索が詳細本文を索引に含めない場合も、公式告知の購入先から本文を確認する',async()=>{
  for(const item of detailedSources) {
   const s={...source(item.id),listingUrls:[],eventUrls:[]};const calls=[];
-  const results=await collectTickets({...config,sources:[s]},{announcementsPromise:Promise.resolve([{title:'ゆるめるモ！出演公演',date:'2026-11-03',ticketUrls:[item.url.replace('https://','')]}]),fetchPage:async url=>{calls.push(url);return{url,html:detailedPage(item,'<p>出演：ゆるめるモ！ / 別グループ</p>')};}});
+  const results=await collectTickets({...config,sources:[s]},{today:'2026-11-03',announcementsPromise:Promise.resolve([{title:'ゆるめるモ！出演公演',date:'2026-11-03',ticketUrls:[item.url.replace('https://','')]}]),fetchPage:async url=>{calls.push(url);return{url,html:detailedPage(item,'<p>出演：ゆるめるモ！ / 別グループ</p>')};}});
   assert.equal(results[0].status,'ok');assert.equal(results[0].events.length,1,item.id);assert.deepEqual(calls,[item.url]);
  }
 });

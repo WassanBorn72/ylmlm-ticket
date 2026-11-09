@@ -124,7 +124,11 @@ function officialEventUrls(announcements,source) {
   return [...urls];
 }
 
-export async function collectTickets(config, { signal, fetchPage, onSource, announcements, announcementsPromise } = {}) {
+export async function collectTickets(config, { signal, fetchPage, onSource, announcements, announcementsPromise, today = new Date(Date.now()+9*60*60*1000).toISOString().slice(0,10) } = {}) {
+  // Expired official notices often retain purchase links after ticket sites
+  // remove the page. They are not discovery candidates for current listings.
+  const currentNotices = notices => (notices ?? []).filter(notice => notice.date >= today);
+  announcements = currentNotices(announcements);
   const officialHints = announcementsPromise ? [] : officialArtistHints(announcements, config);
   config = { ...config, officialHints };
   const rawFetcher = fetchPage ?? ((url, source) => fetchHtml(url, source, { signal }));
@@ -148,7 +152,8 @@ export async function collectTickets(config, { signal, fetchPage, onSource, anno
     return result;
   }));
   if (!announcementsPromise) return initial;
-  const [results, freshAnnouncements] = await Promise.all([initial, announcementsPromise]);
+  const [results, notices] = await Promise.all([initial, announcementsPromise]);
+  const freshAnnouncements = currentNotices(notices);
   if (signal?.aborted) throw new Error('取得を中断しました');
   const freshHints = officialArtistHints(freshAnnouncements, config);
   return Promise.all(results.map(async (result, index) => {

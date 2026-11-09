@@ -12,6 +12,7 @@ import appConfig from './app.json';
 import * as Calendar from 'expo-calendar';
 import {useSaleReminders} from './src/useSaleReminders';
 import {useTicketWidget} from './src/useTicketWidget';
+import {refreshStatus} from './src/refreshStatus.mjs';
 import {linkedEvent,subscribeWidgetRoutes} from './src/widgetRoutes.mjs';
 import { calendarEvent } from './src/calendarEvent.mjs';
 import { offerStatus, eventSalesStatus } from './src/tickets/sales.mjs';
@@ -62,7 +63,7 @@ function AppContent() {
   const [preferencesReady, setPreferencesReady] = useState(false);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState('');
-  const [error, setError] = useState('');
+  const [updateStatus, setUpdateStatus] = useState<ReturnType<typeof refreshStatus>>(null);
   const [notice, setNotice] = useState('');
   const [selected, setSelected] = useState<TicketEvent | null>(null);
   const [descending, setDescending] = useState(false);
@@ -110,10 +111,11 @@ function AppContent() {
     const controller = new AbortController();
     activeRequest.current = controller;
     setLoading(true);
+    setUpdateStatus(null);
     setProgress('チケットサイトを確認しています…');
+    const completed = new Map<string, Awaited<ReturnType<typeof collectTickets>>[number]>();
     try {
       const baseline = deviceState.current;
-      const completed = new Map<string, Awaited<ReturnType<typeof collectTickets>>[number]>();
       const officialPromise = collectOfficialDetails({ signal: controller.signal });
       const ticketsPromise = collectTickets(config, {
         announcements: baseline.official?.announcements,
@@ -144,13 +146,12 @@ function AppContent() {
         const matches = nextFeed.events.filter(event => event.date === current.date && event.title === current.title && event.sourceUrls.some(url => current.sourceUrls.includes(url)));
         return matches.length === 1 ? matches[0] : null;
       });
-      const failed = results.filter(result => result.status !== 'ok').map(result => result.name);
-      setError(failed.length ? `${failed.join('・')}を取得できませんでした。取得状況から詳細を確認できます。` : '');
+      setUpdateStatus(refreshStatus([...results, {name:'公式告知',status:official.status}]));
       try { await saveDeviceState(next); }
       catch { setNotice('取得情報を端末に保存できませんでした。次回の新着判定が保持されない場合があります。'); }
     } catch (failure) {
       if (!controller.signal.aborted) refreshedOnce.current = true;
-      if (!controller.signal.aborted) setError(failure instanceof Error ? failure.message : '接続を確認して再試行してください。');
+      if (!controller.signal.aborted) setUpdateStatus(refreshStatus([...completed.values()], failure instanceof Error ? failure.message : '接続を確認して再試行してください。'));
     } finally {
       if (activeRequest.current === controller) {
         if(controller.signal.aborted){
@@ -313,7 +314,7 @@ function AppContent() {
         {tab === 'tickets' && <View style={s.officialLinks}><Pressable style={s.officialLink} onPress={() => { void openTicket('https://ylmlm.jp/'); }} accessibilityRole="link" accessibilityLabel="公式サイトを開く"><Text style={s.officialLinkText}>公式サイト ↗</Text></Pressable><Pressable style={s.officialLink} onPress={() => { void openTicket('https://x.com/ylmlm_official'); }} accessibilityRole="link" accessibilityLabel="公式Xを開く"><Text style={s.officialLinkText}>公式X ↗</Text></Pressable></View>}
         {loading && <View style={s.notice}><ActivityIndicator color={c.green} /><Text style={s.noticeText}>{progress}{feed.events.length ? ' · 取得済みの公演を表示中' : ''}</Text><Pressable style={s.clearDateButton} onPress={() => { activeRequest.current?.abort(); }} accessibilityRole="button" accessibilityLabel="チケット情報の更新を中止"><Text style={s.clearDateText}>中止</Text></Pressable></View>}
         {notice !== '' && <View style={s.notice}><Text style={s.noticeText}>{notice}</Text><Pressable onPress={() => setNotice('')} accessibilityRole="button" accessibilityLabel="メッセージを閉じる"><X size={18} color={c.ink} /></Pressable></View>}
-        {error !== '' && <View style={s.error}><Text style={s.noticeText}>更新できませんでした。{feed.events.length ? '一部に前回取得の情報が含まれます。' : ''} {error}</Text><Pressable onPress={refresh} accessibilityRole="button" accessibilityLabel="再試行"><RefreshCw size={18} color={c.ink} /></Pressable></View>}
+        {updateStatus && <View style={updateStatus.tone==='warning'?s.updateWarning:s.error}><Text style={s.noticeText}>{updateStatus.message}</Text><Pressable onPress={refresh} accessibilityRole="button" accessibilityLabel="再試行"><RefreshCw size={18} color={c.ink} /></Pressable></View>}
         {tab === 'settings' ? <>
           <Text style={s.pageTitle}>取得状況</Text><Text style={s.subtitle}>開いたときに、最新の掲載情報を確認。</Text>
           <View style={s.settingsCard}><Text style={s.sectionTitle}>このアプリの更新方法</Text><Text style={s.bodyText}>起動時・バックグラウンドから戻ったとき・手動更新時に、端末からチケットサイトへ接続します。アプリを閉じている間は取得しません。新着は次に開いたときに表示します。発売開始リマインダーを有効にした場合は、取得済みの発売日時を端末に予約して通知します。</Text><Pressable style={[s.primaryButton, loading && s.disabled]} disabled={loading || !preferencesReady} onPress={() => { void refresh(); }} accessibilityRole="button" accessibilityLabel="今すぐ更新"><Text style={s.primaryText}>{loading ? '確認中…' : '今すぐ更新'}</Text><RefreshCw size={17} color="white" /></Pressable><Text style={s.smallText}>お気に入りの料金・開場／開演時間・販売状況・受付期間が変わると、次回取得時に「変更」を表示します。取得できない情報や、別公演と区別できない変更は判定しません。公演情報の変更を閉じている間に検出することはできません。前回取得の公演ID・既読状態・お気に入りは、この端末だけに保存します。端末間の同期はありません。</Text></View>
@@ -369,7 +370,7 @@ const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: c.bg }, page: { flex: 1, width: '100%', maxWidth: 760, alignSelf: 'center', backgroundColor: c.bg },
   header: { paddingHorizontal: 14, paddingVertical: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: c.bg },
   brandRow: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, marginRight: 8 }, unofficialName: { fontSize: 11, fontWeight: '700', color: c.green, letterSpacing: 0 }, brand: { fontSize: 18, fontWeight: '900', color: c.ink, letterSpacing: 0 }, bellButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: c.border, borderRadius: 17, backgroundColor: 'white' }, bellDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: c.pink, position: 'absolute', top: 9, right: 10 },
-  scroll: { flex: 1 }, content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 }, demoBanner: { flexDirection: 'row', alignItems: 'center', gap: 7, padding: 10, borderRadius: 10, backgroundColor: '#fff6e5', marginBottom: 14 }, demoText: { color: '#946b18', fontSize: 10, flex: 1, lineHeight: 16 }, notice: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 14, borderRadius: 12, backgroundColor: c.mint, marginBottom: 12 }, error: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 14, borderRadius: 12, backgroundColor: '#ffe9e7', marginBottom: 12 }, noticeText: { flex: 1, fontSize: 12, lineHeight: 19, color: c.ink },
+  scroll: { flex: 1 }, content: { paddingHorizontal: 20, paddingTop: 4, paddingBottom: 24 }, demoBanner: { flexDirection: 'row', alignItems: 'center', gap: 7, padding: 10, borderRadius: 10, backgroundColor: '#fff6e5', marginBottom: 14 }, demoText: { color: '#946b18', fontSize: 10, flex: 1, lineHeight: 16 }, notice: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 14, borderRadius: 12, backgroundColor: c.mint, marginBottom: 12 }, updateWarning: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 14, borderRadius: 12, backgroundColor: '#fff4dd', marginBottom: 12 }, error: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 14, borderRadius: 12, backgroundColor: '#ffe9e7', marginBottom: 12 }, noticeText: { flex: 1, fontSize: 12, lineHeight: 19, color: c.ink },
   eventActions:{marginBottom:16}, calendarAction:{minHeight:56,backgroundColor:c.green,borderRadius:14,paddingHorizontal:16,paddingVertical:14,flexDirection:'row',alignItems:'center',gap:12}, calendarActionText:{flex:1,color:'white',fontSize:16,fontWeight:'700'}, actionHint:{fontSize:12,lineHeight:20,color:c.muted,marginTop:6}, registerAction:{minHeight:48,padding:12,borderWidth:1,borderColor:c.border,borderRadius:12,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8,marginTop:6,backgroundColor:'white'}, registerActionText:{fontSize:14,fontWeight:'600',color:c.green,flexShrink:1}, reminderQuickCard:{marginBottom:18},
   favoriteButton: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   mapLink: { minHeight: 44 }, mapText: { color: c.green, textDecorationLine: 'underline' },

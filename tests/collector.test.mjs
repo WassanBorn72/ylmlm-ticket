@@ -45,3 +45,25 @@ test('一部サイトや公演ページが失敗しても成功した公演と�
   assert.equal(results[1].events.length, 0);
   assert.equal(results[1].status, 'error');
 });
+
+// The official calendar retains past notices whose purchase pages may be 404.
+test('終了済み公式告知のリンクは取得せず、当日・今後の公演は確認する',async()=>{
+ const s={id:'site',name:'Site',allowedHosts:['tickets.example'],eventPathPattern:'^/event/',listingUrls:['https://tickets.example/search'],listingSelector:'main',listingReadySelector:'main',emptyPattern:'0件'};
+ for(const fresh of [false,true]) {
+  const calls=[];
+  const notices=[{title:'過去公演',date:'2026-11-03',ticketUrls:['tickets.example/event/past']},{title:'当日公演',date:'2026-11-09',ticketUrls:['tickets.example/event/today']},{title:'次回公演',date:'2026-11-10',ticketUrls:['tickets.example/event/future']}];
+  const results=await collectTickets({artist:'ゆるめるモ！',sources:[s]}, {today:'2026-11-09',...(fresh?{announcementsPromise:Promise.resolve(notices)}:{announcements:notices}),fetchPage:async url=>{
+   calls.push(url);if(url.endsWith('/past'))throw new Error('HTTP 404');
+   return {url,html:url.endsWith('/search')?'<main>0件</main>':html('別グループ公演')};
+  }});
+  assert.equal(results[0].status,'ok');assert.ok(!calls.some(url=>url.endsWith('/past')));
+  assert.ok(calls.some(url=>url.endsWith('/today')));assert.ok(calls.some(url=>url.endsWith('/future')));
+ }
+});
+test('今後の公式告知のリンクが失敗した場合は取得エラーを隠さない',async()=>{
+ const s={id:'site',name:'Site',allowedHosts:['tickets.example'],eventPathPattern:'^/event/',listingUrls:['https://tickets.example/search'],listingSelector:'main',listingReadySelector:'main',emptyPattern:'0件'};
+ const results=await collectTickets({artist:'ゆるめるモ！',sources:[s]},{today:'2026-11-09',announcementsPromise:Promise.resolve([{title:'今後の公演',date:'2026-11-10',ticketUrls:['tickets.example/event/future']}]),fetchPage:async url=>{
+  if(url.endsWith('/future'))throw new Error('HTTP 404');return {url,html:url.endsWith('/search')?'<main>0件</main>':html('別グループ公演')};
+ }});
+ assert.equal(results[0].status,'error');assert.match(results[0].errors.join(' '),/HTTP 404/);
+});

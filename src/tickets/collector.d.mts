@@ -14,4 +14,4 @@ export type SourceResult = {
 export type FetchPage = (url: string, source: Source) => Promise<{ html: string; url: string }>;
 export function fetchHtml(url: string, source: Source, options?: { signal?: AbortSignal; fetcher?: typeof fetch; timeoutMs?: number }): Promise<{ html: string; url: string }>;
 export function collectSource(source: Source, config: Config, fetchPage: FetchPage, signal?: AbortSignal): Promise<SourceResult>;
-export function collectTickets(config: Config, options?: { signal?: AbortSignal; fetchPage?: FetchPage; announcements?: import('./official.mjs').OfficialAnnouncement[]; announcementsPromise?: Promise<import('./official.mjs').OfficialAnnouncement[]>; onSource?: (result: SourceResult) => void }): Promise<SourceResult[]>;
+export function collectTickets(config: Config, options?: { today?: string; signal?: AbortSignal; fetchPage?: FetchPage; announcements?: import('./official.mjs').OfficialAnnouncement[]; announcementsPromise?: Promise<import('./official.mjs').OfficialAnnouncement[]>; onSource?: (result: SourceResult) => void }): Promise<SourceResult[]>;
