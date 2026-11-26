@@ -63,15 +63,20 @@ function tiget($, pageUrl, source, config) {
   const groups = new Map();
   $('dd.pg-event__detail__ticket').each((_, el) => {
     const node = $(el);
-    const timing = node.prev('dt').text();
-    const start = clock(timing, '開演');
-    const doors = clock(timing, '開場');
+    // Current TIGET puts '13:00開場 / 13:15開演' directly in the ticket
+    // description; legacy pages use '開場 13:00' in the preceding heading.
+    const direct = node.clone();
+    direct.children().remove();
+    const timing = `${node.prev('dt').text()} ${direct.text()}`;
+    const ticketClock = label => clock(timing,label) ?? text(timing).match(new RegExp(`([0-2]?\\d:[0-5]\\d)\\s*${label}`))?.[1]?.padStart(5,'0') ?? null;
+    const start = ticketClock('開演');
+    const doors = ticketClock('開場');
     const key = `${start ?? 'unknown'}|${doors ?? 'unknown'}`;
     if (!groups.has(key)) groups.set(key, { name: title, startDate: instant(day, start), doorTime: doors, location: { name: venue }, performer: { name: performers }, offers: [] });
     const label = text(node.find('h6').text()).replace(/^●(?:予約|販売|電子チケット)/, '').replace(/^●/, '').replace(/^\((.*)\)$/, '$1');
     node.children('p').each((_, p) => {
       const line = text($(p).text());
-      const kind = line.match(/^(前売券|当日券)\s*[:：]/)?.[1];
+      const kind = line.match(/^((?:抽選)?(?:前売券|当日券))\s*[:：]?/)?.[1];
       if (!kind && !/^料金\s*[:：]?/.test(line)) return;
       const amount = $(p).clone();
       amount.find('span').remove();

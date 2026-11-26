@@ -224,3 +224,24 @@ test('検索が詳細本文を索引に含めない場合も、公式告知の�
   assert.equal(results[0].status,'ok');assert.equal(results[0].events.length,1,item.id);assert.deepEqual(calls,[item.url]);
  }
 });
+
+test('TIGETの新検索結果グリッドから公演だけを発見し、周辺リンクを除外',()=>{
+ const html=fixture('tiget-listing-current')+'<aside><a href="/events/999999">おすすめ</a></aside>';
+ assert.deepEqual(discoverEventUrls(html,source('tiget').listingUrls[0],source('tiget')),['https://tiget.net/events/539782','https://tiget.net/events/541490']);
+});
+test('TIGETの新検索結果から現在の公演詳細・会場・時刻・券種まで取得',async()=>{
+ const s={...source('tiget'),listingUrls:[source('tiget').listingUrls[0]]};
+ const calls=[];
+ const [result]=await collectTickets({...config,sources:[s]},{fetchPage:async url=>{
+  calls.push(url);return {url,html:url.includes('?')?fixture('tiget-listing-current'):url.endsWith('/539782')?fixture('tiget-event-current'):'<h1 class="pg-event__header__title">対象外公演</h1>'};
+ }});
+ assert.equal(result.status,'ok');assert.deepEqual(result.errors,[]);assert.equal(result.events.length,1);
+ const event=result.events[0];assert.equal(event.title,'Oshi Fes in IKEBUKURO Christmas Night ver.');assert.equal(event.date,'2026-12-25');assert.match(event.venue,/グローバルリング/);assert.equal(event.offers.length,4);assert.equal(event.startAt,'2026-12-25T04:15:00.000Z');assert.equal(event.doorsAt,'2026-12-25T04:00:00.000Z');assert.equal(event.offers.filter(offer=>offer.label.includes('抽選前売券')).length,2);assert.equal(event.offers.at(-1).price,2000);
+ assert.ok(calls.includes('https://tiget.net/events/539782'));assert.ok(calls.includes('https://tiget.net/events/541490'));
+});
+test('TIGETの新しい0件ページは成功扱い、確認画面や壊れた一覧は失敗扱い',async()=>{
+ const s={...source('tiget'),listingUrls:[source('tiget').listingUrls[0]]};
+ for(const [html,status]of[[fixture('tiget-empty-current'),'ok'],['<h1>アクセス確認</h1>','error'],['<div class="pg-events-index"><p>読み込みエラー</p></div>','error']]){
+  const [result]=await collectTickets({...config,sources:[s]},{fetchPage:async url=>({url,html})});assert.equal(result.status,status);assert.equal(result.events.length,0);
+ }
+});

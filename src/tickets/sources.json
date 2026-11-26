@@ -91,8 +91,8 @@
         "https://tiget.net/events?q%5Bwords%5D=Babywiper+or+Gangstar"
       ],
       "eventPathPattern": "^/events/[0-9]+$",
-      "listingSelector": ".events-archive-body",
-      "listingReadySelector": ".events-archive-body",
+      "listingSelector": ".events-archive-body, .pg-events-index__grid",
+      "listingReadySelector": ".events-archive-body, .pg-events-index",
       "emptyPattern": "(?:検索結果:0件|見つかりません|ありません)",
       "stripQuery": true
     },
