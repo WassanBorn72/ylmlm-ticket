@@ -1,12 +1,12 @@
 # GitHub での配布
 
-正式リリースの公開先は https://github.com/WassanBorn72/ylmlm-ticket/releases です。取得済みの情報が表示されていても更新失敗と表示される問題を修正した [v0.9.8](https://github.com/WassanBorn72/ylmlm-ticket/releases/tag/v0.9.8) を2026年11月9日（日本時間）に正式公開しました。ストアには提出していません。iPhone向けIPAは作成していません。
+正式リリースの公開先は https://github.com/WassanBorn72/ylmlm-ticket/releases です。TIGETのサイト構造変更で公演情報を取得できない問題を修正した [v0.9.9](https://github.com/WassanBorn72/ylmlm-ticket/releases/tag/v0.9.9) を2026年11月27日（日本時間）に正式公開しました。ストアには提出していません。iPhone向けIPAは作成していません。
 
-APK名は `ylmlm-unofficial-ticket-v0.9.8.apk` です。更新でもApplication IDと署名鍵を維持します。
+APK名は `ylmlm-unofficial-ticket-v0.9.9.apk` です。更新でもApplication IDと署名鍵を維持します。
 
-[署名付きビルド](https://github.com/WassanBorn72/ylmlm-ticket/actions/runs/42623906235)と[CI](https://github.com/WassanBorn72/ylmlm-ticket/actions/runs/42623903896)は成功しています。102件のJSテスト、ネイティブテスト20件、画面操作、全OS向けバンドル、公開APKのチェックサムと既存正式版と同じ署名を確認しました。APK内のversionName `0.9.8`・versionCode `35`、2種類のウィジェット、保護されたRemoteViewsService、通知権限とカレンダー権限除去も検証済みです。
+[署名付きビルド](https://github.com/WassanBorn72/ylmlm-ticket/actions/runs/45889002982)と[CI](https://github.com/WassanBorn72/ylmlm-ticket/actions/runs/45889001686)は成功しています。105件のJSテスト、ネイティブテスト20件、画面操作、全OS向けバンドル、公開APKのチェックサムと既存正式版と同じ署名を確認しました。APK内のversionName `0.9.9`・versionCode `36`、2種類のウィジェット、保護されたRemoteViewsService、通知権限とカレンダー権限除去も検証済みです。
 
-実サイトの初回検証で、3サイトの取得成功と、公式告知に残った11月3日のイープラス購入先のHTTP 404を確認しました。公式告知による追加巡回を日本時間の当日以降へ絞った後は、現在の9公演を保持したまま4サイトすべて成功しました。今後の公演の取得失敗を隠さないこともテストしています。一部の情報を取得できた場合は注意表示、全体を取得できない場合は失敗表示とし、次の更新開始時に前回表示を解除します。公式告知のエラーも注意の対象です。端末実機での確認は未実施です。APKのSHA-256は `fbdc1cce29d704afb61998ceea4759de08ec6993bf415dfacd5944fd0077bf3e` です。
+実サイトでTIGETの検索結果欄が旧 `events-archive-body` から `pg-events-index`／`pg-events-index__grid` へ変更されたことを確認し、新旧両形式に対応しました。現在の公演ページの抜粋を使い、検索から公演詳細・会場・開催日・時刻・4券種の取得までを検証。0件は成功、確認画面や壊れた一覧は失敗とする判定を維持しています。時刻が券種欄の本文に「13:00開場／13:15開演」と記載される形式と、抽選前売券にも対応。修正後の実サイト確認では、TIGETの2公演を含め、4サイトすべて成功・現在の公演合計9件を確認しました。追加確認でTicketDive4公演・LivePocket3公演の会場／開場・開演／料金を公開ページと照合し、一致を確認。イープラスは対象公演0件のため検索ページの正常判定まで確認し、現在の対象公演詳細は未検証です。端末実機での確認は未実施です。APKのSHA-256は `8fd7680a70aafdecb130ef1926658ed6a8b7badd0618d8c80c08b788d10a2b6a` です。
 
 ## アプリの識別子
 
@@ -25,7 +25,7 @@ APK名は `ylmlm-unofficial-ticket-v0.9.8.apk` です。更新でもApplication 
 表示バージョンは `MAJOR.MINOR.PATCH` 形式です。1.0未満では仕様の変更があり得る開発段階として扱い、新機能の追加はMINOR、不具合修正はPATCHを上げます。公開ごとの変更内容を [CHANGELOG.md](CHANGELOG.md) に記録します。
 
 - `app.json` の `expo.version`、`package.json` とロックファイルのversion、Gitタグ、Releaseタイトル、APK名を一致させます。
-- AndroidのversionCodeとiOSのbuildNumberは、表示バージョンとは別の更新用の番号として増やします。今回の値は両方 `35` です。
+- AndroidのversionCodeとiOSのbuildNumberは、表示バージョンとは別の更新用の番号として増やします。今回の値は両方 `36` です。
 - アプリ内の表示は `app.json` から読み取り、設定画面に表示します。
 - 公開済みタグ・APKを別のビルドで置き換えません。公開後の修正は新しいバージョンで配布します。
 
@@ -70,11 +70,11 @@ GitHub のリポジトリ Settings → Secrets and variables → Actions に、�
 
 Base64 は暗号化ではありません。変換した内容も秘密情報として取り扱ってください。署名鍵とパスワードはクラウド開発環境の通常変数には入れず、GitHub Actions の Secrets を利用します。
 
-準備と実機確認後、バージョンと一致するタグ（例：`v0.9.8`）を作り、GitHub に push します。
+準備と実機確認後、バージョンと一致するタグ（例：`v0.9.9`）を作り、GitHub に push します。
 
 ```sh
-git tag v0.9.8
-git push origin v0.9.8
+git tag v0.9.9
+git push origin v0.9.9
 ```
 
 `Android GitHub Release` ワークフローが、テスト → Expo prebuild → 専用鍵で署名した release APK の生成 → 署名検証 → チェックサム生成 → GitHub Release 下書き作成を行います。秘密情報がない場合は停止し、debug 鍵で代用しません。既存タグは Actions の手動実行でも指定できます。同じ下書きの再作成は自動上書きせず失敗するため、既存の内容を確認して扱ってください。
